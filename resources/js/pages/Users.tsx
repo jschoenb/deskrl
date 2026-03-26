@@ -1,3 +1,7 @@
+import { ArrowUpIcon } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+
 type User = {
     id: number;
     name: string;
@@ -15,6 +19,15 @@ export default function Users({ users }: { users: User[] }) {
                     </li>
                 ))}
             </ul>
+
+
+            <div className="flex flex-wrap items-center gap-2 md:flex-row">
+            <Button variant="outline">Button</Button>
+            <Button variant="outline" size="icon" aria-label="Submit">
+            <ArrowUpIcon />
+            </Button>
+            </div>
+
         </div>
     );
 }
