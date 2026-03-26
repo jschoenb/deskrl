@@ -8,7 +8,7 @@ type User = {
     email: string;
 };
 
-export default function Users({ users }: { users: User[] }) {
+export default function Users_old({ users }: { users: User[] }) {
     return (
         <div style={{ padding: "2rem" }}>
             <h1>User List</h1>
@@ -27,6 +27,8 @@ export default function Users({ users }: { users: User[] }) {
             <ArrowUpIcon />
             </Button>
             </div>
+
+            <h1>hallo</h1>
 
         </div>
     );
