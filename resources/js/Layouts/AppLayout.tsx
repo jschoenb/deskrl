@@ -2,6 +2,8 @@ import { Link } from '@inertiajs/react';
 import {BrowserRouter, Route, Routes} from "react-router";
 import Users_old from "@/pages/Users_old";
 import React from "react";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
 
 type Props = {
     children: React.ReactNode;
@@ -9,27 +11,17 @@ type Props = {
 
 export default function Welcome({ children }: Props) {
     return (
-        <div style={{ padding: '2rem' }}>
-            <nav>
-                <Link href="/">Go to Home</Link>
-                <Link href="/users">Go to Users</Link>
-                <Link href="/terms">Go to Terms</Link>
+        <div className="min-h-screen flex flex-col">
+            {/* HEADER */}
+            <Header />
 
-                <Link href="/terms">Go to AGB</Link>
-            </nav>
-
-            <main>
+            {/* CONTENT */}
+            <main className="flex-grow max-w-7xl mx-auto p-6 w-full">
                 {children}
-
             </main>
 
-            <nav>
-
-            </nav>
-
-
-
-
+            {/* FOOTER */}
+            <Footer />
 
         </div>
     );
