@@ -66,8 +66,7 @@ export default function Footer() {
                             </span>
                         </Link>
                         <p className="text-gray-600 mb-6 leading-relaxed max-w-md">
-                            Finde und buche flexible Arbeitsplätze in deiner Nähe.
-                            Einfach, schnell und produktiv arbeiten – wo immer du bist.
+                            So much free space! Use it! Find your perfect workspace – flexible, modern and just right.
                         </p>
                         <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#f5f5ff] rounded-xl border border-[#5555ff]/20">
                             <span className="text-[#5555ff] text-lg font-bold">
@@ -79,7 +78,7 @@ export default function Footer() {
                     {/* Quick Actions Spalte */}
                     <div>
                         <h3 className="text-lg font-bold mb-4 text-gray-900">
-                            Suchen & Finden
+                            Search
                         </h3>
                         <ul className="space-y-3">
                             <li>
@@ -88,7 +87,7 @@ export default function Footer() {
                                     className="text-gray-600 hover:text-[#5555ff] transition-colors flex items-center gap-2"
                                 >
                                     <Search className="w-4 h-4" />
-                                    Arbeitsplatz finden
+                                    Find Deskrl
                                 </Link>
                             </li>
                             <li>
@@ -97,7 +96,7 @@ export default function Footer() {
                                     className="text-gray-600 hover:text-[#5555ff] transition-colors flex items-center gap-2"
                                 >
                                     <Share2 className="w-4 h-4" />
-                                    Teilen
+                                    Share
                                 </button>
                             </li>
                             <li>
@@ -106,7 +105,7 @@ export default function Footer() {
                                     className="text-gray-600 hover:text-[#5555ff] transition-colors flex items-center gap-2"
                                 >
                                     <Bookmark className="w-4 h-4" />
-                                    Gespeichert
+                                    Save
                                 </Link>
                             </li>
                         </ul>
@@ -150,16 +149,16 @@ export default function Footer() {
                 {/* Bottom Bar */}
                 <div className="pt-8 border-t border-gray-200">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
-                        <div>© 2026 Deskrl. Alle Rechte vorbehalten.</div>
+                        <div>© 2026 Deskrl. All rights reserved.</div>
                         <div className="flex items-center gap-6">
                             <Link href="/privacy-policy" className="hover:text-[#5555ff] transition-colors">
-                                Datenschutz
+                                Privacy Policy
                             </Link>
                             <Link href="/terms" className="hover:text-[#5555ff] transition-colors">
-                                AGB
+                                Terms
                             </Link>
                             <Link href="/legal-notice" className="hover:text-[#5555ff] transition-colors">
-                                Impressum
+                                Legal Notice
                             </Link>
                         </div>
                     </div>
