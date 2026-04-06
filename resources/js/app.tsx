@@ -29,6 +29,7 @@ createInertiaApp({
 
 // resources/js/app.tsx
 
+import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import {JSX, ReactNode} from 'react';
