@@ -10,7 +10,13 @@ use Inertia\Inertia;
 Route::get('/users', [UserController::class, 'index']);
 
 //Header
-Route::get('/', function (){return Inertia::render('Home');});
+use App\Models\Listing;
+
+Route::get('/', function (){
+    return Inertia::render('Home', [
+        'listings' => Listing::all()
+    ]);
+});
 Route::get('/bookings', function (){return Inertia::render('Bookings');});
 Route::get('/favorites', function (){return Inertia::render('Favorites');});
 
