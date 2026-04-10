@@ -33,8 +33,8 @@ return new class extends Migration
             ])->default('draft');
 
             $table->integer('capacity')->nullable();
-            $table->integer('price_hourly')->nullable();
-            $table->integer('price_half_day')->nullable();
+            $table->integer('price_per_hour')->nullable();
+            $table->integer('price_per_half_day')->nullable();
             $table->integer('price_per_day')->nullable();
             $table->integer('price_per_week')->nullable();
             $table->integer('price_per_month')->nullable();
