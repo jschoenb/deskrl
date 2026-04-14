@@ -2,19 +2,12 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\User;
 use App\Models\Host;
 use App\Models\Listing;
 
-
-
 class ListingSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $sophieHost = Host::where('first_name', 'Sophie')->where('last_name', 'Berger')->first();
@@ -28,11 +21,11 @@ class ListingSeeder extends Seeder
             'type' => 'office',
             'status' => 'active',
             'capacity' => 8,
-            'price_hourly' => 25,
-            'price_half_day' => 90,
-            'price_per_day' => 160,
-            'price_per_week' => 700,
-            'price_per_month' => 2400,
+            'price_per_hour' => 2500,
+            'price_per_half_day' => 9000,
+            'price_per_day' => 16000,
+            'price_per_week' => 70000,
+            'price_per_month' => 240000,
         ]);
 
         Listing::create([
@@ -42,11 +35,11 @@ class ListingSeeder extends Seeder
             'type' => 'seminar',
             'status' => 'active',
             'capacity' => 20,
-            'price_hourly' => 40,
-            'price_half_day' => 140,
-            'price_per_day' => 260,
-            'price_per_week' => 1100,
-            'price_per_month' => 3800,
+            'price_per_hour' => 4000,
+            'price_per_half_day' => 14000,
+            'price_per_day' => 26000,
+            'price_per_week' => 110000,
+            'price_per_month' => 380000,
         ]);
 
         Listing::create([
@@ -56,11 +49,11 @@ class ListingSeeder extends Seeder
             'type' => 'coworking',
             'status' => 'active',
             'capacity' => 1,
-            'price_hourly' => 8,
-            'price_half_day' => 25,
-            'price_per_day' => 39,
-            'price_per_week' => 170,
-            'price_per_month' => 520,
+            'price_per_hour' => 800,
+            'price_per_half_day' => 2500,
+            'price_per_day' => 3900,
+            'price_per_week' => 17000,
+            'price_per_month' => 52000,
         ]);
 
         Listing::create([
@@ -70,11 +63,11 @@ class ListingSeeder extends Seeder
             'type' => 'workspace',
             'status' => 'inactive',
             'capacity' => 3,
-            'price_hourly' => 18,
-            'price_half_day' => 60,
-            'price_per_day' => 110,
-            'price_per_week' => 480,
-            'price_per_month' => 1650,
+            'price_per_hour' => 1800,
+            'price_per_half_day' => 6000,
+            'price_per_day' => 11000,
+            'price_per_week' => 48000,
+            'price_per_month' => 165000,
         ]);
 
         Listing::create([
@@ -84,11 +77,11 @@ class ListingSeeder extends Seeder
             'type' => 'workspace',
             'status' => 'draft',
             'capacity' => 1,
-            'price_hourly' => 10,
-            'price_half_day' => 32,
-            'price_per_day' => 55,
-            'price_per_week' => 240,
-            'price_per_month' => 780,
+            'price_per_hour' => 1000,
+            'price_per_half_day' => 3200,
+            'price_per_day' => 5500,
+            'price_per_week' => 24000,
+            'price_per_month' => 78000,
         ]);
 
         Listing::create([
@@ -98,11 +91,11 @@ class ListingSeeder extends Seeder
             'type' => 'event',
             'status' => 'archived',
             'capacity' => 30,
-            'price_hourly' => 50,
-            'price_half_day' => 180,
-            'price_per_day' => 320,
-            'price_per_week' => 1400,
-            'price_per_month' => 4900,
+            'price_per_hour' => 5000,
+            'price_per_half_day' => 18000,
+            'price_per_day' => 32000,
+            'price_per_week' => 140000,
+            'price_per_month' => 490000,
         ]);
     }
 }

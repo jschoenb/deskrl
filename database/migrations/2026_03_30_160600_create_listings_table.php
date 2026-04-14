@@ -39,7 +39,7 @@ return new class extends Migration
             $table->integer('price_per_week')->nullable();
             $table->integer('price_per_month')->nullable();
 
-            $table->foreignId('host_id')->constrained();
+            $table->foreignId('host_id')->constrained()->cascadeOnDelete();
 
             $table->timestamps();
         });
