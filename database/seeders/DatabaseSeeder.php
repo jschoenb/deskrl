@@ -24,7 +24,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             HostSeeder::class,
+            UtilitySeeder::class,
             ListingSeeder::class,
+            AddressSeeder::class,
+            AvailabilitySeeder::class,
         ]);
     }
 }

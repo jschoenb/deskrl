@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Host;
 use App\Models\Listing;
+use App\Models\Utility;
 
 class ListingSeeder extends Seeder
 {
@@ -14,7 +15,7 @@ class ListingSeeder extends Seeder
         $danielHost = Host::where('first_name', 'Daniel')->where('last_name', 'Hofer')->first();
         $leaHost = Host::where('first_name', 'Lea')->where('last_name', 'Mayer')->first();
 
-        Listing::create([
+        $meetingraum = Listing::create([
             'host_id' => $sophieHost->id,
             'title' => 'Moderner Meetingraum Wien Zentrum',
             'description' => 'Heller Besprechungsraum für Teams und Kundentermine in zentraler Lage.',
@@ -28,7 +29,7 @@ class ListingSeeder extends Seeder
             'price_per_month' => 240000,
         ]);
 
-        Listing::create([
+        $seminarraum = Listing::create([
             'host_id' => $sophieHost->id,
             'title' => 'Seminarraum mit Präsentationstechnik',
             'description' => 'Großer Seminarraum für Workshops, Schulungen und Teamtage.',
@@ -42,7 +43,7 @@ class ListingSeeder extends Seeder
             'price_per_month' => 380000,
         ]);
 
-        Listing::create([
+        $coworkingPlatz = Listing::create([
             'host_id' => $danielHost->id,
             'title' => 'Coworking Platz im Open Space',
             'description' => 'Flexibler Arbeitsplatz mit WLAN, Kaffee und guter Verkehrsanbindung.',
@@ -56,7 +57,7 @@ class ListingSeeder extends Seeder
             'price_per_month' => 52000,
         ]);
 
-        Listing::create([
+        $privatesBuero = Listing::create([
             'host_id' => $danielHost->id,
             'title' => 'Privates Büro für konzentriertes Arbeiten',
             'description' => 'Ruhiges Büro für Einzelpersonen oder kleine Teams mit hoher Privatsphäre.',
@@ -70,7 +71,7 @@ class ListingSeeder extends Seeder
             'price_per_month' => 165000,
         ]);
 
-        Listing::create([
+        $arbeitsplatz = Listing::create([
             'host_id' => $leaHost->id,
             'title' => 'Kleiner Arbeitsplatz mit Tageslicht',
             'description' => 'Gemütlicher Arbeitsplatz in ruhiger Umgebung für Freelancer und Remote Work.',
@@ -84,7 +85,7 @@ class ListingSeeder extends Seeder
             'price_per_month' => 78000,
         ]);
 
-        Listing::create([
+        $eventflaeche = Listing::create([
             'host_id' => $leaHost->id,
             'title' => 'Eventfläche für kleine Business Events',
             'description' => 'Flexible Fläche für Networking, Vorträge und kleine Firmenveranstaltungen.',
@@ -97,5 +98,29 @@ class ListingSeeder extends Seeder
             'price_per_week' => 140000,
             'price_per_month' => 490000,
         ]);
+
+        $meetingraum->utilities()->attach(
+            Utility::whereIn('name', ['WLAN', 'Beamer', 'Whiteboard', 'Kaffeemaschine'])->pluck('id')
+        );
+
+        $seminarraum->utilities()->attach(
+            Utility::whereIn('name', ['WLAN', 'Beamer', 'Whiteboard', 'Flipchart', 'Klimaanlage'])->pluck('id')
+        );
+
+        $coworkingPlatz->utilities()->attach(
+            Utility::whereIn('name', ['WLAN', 'Kaffeemaschine', 'Drucker'])->pluck('id')
+        );
+
+        $privatesBuero->utilities()->attach(
+            Utility::whereIn('name', ['WLAN', 'Klimaanlage', 'Drucker'])->pluck('id')
+        );
+
+        $arbeitsplatz->utilities()->attach(
+            Utility::whereIn('name', ['WLAN', 'Kaffeemaschine'])->pluck('id')
+        );
+
+        $eventflaeche->utilities()->attach(
+            Utility::whereIn('name', ['WLAN', 'Beamer', 'Whiteboard', 'Küche', 'Parkplatz', 'Barrierefrei'])->pluck('id')
+        );
     }
 }
