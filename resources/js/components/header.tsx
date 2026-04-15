@@ -52,7 +52,7 @@ export default function Header() {
                                 }`}
                             >
                                 <Home className="w-5 h-5" />
-                                <span className="font-medium">Suche</span>
+                                <span className="font-medium">Suchen</span>
                             </Link>
 
                             <Link
