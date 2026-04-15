@@ -198,13 +198,13 @@ export default function Footer() {
                     <div>
                         <h3 className="text-lg font-bold mb-4 text-gray-900">Für Nutzer:innen</h3>
                         <ul className="space-y-3 text-sm">
-                            <li><Link href="/faq-user" className="text-gray-600 hover:text-[#5555ff] transition-colors">FAQ für Nutzer:innen</Link></li>
-                            <li><Link href="/cancellation" className="text-gray-600 hover:text-[#5555ff] transition-colors">Stornierungsbedingungen</Link></li>
+                            <li><Link href="/faq-user" className="text-gray-600 hover:text-[#5555ff] transition-colors">FAQ</Link></li>
+                            <li><Link href="/cancellation" className="text-gray-600 hover:text-[#5555ff] transition-colors">Stornierungsmöglichkeiten</Link></li>
                             <li><Link href="/support-user" className="text-gray-600 hover:text-[#5555ff] transition-colors">Support</Link></li>
                         </ul>
                     </div>
 
-                    {/* Links for hosts */}
+                    {/* Links for providers */}
                     <div>
                         <h3 className="text-lg font-bold mb-4 text-gray-900">Für Anbieter:innen</h3>
                         <ul className="space-y-3 text-sm">
