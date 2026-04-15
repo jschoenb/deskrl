@@ -9,7 +9,9 @@ use Inertia\Inertia;
 //Test
 Route::get('/users', [UserController::class, 'index']);
 
+//=========================================================
 //Header
+//=========================================================
 use App\Models\Listing;
 
 Route::get('/', function (){
@@ -20,7 +22,11 @@ Route::get('/', function (){
 Route::get('/bookings', function (){return Inertia::render('Bookings');});
 Route::get('/favorites', function (){return Inertia::render('Favorites');});
 
+
+//=========================================================
 //Footer
+//=========================================================
+
 //Links for normal users
 Route::get('/faq-user', function (){return Inertia::render('FaqUser');});
 Route::get('/cancellation', function (){return Inertia::render('Cancellation');});
