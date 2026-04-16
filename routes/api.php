@@ -24,6 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [UserController::class, 'logout']);
 
+    Route::put('/users/{user}', [UserController::class, 'update']);
+
     // Favoriten des eingeloggten Users
     Route::get('/favourites', [FavouriteController::class, 'index']);
 
