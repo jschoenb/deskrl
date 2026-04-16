@@ -1,12 +1,12 @@
-import { Link, usePage } from '@inertiajs/react';
-import React, { useState, useEffect } from "react";
+import {Link, usePage} from '@inertiajs/react';
+import React, {useState, useEffect} from "react";
 //Import Icons
-import { Home, Calendar, LayoutGrid, User, LogOut, Heart, Menu, X } from 'lucide-react';
+import {Home, Calendar, LayoutGrid, User, LogOut, Heart, Menu, X} from 'lucide-react';
 
 //Rendering header
 export default function Header() {
-    const { url, props } = usePage();
-    const { auth } = props as any; // Laravel/Inertia Auth Daten
+    const {url, props} = usePage();
+    const {auth} = props as any; // Laravel/Inertia Auth Daten
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     //Check active link
@@ -27,7 +27,9 @@ export default function Header() {
         } else {
             document.body.style.overflow = '';
         }
-        return () => { document.body.style.overflow = ''; };
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [isMobileMenuOpen]);
 
     return (
@@ -51,7 +53,7 @@ export default function Header() {
                                         : 'hover:bg-gray-100 text-gray-700'
                                 }`}
                             >
-                                <Home className="w-5 h-5" />
+                                <Home className="w-5 h-5"/>
                                 <span className="font-medium">Suchen</span>
                             </Link>
 
@@ -63,7 +65,7 @@ export default function Header() {
                                         : 'hover:bg-gray-100 text-gray-700'
                                 }`}
                             >
-                                <Calendar className="w-5 h-5" />
+                                <Calendar className="w-5 h-5"/>
                                 <span className="font-medium">Buchungen</span>
                             </Link>
 
@@ -75,10 +77,11 @@ export default function Header() {
                                         : 'hover:bg-gray-100 text-gray-700'
                                 }`}
                             >
-                                <Heart className={`w-5 h-5 ${isActive('/favorites') ? 'fill-white' : ''}`} />
+                                <Heart className={`w-5 h-5 ${isActive('/favorites') ? 'fill-white' : ''}`}/>
                                 <span className="font-medium">Favoriten</span>
                                 {favoritesCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#e63cff] text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                    <span
+                                        className="absolute -top-1 -right-1 w-5 h-5 bg-[#e63cff] text-white text-xs rounded-full flex items-center justify-center font-bold">
                                         {favoritesCount}
                                     </span>
                                 )}
@@ -93,7 +96,7 @@ export default function Header() {
                                             : 'hover:bg-gray-100 text-gray-700'
                                     }`}
                                 >
-                                    <LayoutGrid className="w-5 h-5" />
+                                    <LayoutGrid className="w-5 h-5"/>
                                     <span className="font-medium">Dashboard</span>
                                 </Link>
                             )}
@@ -110,7 +113,7 @@ export default function Header() {
                                                     : 'hover:bg-gray-100 text-gray-900'
                                             }`}
                                         >
-                                            <User className="w-5 h-5" />
+                                            <User className="w-5 h-5"/>
                                             <span className="font-medium">{auth.user.name}</span>
                                         </Link>
                                         <Link
@@ -119,16 +122,17 @@ export default function Header() {
                                             as="button"
                                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
                                         >
-                                            <LogOut className="w-5 h-5" />
+                                            <LogOut className="w-5 h-5"/>
                                         </Link>
                                     </>
                                 ) : (
+                                    //ersetze den Anmelde Link im Menü mit Mock-Link wo noch Anmeldeschritt dazwischen kommt von Jojo
                                     <Link
-                                        href="/login"
-                                        className="bg-[#e63cff] hover:bg-[#d12ee6] text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2 font-semibold"
+                                        href="/profile"
+                                        className="bg-[#e63cff] hover:bg-[#d12ee6] text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2 font-semibold shadow-md"
                                     >
                                         <User className="w-5 h-5" />
-                                        Anmelden
+                                        <span className="font-semibold">Profil</span>
                                     </Link>
                                 )}
                             </div>
@@ -139,7 +143,7 @@ export default function Header() {
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         >
-                            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            {isMobileMenuOpen ? <X className="w-6 h-6"/> : <Menu className="w-6 h-6"/>}
                         </button>
                     </div>
                 </div>
@@ -167,7 +171,7 @@ export default function Header() {
                                 isActive('/') && url === '/' ? 'bg-[#5555ff] text-white' : 'hover:bg-gray-100'
                             }`}
                         >
-                            <Home className="w-5 h-5" />
+                            <Home className="w-5 h-5"/>
                             <span className="font-semibold">Suche</span>
                         </Link>
 
@@ -177,7 +181,7 @@ export default function Header() {
                                 isActive('/bookings') ? 'bg-[#5555ff] text-white' : 'hover:bg-gray-100'
                             }`}
                         >
-                            <Calendar className="w-5 h-5" />
+                            <Calendar className="w-5 h-5"/>
                             <span className="font-semibold">Buchungen</span>
                         </Link>
 
@@ -187,10 +191,11 @@ export default function Header() {
                                 isActive('/favorites') ? 'bg-[#5555ff] text-white' : 'hover:bg-gray-100'
                             }`}
                         >
-                            <Heart className={`w-5 h-5 ${isActive('/favorites') ? 'fill-white' : ''}`} />
+                            <Heart className={`w-5 h-5 ${isActive('/favorites') ? 'fill-white' : ''}`}/>
                             <span className="font-semibold">Favoriten</span>
                             {favoritesCount > 0 && (
-                                <span className="ml-auto w-6 h-6 bg-[#e63cff] text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                <span
+                                    className="ml-auto w-6 h-6 bg-[#e63cff] text-white text-xs rounded-full flex items-center justify-center font-bold">
                                     {favoritesCount}
                                 </span>
                             )}
@@ -203,12 +208,12 @@ export default function Header() {
                                     isActive('/provider') ? 'bg-[#5555ff] text-white' : 'hover:bg-gray-100'
                                 }`}
                             >
-                                <LayoutGrid className="w-5 h-5" />
+                                <LayoutGrid className="w-5 h-5"/>
                                 <span className="font-semibold">Dashboard</span>
                             </Link>
                         )}
 
-                        <div className="border-t border-gray-200 my-4" />
+                        <div className="border-t border-gray-200 my-4"/>
 
                         {auth?.user ? (
                             <>
@@ -218,7 +223,7 @@ export default function Header() {
                                         isActive('/profile') ? 'bg-[#5555ff] text-white' : 'hover:bg-gray-100'
                                     }`}
                                 >
-                                    <User className="w-5 h-5" />
+                                    <User className="w-5 h-5"/>
                                     <span className="font-semibold">{auth.user.name}</span>
                                 </Link>
                                 <Link
@@ -227,19 +232,21 @@ export default function Header() {
                                     as="button"
                                     className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg transition-colors text-gray-900 w-full text-left"
                                 >
-                                    <LogOut className="w-5 h-5" />
+                                    <LogOut className="w-5 h-5"/>
                                     <span className="font-semibold">Abmelden</span>
                                 </Link>
                             </>
                         ) : (
+                            //ersetze den Anmelde Link im Menü mit Mock-Link wo noch Anmeldeschritt dazwischen kommt von Jojo
                             <Link
-                                href="/login"
+                                href="/profile"  // Mock: Direkt zur Profilseite
                                 className="bg-[#e63cff] hover:bg-[#d12ee6] text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-3 font-semibold"
                             >
-                                <User className="w-5 h-5" />
-                                Anmelden
+                                <User className="w-5 h-5"/>
+                                Profil
                             </Link>
                         )}
+
                     </div>
                 </div>
             </div>

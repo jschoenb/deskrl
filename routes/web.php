@@ -24,6 +24,16 @@ Route::get('/favorites', function (){return Inertia::render('Favorites');});
 
 
 //=========================================================
+//Profilansicht ohne Anmeldelogik
+//=========================================================
+
+// routes/web.php
+Route::get('/profile', function () {
+    return Inertia::render('UserProfile');
+});
+
+
+//=========================================================
 //Footer
 //=========================================================
 

@@ -37,9 +37,9 @@ import {createRoot} from "react-dom/client";
 
 createInertiaApp({
     resolve: async name => {
-        const pages = import.meta.glob('./Pages/**/*.tsx', { eager: true });
+        const pages = import.meta.glob('./pages/**/*.tsx', { eager: true });
 
-        const page = pages[`./Pages/${name}.tsx`] as {
+        const page = pages[`./pages/${name}.tsx`] as {
             default: {
                 layout?: (page: ReactNode) => JSX.Element;
             };
