@@ -1,5 +1,5 @@
 <?php
-
+/*
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -26,9 +26,7 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    /**
-     * Login
-     */
+    //Login
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -53,9 +51,7 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Logout
-     */
+    //Logout
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
@@ -65,9 +61,7 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * User erstellen
-     */
+    //User erstellen
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -91,9 +85,7 @@ class UserController extends Controller
         ], 201);
     }
 
-    /**
-     * User aktualisieren
-     */
+    //User aktualisieren
     public function update(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
@@ -117,9 +109,7 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * User löschen
-     */
+    //User löschen
     public function destroy(User $user): JsonResponse
     {
         $user->delete();
@@ -127,5 +117,56 @@ class UserController extends Controller
         return response()->json([
             'message' => 'User erfolgreich gelöscht.',
         ]);
+    }
+}*/
+
+
+//KI
+
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Inertia\Inertia;
+use Illuminate\Http\Request;
+
+class UserController extends Controller
+{
+    public function index()
+    {
+        return Inertia::render('Users/Index', [
+            'users' => User::all(),
+        ]);
+    }
+
+    // Für die Profilansicht, an der dein Team gerade arbeitet
+    public function show(User $user)
+    {
+        return Inertia::render('Profile/Show', [
+            'user' => $user->load(['host', 'bookings']),
+        ]);
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'gender' => 'sometimes|in:male,female,diverse,undisclosed',
+            'job' => 'nullable|string|max:255',
+            'company' => 'nullable|string|max:255',
+            'about_me' => 'nullable|string',
+            'birthday' => 'nullable|date',
+        ]);
+
+        $user->update($validated);
+
+        // Schickt den User einfach zurück zum Profil mit einer Erfolgsmeldung
+        return back()->with('success', 'Profil aktualisiert.');
+    }
+
+    public function destroy(User $user)
+    {
+        $user->delete();
+        return redirect('/')->with('success', 'Account gelöscht.');
     }
 }

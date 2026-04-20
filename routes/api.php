@@ -12,15 +12,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Öffentliche Auth-Routen
-Route::post('/register', [UserController::class, 'register']);
-Route::post('/login', [UserController::class, 'login']);
+/*Route::post('/register', [UserController::class, 'register']);
+Route::post('/login', [UserController::class, 'login']);*/
 
 // Öffentliche Listing-Routen
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 
 // Geschützte Routen
-Route::middleware('auth:sanctum')->group(function () {
+/*Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [UserController::class, 'logout']);
 
@@ -32,4 +32,4 @@ Route::middleware('auth:sanctum')->group(function () {
     // Favorit hinzufügen / entfernen
     Route::post('/favourites/{listing}', [FavouriteController::class, 'store']);
     Route::delete('/favourites/{listing}', [FavouriteController::class, 'destroy']);
-});
+});*/
