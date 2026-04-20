@@ -262,16 +262,20 @@ export default function Header() {
     const { auth } = props as any;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // NEU: State für die Sichtbarkeit des Modals
+    //state for the AuthModal
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+    //Check active link
     const isActive = (path: string) => url === path || (path !== '/' && url.startsWith(path));
+    //Placeholder for the number of favorites (fill this in with actual data later)
     const favoritesCount = 0;
 
+    // Close mobile menu, if URl is changed
     useEffect(() => {
         setIsMobileMenuOpen(false);
     }, [url]);
 
+    // scroll lock while displaying the mobile menu
     useEffect(() => {
         if (isMobileMenuOpen) {
             document.body.style.overflow = 'hidden';
@@ -292,7 +296,7 @@ export default function Header() {
                             <span className="text-2xl font-bold tracking-tighter text-blue-900">deskrl</span>
                         </Link>
 
-                        {/* Desktop Navigation */}
+                        {/* Desktop navigation (visible at lg) */}
                         <div className="hidden lg:flex items-center gap-2">
                             <Link
                                 href="/"
@@ -324,7 +328,7 @@ export default function Header() {
                                 <span className="font-medium">Favoriten</span>
                             </Link>
 
-                            {/* User Bereich Desktop */}
+                            {/* User login area */}
                             <div className="ml-4 pl-4 border-l border-gray-200 flex items-center gap-3">
                                 {auth?.user ? (
                                     <>
@@ -347,7 +351,7 @@ export default function Header() {
                                         </Link>
                                     </>
                                 ) : (
-                                    /* GEÄNDERT: Button statt Link öffnet das Modal */
+                                    /* button for opening AuthModal */
                                     <button
                                         onClick={() => setIsAuthModalOpen(true)}
                                         className="bg-[#e63cff] hover:bg-[#d12ee6] text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2 font-semibold"
@@ -359,7 +363,7 @@ export default function Header() {
                             </div>
                         </div>
 
-                        {/* Burger Button */}
+                        {/* Mobile burger menu (visible under lg) */}
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -378,7 +382,7 @@ export default function Header() {
                             <Home className="w-5 h-5" />
                             <span className="font-semibold">Suchen</span>
                         </Link>
-                        {/* NEU: Buchungen Mobil */}
+
                         <Link
                             href="/bookings"
                             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
@@ -389,7 +393,6 @@ export default function Header() {
                             <span className="font-semibold">Buchungen</span>
                         </Link>
 
-                        {/* NEU: Favoriten Mobil */}
                         <Link
                             href="/favorites"
                             className={`relative flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
@@ -419,11 +422,11 @@ export default function Header() {
                                 </Link>
                             </>
                         ) : (
-                            /* GEÄNDERT: Button statt Link öffnet das Modal auch mobil */
+
                             <button
                                 onClick={() => {
-                                    setIsMobileMenuOpen(false); // Menü schließen
-                                    setIsAuthModalOpen(true);   // Modal öffnen
+                                    setIsMobileMenuOpen(false); // close menu
+                                    setIsAuthModalOpen(true);   // open modal
                                 }}
                                 className="bg-[#e63cff] hover:bg-[#d12ee6] text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-3 font-semibold"
                             >
@@ -435,7 +438,6 @@ export default function Header() {
                 </div>
             </div>
 
-            {/* NEU: Das Modal am Ende einbinden */}
             <AuthModal
                 isOpen={isAuthModalOpen}
                 onClose={() => setIsAuthModalOpen(false)}

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    //user login
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -36,13 +37,28 @@ class AuthController extends Controller
         ]);
     }
 
+    //user registration
     public function register(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8',
             'role' => 'required|in:user,host',
+            'password' => [
+                'required',
+                'string',
+                'min:8',              // At least 8 characters
+                'regex:/[a-z]/',      // At least 1 lowercase letter
+                'regex:/[A-Z]/',      // At least 1 uppercase letter
+                'regex:/[0-9]/',      // At least 1 digit
+                'regex:/[@$!%*#?&]/', // At least 1 special character
+                'not_regex:/\s/',     // No spaces
+            ],
+        ], [
+            // Custom error messages sent back to the React frontend
+            'password.min' => 'Das Passwort muss mindestens 8 Zeichen lang sein.',
+            'password.regex' => 'Das Passwort muss Groß- und Kleinbuchstaben, eine Ziffer und ein Sonderzeichen enthalten.',
+            'password.not_regex' => 'Das Passwort darf keine Leerzeichen enthalten.',
         ]);
 
         $user = User::create([
@@ -57,6 +73,7 @@ class AuthController extends Controller
         return redirect('/');
     }
 
+    //user logout
     public function logout(Request $request)
     {
         Auth::logout();

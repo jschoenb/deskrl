@@ -2,19 +2,21 @@ import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { X } from 'lucide-react';
 
+//needed information from header
 interface AuthModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+    isOpen: boolean;        //is modal open
+    onClose: () => void;    //close modal
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+    //mode decides whether to display the login or registration form
     const [mode, setMode] = useState<'login' | 'register'>('login');
 
-    // Inertia Form-Helper für die Kommunikation mit dem AuthController
+    // Inertia Form-Helper to communicate with AuthController
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         firstName: '',
         lastName: '',
-        name: '', // Wird vor dem Absenden aus Vor- und Nachname gebaut
+        name: '', // firstName + lastName
         email: '',
         password: '',
         role: 'user' as 'user' | 'host',
@@ -22,23 +24,26 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     if (!isOpen) return null;
 
+    //toggles between login and registration and clears the form
     const toggleMode = () => {
         setMode(mode === 'login' ? 'register' : 'login');
         clearErrors();
         reset();
     };
 
+    //submit form and send data to AuthController
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
+        //Login: sends email and password to AuthController@login
         if (mode === 'login') {
             post('/login', {
                 onSuccess: () => { onClose(); reset(); },
             });
-        } else {
-            // Namen für die Datenbank zusammenführen
+        }
+        //Registration: sends data to AuthController@register
+        else {
             const fullName = `${data.firstName} ${data.lastName}`.trim();
-            // Wir nutzen einen kleinen Trick: Wir setzen 'name' direkt im data-Objekt
             data.name = fullName;
 
             post('/register', {
@@ -48,24 +53,26 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     };
 
     return (
+        //modal layout
+        /* dark background overlay */
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+            {/* modal card */}
             <div className="bg-white rounded-3xl max-w-md w-full p-8 relative shadow-2xl overflow-y-auto max-h-[95vh]">
-
-                {/* Schließen Button */}
+                {/* close button */}
                 <button
-                    type="button" // <--- Ganz wichtig, damit er nicht das Formular triggert
+                    type="button"
                     onClick={(e) => {
                         e.preventDefault();
-                        e.stopPropagation(); // Verhindert, dass der Klick nach oben "wandert"
+                        e.stopPropagation();
                         onClose();
                     }}
                     className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-all hover:scale-110 z-[110]" // z-Index erhöht
                     aria-label="Schließen"
                 >
-                    <X className="w-8 h-8" /> {/* Ein klein wenig größer für bessere Bedienbarkeit */}
+                    <X className="w-8 h-8" />
                 </button>
 
-                {/* Header mit Emoji */}
+                {/* Header and title */}
                 <div className="text-center mb-8">
                     <div className="text-5xl mb-4 animate-bounce">😊</div>
                     <h2 className="text-3xl font-bold mb-2 text-gray-900">
@@ -76,7 +83,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     </p>
                 </div>
 
+                {/* Input form */ }
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* name */ }
                     {mode === 'register' && (
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
@@ -102,6 +111,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         </div>
                     )}
 
+                    {/* email */ }
                     <div className="space-y-1">
                         <label className="text-xs font-bold uppercase text-gray-500 ml-1">E-Mail</label>
                         <input
@@ -112,9 +122,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5555ff] outline-none"
                             required
                         />
+                        {/* displays Laravel error messages */}
                         {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                     </div>
 
+                    {/* password */ }
                     <div className="space-y-1">
                         <label className="text-xs font-bold uppercase text-gray-500 ml-1">Passwort</label>
                         <input
@@ -122,12 +134,16 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             value={data.password}
                             onChange={e => setData('password', e.target.value)}
                             placeholder="••••••••"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5555ff] outline-none"
+                            // input border turns red if an error for 'password' exists
+                            className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${
+                                errors.password ? 'border-red-500' : 'border-gray-200 focus:ring-2 focus:ring-[#5555ff]'
+                            }`}
                             required
                         />
                         {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
                     </div>
 
+                    {/* role selection in registration */}
                     {mode === 'register' && (
                         <div className="space-y-3 pt-2">
                             <p className="text-sm font-bold text-gray-700">Ich möchte...</p>
@@ -150,6 +166,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         </div>
                     )}
 
+                    {/* submit button */}
                     <button
                         type="submit"
                         disabled={processing}
@@ -159,6 +176,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     </button>
                 </form>
 
+                {/* switch mode (login/registration) */}
                 <div className="mt-8 text-center border-t border-gray-100 pt-6">
                     <button onClick={toggleMode} className="text-[#5555ff] font-bold hover:text-[#4444ee] transition-colors">
                         {mode === 'login' ? 'Noch kein Konto? Jetzt registrieren' : 'Bereits ein Konto? Zum Login'}
