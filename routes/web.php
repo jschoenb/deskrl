@@ -14,9 +14,28 @@ Route::get('/users', [UserController::class, 'index']);
 //=========================================================
 use App\Models\Listing;
 
-Route::get('/', function (){
+Route::get('/', function (\Illuminate\Http\Request $request) {
+    $query = \App\Models\Listing::query()->where('status', 'active');
+
+    if ($request->filled('search')) {
+        $query->where(function($q) use ($request) {
+            $q->where('title', 'like', '%' . $request->search . '%')
+                ->orWhere('description', 'like', '%' . $request->search . '%')
+                ->orWhereHas('address', function($aq) use ($request) {
+                    $aq->where('city', 'like', '%' . $request->search . '%')
+                        ->orWhere('street', 'like', '%' . $request->search . '%')
+                        ->orWhere('postal_code', 'like', '%' . $request->search . '%');
+                });
+        });
+    }
+
+    if ($request->filled('type')) {
+        $query->where('type', $request->type);
+    }
+
     return Inertia::render('Home', [
-        'listings' => Listing::all()
+        'listings' => $query->with('address')->get(),
+        'filters' => $request->only(['search', 'type']),
     ]);
 });
 Route::get('/bookings', function (){return Inertia::render('Bookings');});

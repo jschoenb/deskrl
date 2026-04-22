@@ -16,7 +16,7 @@ export default function Welcome({ children }: Props) {
             <Header />
 
             {/* CONTENT */}
-            <main className="flex-grow max-w-7xl mx-auto p-6 w-full">
+            <main className="flex-grow w-full">
                 {children}
             </main>
 
