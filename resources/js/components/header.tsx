@@ -87,7 +87,7 @@ export default function Header() {
                                 )}
                             </Link>
 
-                            {auth?.user?.role === 'provider' && (
+                            {auth?.user?.role === 'host' && (
                                 <Link
                                     href="/provider"
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
@@ -201,7 +201,7 @@ export default function Header() {
                             )}
                         </Link>
 
-                        {auth?.user?.role === 'provider' && (
+                        {auth?.user?.role === 'host' && (
                             <Link
                                 href="/provider"
                                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
