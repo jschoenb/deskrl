@@ -1,39 +1,9 @@
-/*
-import { createInertiaApp } from '@inertiajs/react';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router';
-import '../css/app.css';
-
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
-createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
-    resolve: (name) =>
-        resolvePageComponent(
-            `./pages/${name}.tsx`,
-            import.meta.glob('./pages/!**!/!*.tsx'),
-        ),
-    setup({ el, App, props }) {
-        const root = createRoot(el);
-
-        root.render(<App {...props} />);
-
-
-    },
-    progress: {
-        color: '#4B5563',
-    },
-});
-*/
-
-// resources/js/app.tsx
-
 import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import {JSX, ReactNode} from 'react';
-import {createRoot} from "react-dom/client";
+import { JSX, ReactNode } from 'react';
+import { createRoot } from "react-dom/client";
+import { FavoritesProvider } from '@/contexts/FavoritesContext';
 
 createInertiaApp({
     resolve: async name => {
@@ -55,10 +25,10 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        root.render(<App {...props} />);
-
-
+        root.render(
+            <FavoritesProvider>
+                <App {...props} />
+            </FavoritesProvider>
+        );
     },
 });
-
-

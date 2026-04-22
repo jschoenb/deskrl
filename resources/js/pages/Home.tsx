@@ -2,6 +2,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import type { InertiaPage } from '@/types/inertia';
 import { DatePicker } from '@/components/DatePicker';
 import { router } from '@inertiajs/react';
+import { useFavorites } from '@/contexts/FavoritesContext';
 import {
     Search, MapPin, Calendar, Xmark, Heart, HeartSolid,
     FilterList, Position, LayoutRight, Map,
@@ -37,19 +38,33 @@ const LOCATION_SUGGESTIONS = [
     'Wiener Neustadt',
 ];
 
-function ListingCard({ listing }: { listing: any }) {
-    const [favorited, setFavorited] = useState(false);
+function ListingCard({ listing, onLoginRequired }: { listing: any; onLoginRequired: () => void }) {
+    const { isFavorited, toggleFavorite } = useFavorites();
     const img = PLACEHOLDER_IMAGES[listing.type] ?? PLACEHOLDER_IMAGES.office;
+
+    const handleFavorite = () => {
+        const hasSeenPopup = localStorage.getItem('deskrl_has_seen_popup');
+
+        if (!hasSeenPopup) {
+            // Erstes Mal → Popup zeigen + merken
+            localStorage.setItem('deskrl_has_seen_popup', 'true');
+            onLoginRequired();
+            return;
+        }
+
+        // Ab dem zweiten Mal → direkt favorisieren
+        toggleFavorite(listing.id);
+    };
 
     return (
         <div className="bg-white rounded-2xl shadow hover:shadow-xl transition-all overflow-hidden flex flex-col border border-gray-100 group">
             <div className="relative h-56 overflow-hidden">
                 <img src={img} alt={listing.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                 <button
-                    onClick={() => setFavorited(!favorited)}
+                    onClick={handleFavorite}
                     className="absolute top-4 left-4 bg-white rounded-full p-2 shadow"
                 >
-                    {favorited
+                    {isFavorited(listing.id)
                         ? <HeartSolid className="h-4 w-4 text-red-500" />
                         : <Heart className="h-4 w-4 text-gray-400" />
                     }
@@ -97,6 +112,7 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
     const [visibleCount, setVisibleCount] = useState(6);
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
     const [amenities, setAmenities] = useState<string[]>([]);
+    const [showLoginPopup, setShowLoginPopup] = useState(false);
 
     const toggleAmenity = (label: string) => {
         setAmenities(prev =>
@@ -277,7 +293,13 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                     <>
                         {listings.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {visibleListings.map(listing => <ListingCard key={listing.id} listing={listing} />)}
+                                {visibleListings.map(listing => (
+                                    <ListingCard
+                                        key={listing.id}
+                                        listing={listing}
+                                        onLoginRequired={() => setShowLoginPopup(true)}
+                                    />
+                                ))}
                             </div>
                         ) : (
                             <p className="text-gray-400 text-center py-16 text-lg">Keine Räume gefunden.</p>
@@ -306,6 +328,72 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                 )}
             </div>
 
+            {/* Login Popup */}
+            {showLoginPopup && (
+                <>
+                    <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowLoginPopup(false)} />
+                    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 p-8 w-full max-w-md">
+                        <button onClick={() => setShowLoginPopup(false)}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                            <Xmark className="w-5 h-5" />
+                        </button>
+                        <div className="text-center mb-6">
+                            <span className="text-4xl">😊</span>
+                            <h2 className="text-2xl font-bold mt-3 mb-1">Willkommen zurück!</h2>
+                            <p className="text-gray-500 text-sm">Melden Sie sich an, um fortzufahren</p>
+                            <p className="text-[#5555ff] font-semibold text-sm mt-1">Willkommen bei Deskrl</p>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <div>
+                                <label className="text-sm font-semibold text-gray-700 block mb-1">E-Mail</label>
+                                <input type="email" placeholder="ihre@email.com"
+                                       className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-semibold text-gray-700 block mb-1">Passwort</label>
+                                <input type="password" placeholder="••••••••"
+                                       className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]" />
+                            </div>
+                            <button className="w-full bg-[#e63cff] hover:bg-[#d12ee6] text-white py-3 rounded-xl font-bold transition mt-2">
+                                Anmelden
+                            </button>
+                            <div className="flex items-center gap-3 my-1">
+                                <div className="flex-1 h-px bg-gray-200" />
+                                <span className="text-xs text-gray-400">Oder fortfahren mit</span>
+                                <div className="flex-1 h-px bg-gray-200" />
+                            </div>
+                            <button className="w-full border border-gray-200 py-3 rounded-xl font-semibold flex items-center justify-center gap-3 hover:bg-gray-50 transition">
+                                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                                </svg>
+                                Mit Google fortfahren
+                            </button>
+
+                            <button className="w-full border border-gray-200 py-3 rounded-xl font-semibold flex items-center justify-center gap-3 hover:bg-gray-50 transition">
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                </svg>
+                                Mit Facebook fortfahren
+                            </button>
+
+                            <button className="w-full border border-gray-200 py-3 rounded-xl font-semibold flex items-center justify-center gap-3 hover:bg-gray-50 transition">
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                                </svg>
+                                Mit Apple fortfahren
+                            </button>
+                            <p className="text-center text-sm mt-2">
+                                <a href="/register" className="text-[#5555ff] font-semibold hover:underline">
+                                    Noch kein Konto? Jetzt registrieren
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </>
+            )}
             {/* Filter Sidebar */}
             {filterOpen && (
                 <>
@@ -320,14 +408,11 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                         </div>
 
                         <div className="flex-1 overflow-y-auto px-6 py-6">
-
-                            {/* Raumart */}
                             <div className="mb-8">
                                 <h3 className="text-lg font-bold mb-4">Raumart</h3>
                                 <div className="space-y-3">
                                     {Object.entries(TYPE_LABEL).map(([value, label]) => (
-                                        <label key={value}
-                                               className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:border-[#5555ff] cursor-pointer transition-colors">
+                                        <label key={value} className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:border-[#5555ff] cursor-pointer transition-colors">
                                             <input type="checkbox" className="sr-only"
                                                    checked={type === value}
                                                    onChange={() => setType(type === value ? '' : value)} />
@@ -340,11 +425,8 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                                 </div>
                             </div>
 
-                            {/* Ausstattung */}
                             <div className="mb-6">
                                 <h3 className="text-lg font-bold mb-4">Ausstattung</h3>
-
-                                {/* Technik */}
                                 <div className="flex items-center gap-2 mb-3">
                                     <DatabaseMonitor className="h-4 w-4 text-[#5555ff]" />
                                     <h4 className="text-base font-bold text-[#5555ff]">Technik & Arbeitsausstattung</h4>
@@ -379,7 +461,6 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                                     ))}
                                 </div>
 
-                                {/* Komfort */}
                                 <div className="flex items-center gap-2 mb-3">
                                     <CoffeeCup className="h-4 w-4 text-[#5555ff]" />
                                     <h4 className="text-base font-bold text-[#5555ff]">Komfort & Infrastruktur</h4>
@@ -410,7 +491,6 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                                     ))}
                                 </div>
 
-                                {/* Mobilität */}
                                 <div className="flex items-center gap-2 mb-3">
                                     <Bicycle className="h-4 w-4 text-[#5555ff]" />
                                     <h4 className="text-base font-bold text-[#5555ff]">Mobilität & Lage</h4>
@@ -437,7 +517,6 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                                     ))}
                                 </div>
 
-                                {/* Extras */}
                                 <div className="flex items-center gap-2 mb-3">
                                     <Gamepad className="h-4 w-4 text-[#5555ff]" />
                                     <h4 className="text-base font-bold text-[#5555ff]">Extras & Freizeit</h4>

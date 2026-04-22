@@ -39,7 +39,10 @@ Route::get('/', function (\Illuminate\Http\Request $request) {
     ]);
 });
 Route::get('/bookings', function (){return Inertia::render('Bookings');});
-Route::get('/favorites', function (){return Inertia::render('Favorites');});
+Route::get('/favorites', function () {
+    $listings = \App\Models\Listing::where('status', 'active')->with('address')->get();
+    return Inertia::render('Favorites', ['listings' => $listings]);
+});
 
 
 //=========================================================

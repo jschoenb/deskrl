@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import React, { useState, useEffect } from "react";
 //Import Icons
 import { Home, Calendar, LayoutGrid, User, LogOut, Heart, Menu, X } from 'lucide-react';
+import { useFavorites } from '@/contexts/FavoritesContext';
 
 //Rendering header
 export default function Header() {
@@ -13,7 +14,8 @@ export default function Header() {
     const isActive = (path: string) => url === path || (path !== '/' && url.startsWith(path));
 
     //Placeholder for the number of favorites (fill this in with actual data later)
-    const favoritesCount = 0;
+    //Favoritescount wurde mit favorite.length ersetzt fuer die Anzahl der gemerkten Raeume
+    const { favorites } = useFavorites();
 
     // Close mobile menu, if URl is changed
     useEffect(() => {
@@ -76,10 +78,10 @@ export default function Header() {
                                 }`}
                             >
                                 <Heart className={`w-5 h-5 ${isActive('/favorites') ? 'fill-white' : ''}`} />
-                                <span className="font-medium">Favoriten</span>
-                                {favoritesCount > 0 && (
+                                <span className="font-medium">Gemerkte</span>
+                                {favorites.length  > 0 && (
                                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#e63cff] text-white text-xs rounded-full flex items-center justify-center font-bold">
-                                        {favoritesCount}
+                                        {favorites.length }
                                     </span>
                                 )}
                             </Link>
@@ -189,9 +191,9 @@ export default function Header() {
                         >
                             <Heart className={`w-5 h-5 ${isActive('/favorites') ? 'fill-white' : ''}`} />
                             <span className="font-semibold">Favoriten</span>
-                            {favoritesCount > 0 && (
+                            {favorites.length  > 0 && (
                                 <span className="ml-auto w-6 h-6 bg-[#e63cff] text-white text-xs rounded-full flex items-center justify-center font-bold">
-                                    {favoritesCount}
+                                    {favorites.length}
                                 </span>
                             )}
                         </Link>
