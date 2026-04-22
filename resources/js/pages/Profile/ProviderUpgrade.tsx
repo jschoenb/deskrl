@@ -8,7 +8,7 @@ interface ProviderUpgradeProps {
 }
 
 export function ProviderUpgrade({ user }: ProviderUpgradeProps) {
-    if (user.role === 'provider') return null;
+    if (user.role === 'host') return null;
 
     return (
         <div className="bg-gradient-to-br from-[#e63cff] to-[#ff6cff] rounded-2xl p-8 mb-8 text-white">
