@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
@@ -19,50 +21,105 @@ class UserController extends Controller
         ]);
     }
 
-    public function show(User $user): JsonResponse
-    {
-        $user->load(['host', 'bookings']);
+    /*    public function show(User $user): JsonResponse
+        {
+            $user->load(['host', 'bookings']);
 
-        return response()->json($user);
+            return response()->json($user);
+        }*/
+
+    /**
+     * Zeige das Profil des eingeloggten Users.
+     */
+    /*KI Verbesserung Anna*/
+    public function show(Request $request)
+    {
+        // Hole den eingeloggten User
+        $user = $request->user();
+
+        // Lade die User-Daten (inkl. Profil)
+/*        $user->load(['profile']); // Falls du ein separates Profil-Modell hast*/
+
+        // Gib die Daten als Inertia-Props zurück
+        return Inertia::render('UserProfile', [
+            'user' => $user, // Der User wird als Prop an die Frontend-Seite übergeben
+        ]);
     }
+
+    /*Sobald Auth funktioniert Anna*/
+/*    public function show(Request $request)
+    {
+        return Inertia::render('UserProfile', [
+            'user' => $request->user(),
+        ]);
+    }*/
 
     /**
      * Login
      */
-    public function login(Request $request): JsonResponse
+    /*    public function login(Request $request): JsonResponse
+        {
+            $validated = $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
+
+            $user = User::where('email', $validated['email'])->first();
+
+            if (! $user || ! Hash::check($validated['password'], $user->password)) {
+                return response()->json([
+                    'message' => 'Ungültige Login-Daten.',
+                ], 401);
+            }
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Login erfolgreich.',
+                'user' => $user,
+                'token' => $token,
+            ]);
+        }*/
+    /* statt Token bei Login wie oben lieber mit Laravel Session (Anna): */
+    public function login(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
-
-        if (! $user || ! Hash::check($validated['password'], $user->password)) {
-            return response()->json([
-                'message' => 'Ungültige Login-Daten.',
-            ], 401);
+        if (! Auth::attempt($validated)) {
+            return back()->withErrors([
+                'email' => 'Ungültige Login-Daten.',
+            ]);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $request->session()->regenerate();
 
-        return response()->json([
-            'message' => 'Login erfolgreich.',
-            'user' => $user,
-            'token' => $token,
-        ]);
+        return redirect()->route('profile.show');
     }
 
     /**
      * Logout
      */
-    public function logout(Request $request): JsonResponse
-    {
-        $request->user()->currentAccessToken()->delete();
+    /*    public function logout(Request $request): JsonResponse
+        {
+            $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Logout erfolgreich.',
-        ]);
+            return response()->json([
+                'message' => 'Logout erfolgreich.',
+            ]);
+        }*/
+
+    /* statt Token bei Logout wie oben lieber mit Laravel Session (Anna): */
+    public function logout(Request $request): RedirectResponse
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login');
     }
 
     /**
