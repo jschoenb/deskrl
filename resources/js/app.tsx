@@ -26,9 +26,7 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(
-            <FavoritesProvider>
                 <App {...props} />
-            </FavoritesProvider>
         );
     },
 });

@@ -4,12 +4,13 @@ import { Home, Calendar, LayoutGrid, User, LogOut, Heart, Menu, X } from 'lucide
 import { useFavorites } from '@/contexts/FavoritesContext';
 import AuthModal from './AuthModal';
 
+
 export default function Header() {
     const { url, props } = usePage();
     const { auth } = props as any;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const { favorites } = useFavorites();
+    const { favorites, clearFavorites } = useFavorites();
 
     const isActive = (path: string) => url === path || (path !== '/' && url.startsWith(path));
 
@@ -89,7 +90,8 @@ export default function Header() {
                                             <span className="font-medium">{auth.user.name}</span>
                                         </Link>
                                         <Link href="/logout" method="post" as="button"
-                                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+                                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                                              onClick={() => clearFavorites()}>
                                             <LogOut className="w-5 h-5" />
                                         </Link>
                                     </>
@@ -176,7 +178,8 @@ export default function Header() {
                                     <span className="font-semibold">{auth.user.name}</span>
                                 </Link>
                                 <Link href="/logout" method="post" as="button"
-                                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg text-gray-900 w-full text-left">
+                                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg text-gray-900 w-full text-left"
+                                      onClick={() => clearFavorites()}>
                                     <LogOut className="w-5 h-5" />
                                     <span className="font-semibold">Abmelden</span>
                                 </Link>
