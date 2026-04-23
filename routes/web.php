@@ -37,9 +37,20 @@ Route::get('/', function (\Illuminate\Http\Request $request) {
         $query->where('type', $request->type);
     }
 
+    // Verfügbarkeits-Filter
+    if ($request->filled('date') && $request->filled('start_time') && $request->filled('end_time')) {
+        $weekday = strtolower(date('l', strtotime($request->date)));
+
+        $query->whereHas('availability', function($q) use ($request, $weekday) {
+            $q->where('weekday', $weekday)
+                ->where('start_time', '<=', $request->start_time)
+                ->where('end_time', '>=', $request->end_time);
+        });
+    }
+
     return Inertia::render('Home', [
         'listings' => $query->with('address')->get(),
-        'filters' => $request->only(['search', 'type']),
+        'filters' => $request->only(['search', 'type', 'date', 'start_time', 'end_time']),
     ]);
 });
 

@@ -100,15 +100,15 @@ function ListingCard({ listing, onLoginRequired }: { listing: any; onLoginRequir
     );
 }
 
-const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: string } }> = ({ listings, filters }) => {
+const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: string; date?: string; start_time?: string; end_time?: string } }> = ({ listings, filters }) => {
     const [search, setSearch] = useState(filters.search ?? '');
     const [type, setType] = useState(filters.type ?? '');
     const [filterOpen, setFilterOpen] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [startTime, setStartTime] = useState('09:00');
-    const [endTime, setEndTime] = useState('17:00');
-    const [selectedDate, setSelectedDate] = useState('');
+    const [startTime, setStartTime] = useState(filters.start_time ?? '09:00');
+    const [endTime, setEndTime] = useState(filters.end_time ?? '17:00');
+    const [selectedDate, setSelectedDate] = useState(filters.date ?? '');
     const [visibleCount, setVisibleCount] = useState(6);
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
     const [amenities, setAmenities] = useState<string[]>([]);
@@ -144,7 +144,13 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
     );
 
     const handleSearch = () => {
-        router.get('/', { search, type }, { preserveState: true, replace: true });
+        router.get('/', {
+            search,
+            type,
+            date: selectedDate,
+            start_time: startTime,
+            end_time: endTime,
+        }, { preserveState: true, replace: true });
         setShowSuggestions(false);
     };
 
