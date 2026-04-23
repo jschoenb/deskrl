@@ -86,6 +86,17 @@ Route::get('/news', function () { return Inertia::render('News'); });
 // =========================================================
 // Auth Routes
 // =========================================================
+Route::get('/register', function () {
+    return Inertia::render('Register');});
+Route::get('/login', function () {
+    return Inertia::render('Login');});
+// GET - Registrierungsseite anzeigen
+Route::get('/register', function () {
+    return Inertia::render('Register');});
+
+// GET - Login Seite anzeigen
+Route::get('/login', function () {
+    return Inertia::render('Login');});
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout']);

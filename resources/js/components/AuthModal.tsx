@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 //needed information from header
 interface AuthModalProps {
-    isOpen: boolean;        //is modal open
-    onClose: () => void;    //close modal
+    isOpen: boolean;
+    onClose: () => void;
+    initialMode?: 'login' | 'register';
 }
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-    //mode decides whether to display the login or registration form
-    const [mode, setMode] = useState<'login' | 'register'>('login');
+export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalProps) {
+    const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+
+    useEffect(() => {
+        if (isOpen) {
+            setMode(initialMode ?? 'login');
+        }
+    }, [isOpen, initialMode]);
 
     // Inertia Form-Helper to communicate with AuthController
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({

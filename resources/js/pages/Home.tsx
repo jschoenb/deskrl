@@ -1,8 +1,10 @@
 import AppLayout from '@/Layouts/AppLayout';
+import { usePage } from '@inertiajs/react';
 import type { InertiaPage } from '@/types/inertia';
 import { DatePicker } from '@/components/DatePicker';
 import { router } from '@inertiajs/react';
 import { useFavorites } from '@/contexts/FavoritesContext';
+import AuthModal from '@/components/AuthModal';
 import {
     Search, MapPin, Calendar, Xmark, Heart, HeartSolid,
     FilterList, Position, LayoutRight, Map,
@@ -42,17 +44,15 @@ function ListingCard({ listing, onLoginRequired }: { listing: any; onLoginRequir
     const { isFavorited, toggleFavorite } = useFavorites();
     const img = PLACEHOLDER_IMAGES[listing.type] ?? PLACEHOLDER_IMAGES.office;
 
-    const handleFavorite = () => {
-        const hasSeenPopup = localStorage.getItem('deskrl_has_seen_popup');
+    const { props } = usePage();
+    const { auth } = props as any;
+    const isLoggedIn = !!auth?.user;
 
-        if (!hasSeenPopup) {
-            // Erstes Mal → Popup zeigen + merken
-            localStorage.setItem('deskrl_has_seen_popup', 'true');
+    const handleFavorite = () => {
+        if (!isLoggedIn) {
             onLoginRequired();
             return;
         }
-
-        // Ab dem zweiten Mal → direkt favorisieren
         toggleFavorite(listing.id);
     };
 
@@ -113,7 +113,10 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
     const [amenities, setAmenities] = useState<string[]>([]);
     const [showLoginPopup, setShowLoginPopup] = useState(false);
-
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
     const toggleAmenity = (label: string) => {
         setAmenities(prev =>
             prev.includes(label) ? prev.filter(a => a !== label) : [...prev, label]
@@ -345,17 +348,28 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                             <p className="text-[#5555ff] font-semibold text-sm mt-1">Willkommen bei Deskrl</p>
                         </div>
                         <div className="flex flex-col gap-3">
-                            <div>
-                                <label className="text-sm font-semibold text-gray-700 block mb-1">E-Mail</label>
-                                <input type="email" placeholder="ihre@email.com"
-                                       className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-semibold text-gray-700 block mb-1">Passwort</label>
-                                <input type="password" placeholder="••••••••"
-                                       className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]" />
-                            </div>
-                            <button className="w-full bg-[#e63cff] hover:bg-[#d12ee6] text-white py-3 rounded-xl font-bold transition mt-2">
+                            <input type="email"
+                                   value={loginEmail}
+                                   onChange={e => setLoginEmail(e.target.value)}
+                                   placeholder="ihre@email.com"
+                                   className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]" />
+
+                            <input type="password"
+                                   value={loginPassword}
+                                   onChange={e => setLoginPassword(e.target.value)}
+                                   placeholder="••••••••"
+                                   className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]" />
+
+                            <button
+                                onClick={() => {
+                                    router.post('/login', {
+                                        email: loginEmail,
+                                        password: loginPassword
+                                    }, {
+                                        onSuccess: () => setShowLoginPopup(false)
+                                    });
+                                }}
+                                className="w-full bg-[#e63cff] hover:bg-[#d12ee6] text-white py-3 rounded-xl font-bold transition mt-2">
                                 Anmelden
                             </button>
                             <div className="flex items-center gap-3 my-1">
@@ -387,9 +401,15 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                                 Mit Apple fortfahren
                             </button>
                             <p className="text-center text-sm mt-2">
-                                <a href="/register" className="text-[#5555ff] font-semibold hover:underline">
+                                <button
+                                    onClick={() => {
+                                        setShowLoginPopup(false);
+                                        setAuthModalMode('register');
+                                        setTimeout(() => setShowAuthModal(true), 10);
+                                    }}
+                                    className="text-[#5555ff] font-semibold hover:underline">
                                     Noch kein Konto? Jetzt registrieren
-                                </a>
+                                </button>
                             </p>
                         </div>
                     </div>
@@ -556,6 +576,12 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                     </div>
                 </>
             )}
+            <AuthModal
+                isOpen={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+                initialMode={authModalMode}
+            />
+
         </>
     );
 };
