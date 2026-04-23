@@ -1,12 +1,13 @@
 <?php
 
+use App\Http\Controllers\FavouriteController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ListingController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-/*Route::inertia('/', 'welcome')->name('home');*/
-
-//Test
+//TODO alter Test-Code
 Route::get('/users', [UserController::class, 'index']);
 
 //=========================================================
@@ -72,3 +73,25 @@ Route::get('/privacy-policy', function (){return Inertia::render('PrivacyPolicy'
 Route::get('/accessibility', function (){return Inertia::render('Accessibility');});
 Route::get('/contact', function (){return Inertia::render('Contact');});
 Route::get('/news', function (){return Inertia::render('News');});
+
+
+//=========================================================
+//Auth Routes
+//=========================================================
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout']);
+
+// secured areas
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [UserController::class, 'show'])->name('profile');
+    Route::put('/profile/{user}', [UserController::class, 'update']);
+    Route::delete('/profile/{user}', [UserController::class, 'destroy']);
+
+    // favourites of this specific user
+    Route::get('/favourites', [FavouriteController::class, 'index']);
+
+    // add or delete favourites
+    Route::post('/favourites/{listing}', [FavouriteController::class, 'store']);
+    Route::delete('/favourites/{listing}', [FavouriteController::class, 'destroy']);
+});
