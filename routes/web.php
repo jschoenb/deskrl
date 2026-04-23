@@ -14,6 +14,9 @@ Route::get('/users', [UserController::class, 'index']);
 //=========================================================
 use App\Models\Listing;
 
+//Ausstattungs-Filter sind aktuell nur visuell,
+//sie werden noch nicht ans Backend geschickt. Das wäre der nächste Schritt
+// wenn die Utilities in der DB verknüpft sind
 Route::get('/', function (\Illuminate\Http\Request $request) {
     $query = \App\Models\Listing::query()->where('status', 'active');
 

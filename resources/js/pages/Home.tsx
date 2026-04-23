@@ -207,6 +207,7 @@ const Home: InertiaPage<{ listings: any[]; filters: { search?: string; type?: st
                                 )}
                             </div>
 
+                            {/*//aktuell grad nur visuell - noch keine verknüpfung mit der verfügbarkeitstabelle*/}
                             {/* Wann */}
                             <div className="relative" ref={dateRef}>
                                 <label className="text-xs font-bold text-gray-800 uppercase tracking-wide block mb-2">Wann</label>
