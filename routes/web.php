@@ -4,20 +4,20 @@ use App\Http\Controllers\FavouriteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ListingController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-//TODO alter Test-Code
+// Test
 Route::get('/users', [UserController::class, 'index']);
 
-//=========================================================
-//Header
-//=========================================================
+// =========================================================
+// Header
+// =========================================================
 use App\Models\Listing;
 
-//Ausstattungs-Filter sind aktuell nur visuell,
-//sie werden noch nicht ans Backend geschickt. Das wäre der nächste Schritt
-// wenn die Utilities in der DB verknüpft sind
+// Ausstattungs-Filter sind aktuell nur visuell,
+// sie werden noch nicht ans Backend geschickt.
 Route::get('/', function (\Illuminate\Http\Request $request) {
     $query = \App\Models\Listing::query()->where('status', 'active');
 
@@ -42,56 +42,60 @@ Route::get('/', function (\Illuminate\Http\Request $request) {
         'filters' => $request->only(['search', 'type']),
     ]);
 });
-Route::get('/bookings', function (){return Inertia::render('Bookings');});
+
+Route::get('/bookings', function () {
+    return Inertia::render('Bookings');
+});
+
 Route::get('/favorites', function () {
     $listings = \App\Models\Listing::where('status', 'active')->with('address')->get();
     return Inertia::render('Favorites', ['listings' => $listings]);
 });
 
+// =========================================================
+// Profilansicht
+// =========================================================
 
-//=========================================================
-//Footer
-//=========================================================
+Route::get('/profile', function () {
+    $user = User::where('role', 'user')->first();
+    return Inertia::render('UserProfile', [
+        'user' => $user,
+    ]);
+});
 
-//Links for normal users
-Route::get('/faq-user', function (){return Inertia::render('FaqUser');});
-Route::get('/cancellation', function (){return Inertia::render('Cancellation');});
-Route::get('/support-user', function (){return Inertia::render('SupportUser');});
+// =========================================================
+// Footer
+// =========================================================
 
-//Links for hosts
-Route::get('/become-provider', function (){return Inertia::render('BecomeProvider');});
-Route::get('/faq-provider', function (){return Inertia::render('FaqProvider');});
-Route::get('/support-provider', function (){return Inertia::render('SupportProvider');});
+Route::get('/faq-user', function () { return Inertia::render('FaqUser'); });
+Route::get('/cancellation', function () { return Inertia::render('Cancellation'); });
+Route::get('/support-user', function () { return Inertia::render('SupportUser'); });
+Route::get('/become-provider', function () { return Inertia::render('BecomeProvider'); });
+Route::get('/faq-provider', function () { return Inertia::render('FaqProvider'); });
+Route::get('/support-provider', function () { return Inertia::render('SupportProvider'); });
+Route::get('/about', function () { return Inertia::render('About'); });
+Route::get('/career', function () { return Inertia::render('Career'); });
+Route::get('/legal-notice', function () { return Inertia::render('LegalNotice'); });
+Route::get('/terms', function () { return Inertia::render('Terms'); });
+Route::get('/revocation', function () { return Inertia::render('Revocation'); });
+Route::get('/privacy-policy', function () { return Inertia::render('PrivacyPolicy'); });
+Route::get('/accessibility', function () { return Inertia::render('Accessibility'); });
+Route::get('/contact', function () { return Inertia::render('Contact'); });
+Route::get('/news', function () { return Inertia::render('News'); });
 
-//Links for Deskrl
-Route::get('/about', function (){return Inertia::render('About');});
-Route::get('/career', function (){return Inertia::render('Career');});
-Route::get('/legal-notice', function (){return Inertia::render('LegalNotice');});
-Route::get('/terms', function (){return Inertia::render('Terms');});
-Route::get('/revocation', function (){return Inertia::render('Revocation');});
-Route::get('/privacy-policy', function (){return Inertia::render('PrivacyPolicy');});
-Route::get('/accessibility', function (){return Inertia::render('Accessibility');});
-Route::get('/contact', function (){return Inertia::render('Contact');});
-Route::get('/news', function (){return Inertia::render('News');});
-
-
-//=========================================================
-//Auth Routes
-//=========================================================
+// =========================================================
+// Auth Routes
+// =========================================================
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
-// secured areas
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [UserController::class, 'show'])->name('profile');
     Route::put('/profile/{user}', [UserController::class, 'update']);
     Route::delete('/profile/{user}', [UserController::class, 'destroy']);
 
-    // favourites of this specific user
     Route::get('/favourites', [FavouriteController::class, 'index']);
-
-    // add or delete favourites
     Route::post('/favourites/{listing}', [FavouriteController::class, 'store']);
     Route::delete('/favourites/{listing}', [FavouriteController::class, 'destroy']);
 });

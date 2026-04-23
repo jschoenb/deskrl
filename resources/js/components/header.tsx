@@ -68,6 +68,16 @@ export default function Header() {
                                 )}
                             </Link>
 
+                            {auth?.user?.role === 'host' && (
+                                <Link href="/provider"
+                                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                                          isActive('/provider') ? 'bg-[#5555ff] text-white' : 'hover:bg-gray-100 text-gray-700'
+                                      }`}>
+                                    <LayoutGrid className="w-5 h-5" />
+                                    <span className="font-medium">Dashboard</span>
+                                </Link>
+                            )}
+
                             <div className="ml-4 pl-4 border-l border-gray-200 flex items-center gap-3">
                                 {auth?.user ? (
                                     <>
@@ -143,6 +153,16 @@ export default function Header() {
                                 </span>
                             )}
                         </Link>
+
+                        {auth?.user?.role === 'host' && (
+                            <Link href="/provider"
+                                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                                      isActive('/provider') ? 'bg-[#5555ff] text-white' : 'hover:bg-gray-100'
+                                  }`}>
+                                <LayoutGrid className="w-5 h-5" />
+                                <span className="font-semibold">Dashboard</span>
+                            </Link>
+                        )}
 
                         <div className="border-t border-gray-200 my-4" />
 
