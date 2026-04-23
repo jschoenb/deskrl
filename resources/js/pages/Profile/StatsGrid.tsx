@@ -28,6 +28,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
                 <Award className="w-8 h-8 text-yellow-500 mb-3" />
                 <p className="text-sm text-gray-600 mb-1">Favoriten</p>
                 <p className="text-3xl font-bold">{stats?.favorites ?? '—'}</p>
+                {/*TODO: Favoriten hier korrekt anzeigen mit der Zahl*/}
             </div>
         </div>
     );
