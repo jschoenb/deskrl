@@ -67,12 +67,12 @@ Route::get('/favorites', function () {
 // Profilansicht
 // =========================================================
 
-Route::get('/profile', function () {
+/*Route::get('/profile', function () {
     $user = User::where('role', 'user')->first();
     return Inertia::render('UserProfile', [
         'user' => $user,
     ]);
-});
+});*/
 
 // =========================================================
 // Footer
@@ -114,8 +114,8 @@ Route::post('/logout', [AuthController::class, 'logout']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [UserController::class, 'show'])->name('profile');
-    Route::put('/profile/{user}', [UserController::class, 'update']);
-    Route::delete('/profile/{user}', [UserController::class, 'destroy']);
+    Route::put('/profile', [UserController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [UserController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/favourites', [FavouriteController::class, 'index']);
     Route::post('/favourites/{listing}', [FavouriteController::class, 'store']);

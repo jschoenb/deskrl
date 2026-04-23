@@ -20,7 +20,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
                     <div>
                         <h3 className="text-lg mb-2 font-bold">Verifizierung empfohlen</h3>
                         <p className="text-gray-700 mb-4">
-                            Erhöhe dein Vertrauen bei anderen Nutzern, indem du dein Profil verifizierst.
+                            Erhöhe dein Vertrauen bei anderen Nutzer:innen, indem du dein Profil verifizierst.
                         </p>
                         <div className="flex flex-wrap gap-2 mb-4">
               <span className="px-3 py-1 bg-white rounded-lg text-sm flex items-center gap-1">

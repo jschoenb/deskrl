@@ -1,7 +1,7 @@
 // resources/js/Pages/UserProfile.tsx
 import { Head } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-
+import { router } from '@inertiajs/react';
 // Komponenten importieren
 import { Section } from './Profile/Section';
 import { InputField } from './Profile/InputField';
@@ -101,8 +101,18 @@ export default function UserProfile({ user }: UserProfileProps) {
     };
 
     const handleSavePersonalInfo = () => {
-        console.log('Gespeichert:', formData);
-        alert('Änderungen gespeichert!');
+        router.put('/profile', {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            email: formData.email,
+            gender: formData.gender || null,
+            birthday: formData.dateOfBirth || null,
+            phone: formData.phone || null,
+            languages: formData.languages || null,
+            job: formData.profession || null,
+            company: formData.company || null,
+            about_me: formData.aboutMe || null,
+        });
     };
 
     const handleCancel = () => {
