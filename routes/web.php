@@ -3,29 +3,26 @@
 use App\Http\Controllers\FavouriteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ListingController;
-use App\Models\User;
+use App\Models\Listing;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// =========================================================
 // Test
+// =========================================================
 Route::get('/users', [UserController::class, 'index']);
 
 // =========================================================
-// Header
+// Hauptseite mit Suche & Filter
 // =========================================================
-use App\Models\Listing;
-
-// Ausstattungs-Filter sind aktuell nur visuell,
-// sie werden noch nicht ans Backend geschickt.
 Route::get('/', function (\Illuminate\Http\Request $request) {
-    $query = \App\Models\Listing::query()->where('status', 'active');
+    $query = Listing::query()->where('status', 'active');
 
     if ($request->filled('search')) {
-        $query->where(function($q) use ($request) {
+        $query->where(function ($q) use ($request) {
             $q->where('title', 'like', '%' . $request->search . '%')
                 ->orWhere('description', 'like', '%' . $request->search . '%')
-                ->orWhereHas('address', function($aq) use ($request) {
+                ->orWhereHas('address', function ($aq) use ($request) {
                     $aq->where('city', 'like', '%' . $request->search . '%')
                         ->orWhere('street', 'like', '%' . $request->search . '%')
                         ->orWhere('postal_code', 'like', '%' . $request->search . '%');
@@ -37,11 +34,9 @@ Route::get('/', function (\Illuminate\Http\Request $request) {
         $query->where('type', $request->type);
     }
 
-    // Verfügbarkeits-Filter
     if ($request->filled('date') && $request->filled('start_time') && $request->filled('end_time')) {
         $weekday = strtolower(date('l', strtotime($request->date)));
-
-        $query->whereHas('availability', function($q) use ($request, $weekday) {
+        $query->whereHas('availability', function ($q) use ($request, $weekday) {
             $q->where('weekday', $weekday)
                 ->where('start_time', '<=', $request->start_time)
                 ->where('end_time', '>=', $request->end_time);
@@ -50,74 +45,79 @@ Route::get('/', function (\Illuminate\Http\Request $request) {
 
     return Inertia::render('Home', [
         'listings' => $query->with('address')->get(),
-        'filters' => $request->only(['search', 'type', 'date', 'start_time', 'end_time']),
+        'filters'  => $request->only(['search', 'type', 'date', 'start_time', 'end_time']),
     ]);
 });
 
-Route::get('/bookings', function () {
-    return Inertia::render('Bookings');
-});
-
+// =========================================================
+// Statische Seiten
+// =========================================================
+Route::get('/bookings',  fn () => Inertia::render('Bookings'));
 Route::get('/favorites', function () {
-    $listings = \App\Models\Listing::where('status', 'active')->with('address')->get();
-    return Inertia::render('Favorites', ['listings' => $listings]);
+    return Inertia::render('Favorites', [
+        'listings' => Listing::where('status', 'active')->with('address')->get(),
+    ]);
 });
 
 // =========================================================
-// Profilansicht
+// Footer-Seiten
 // =========================================================
-
-/*Route::get('/profile', function () {
-    $user = User::where('role', 'user')->first();
-    return Inertia::render('UserProfile', [
-        'user' => $user,
-    ]);
-});*/
-
-// =========================================================
-// Footer
-// =========================================================
-
-Route::get('/faq-user', function () { return Inertia::render('FaqUser'); });
-Route::get('/cancellation', function () { return Inertia::render('Cancellation'); });
-Route::get('/support-user', function () { return Inertia::render('SupportUser'); });
-Route::get('/become-provider', function () { return Inertia::render('BecomeProvider'); });
-Route::get('/faq-provider', function () { return Inertia::render('FaqProvider'); });
-Route::get('/support-provider', function () { return Inertia::render('SupportProvider'); });
-Route::get('/about', function () { return Inertia::render('About'); });
-Route::get('/career', function () { return Inertia::render('Career'); });
-Route::get('/legal-notice', function () { return Inertia::render('LegalNotice'); });
-Route::get('/terms', function () { return Inertia::render('Terms'); });
-Route::get('/revocation', function () { return Inertia::render('Revocation'); });
-Route::get('/privacy-policy', function () { return Inertia::render('PrivacyPolicy'); });
-Route::get('/accessibility', function () { return Inertia::render('Accessibility'); });
-Route::get('/contact', function () { return Inertia::render('Contact'); });
-Route::get('/news', function () { return Inertia::render('News'); });
+Route::get('/faq-user',          fn () => Inertia::render('FaqUser'));
+Route::get('/cancellation',      fn () => Inertia::render('Cancellation'));
+Route::get('/support-user',      fn () => Inertia::render('SupportUser'));
+Route::get('/become-provider',   fn () => Inertia::render('BecomeProvider'));
+Route::get('/faq-provider',      fn () => Inertia::render('FaqProvider'));
+Route::get('/support-provider',  fn () => Inertia::render('SupportProvider'));
+Route::get('/about',             fn () => Inertia::render('About'));
+Route::get('/career',            fn () => Inertia::render('Career'));
+Route::get('/legal-notice',      fn () => Inertia::render('LegalNotice'));
+Route::get('/terms',             fn () => Inertia::render('Terms'));
+Route::get('/revocation',        fn () => Inertia::render('Revocation'));
+Route::get('/privacy-policy',    fn () => Inertia::render('PrivacyPolicy'));
+Route::get('/accessibility',     fn () => Inertia::render('Accessibility'));
+Route::get('/contact',           fn () => Inertia::render('Contact'));
+Route::get('/news',              fn () => Inertia::render('News'));
 
 // =========================================================
-// Auth Routes
+// Auth
 // =========================================================
-Route::get('/register', function () {
-    return Inertia::render('Register');});
-Route::get('/login', function () {
-    return Inertia::render('Login');});
-// GET - Registrierungsseite anzeigen
-Route::get('/register', function () {
-    return Inertia::render('Register');});
-
-// GET - Login Seite anzeigen
-Route::get('/login', function () {
-    return Inertia::render('Login');});
+Route::get('/register', fn () => Inertia::render('Register'));
+Route::get('/login',    fn () => Inertia::render('Login'));
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout']);
+Route::post('/login',    [AuthController::class, 'login']);
+Route::post('/logout',   [AuthController::class, 'logout']);
 
+// =========================================================
+// Profil (eingeloggt)
+// =========================================================
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [UserController::class, 'show'])->name('profile');
-    Route::put('/profile', [UserController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [UserController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/favourites', [FavouriteController::class, 'index']);
-    Route::post('/favourites/{listing}', [FavouriteController::class, 'store']);
-    Route::delete('/favourites/{listing}', [FavouriteController::class, 'destroy']);
+    // Profil anzeigen
+    Route::get('/profile', [UserController::class, 'show'])
+        ->name('profile');
+
+    // Persönliche Infos (Name, E-Mail, Beruf, etc.)
+    Route::put('/profile', [UserController::class, 'update'])
+        ->name('profile.update');
+
+    // Wohnadresse (+ optional Rechnungsadresse wenn gleich)
+    Route::put('/profile/address', [UserController::class, 'updateAddress'])
+        ->name('profile.address');
+
+    // Rechnungsadresse (nur wenn abweichend)
+    Route::put('/profile/billing', [UserController::class, 'updateBilling'])
+        ->name('profile.billing');
+
+    // Profilbild
+    Route::post('/profile/image', [UserController::class, 'updateImage'])
+        ->name('profile.image');
+
+    // Account löschen
+    Route::delete('/profile', [UserController::class, 'destroy'])
+        ->name('profile.destroy');
+
+    // Favoriten
+    Route::get('/favourites',                [FavouriteController::class, 'index']);
+    Route::post('/favourites/{listing}',     [FavouriteController::class, 'store']);
+    Route::delete('/favourites/{listing}',   [FavouriteController::class, 'destroy']);
 });
