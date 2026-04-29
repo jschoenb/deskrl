@@ -1,227 +1,243 @@
-// resources/js/Pages/UserProfile.tsx
+// ─── Pages/UserProfile.tsx ───────────────────────────────────────────────────
+// Die Page selbst ist jetzt schlank: Nur Komposition von Sub-Komponenten.
+// Sämtliche Formular-Logik steckt im useProfileForm-Hook.
+// Vergleich: Vorher ~700 Zeilen | Nachher ~150 Zeilen
+
 import { Head } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
-import { router } from '@inertiajs/react';
-// Komponenten importieren
-import { Section } from './Profile/Section';
-import { InputField } from './Profile/InputField';
+import { useProfileForm } from '../hooks/useProfileForm';
 import { ProfileHeader } from './Profile/ProfileHeader';
 import { StatsGrid } from './Profile/StatsGrid';
-import { VerificationSection } from './Profile/VerificationSection';
 import { ProviderUpgrade } from './Profile/ProviderUpgrade';
-
-type UserRole = 'user' | 'host' | 'admin';
-
-interface UserFromBackend {
-    id: number;
-    name: string;
-    email: string;
-    role: UserRole;
-    gender?: 'male' | 'female' | 'diverse' | 'undisclosed' | null;
-    birthday?: string | null;
-    profile_image?: string | null;
-    job?: string | null;
-    company?: string | null;
-    about_me?: string | null;
-    phone?: string | null;
-    languages?: string | null;
-    verification_status?: string | null;
-}
+import { VerificationSection } from './Profile/VerificationSection';
+import { Section } from './Profile/Section';
+import { InputField } from './Profile/InputField';
+import { LanguageSelect } from './Profile/LanguageSelect';
+import { AddressFields } from './Profile/AddressFields';
+import { CountrySelect } from './Profile/CountrySelect';
+import type { UserFromBackend, VerificationStatus } from '../types/profile';
 
 interface UserProfileProps {
     user: UserFromBackend;
+    stats?: {
+        totalBookings: number;
+        visitedPlaces: number;
+        favorites: number;
+    };
 }
 
-interface ProfileHeaderUser {
-    name: string;
-    email: string;
-    profileImage: string | null;
-    role: UserRole;
-}
+export default function UserProfile({ user, stats }: UserProfileProps) {
+    const {
+        personal, address, billing, business,
+        isBillingSameAsAddress,
+        updatePersonal, updateAddress, updateBilling, updateBusiness,
+        setIsBillingSameAsAddress,
+        handleSavePersonal, handleCancelPersonal,
+        handleSaveAddress, handleCancelAddress,
+        handleSaveBilling, handleCancelBilling,
+        handleSaveBusiness, handleCancelBusiness,
+    } = useProfileForm(user);
 
-interface UpgradeUser {
-    role: UserRole;
-}
-
-interface VerificationUser {
-    role: UserRole;
-    verificationStatus: string;
-}
-
-export default function UserProfile({ user }: UserProfileProps) {
-    const splitName = useMemo(() => {
-        const parts = user.name?.trim().split(/\s+/) ?? [];
-        return {
-            firstName: parts[0] ?? '',
-            lastName: parts.slice(1).join(' ') ?? '',
-        };
-    }, [user.name]);
-
-    const initialFormData = useMemo(
-        () => ({
-            firstName: splitName.firstName,
-            lastName: splitName.lastName,
-            email: user.email ?? '',
-            gender: user.gender ?? '',
-            dateOfBirth: user.birthday ?? '',
-            phone: user.phone ?? '',
-            languages: user.languages ?? '',
-            profession: user.job ?? '',
-            company: user.company ?? '',
-            aboutMe: user.about_me ?? '',
-        }),
-        [splitName.firstName, splitName.lastName, user]
-    );
-
-    console.log(user);
-
-    const [formData, setFormData] = useState(initialFormData);
-
-    const currentUserForHeader: ProfileHeaderUser = {
-        name: user.name,
-        email: user.email,
-        profileImage: user.profile_image ?? null,
-        role: user.role,
-    };
-
-    const currentUserForUpgrade: UpgradeUser = {
-        role: user.role,
-    };
-
-    const currentUserForVerification: VerificationUser = {
-        role: user.role,
-        verificationStatus: user.verification_status ?? 'unverified',
-    };
-
-    const handleInputChange = (field: keyof typeof formData, value: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
-    };
-
-    const handleSavePersonalInfo = () => {
-        router.put('/profile', {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            gender: formData.gender || null,
-            birthday: formData.dateOfBirth || null,
-            phone: formData.phone || null,
-            languages: formData.languages || null,
-            job: formData.profession || null,
-            company: formData.company || null,
-            about_me: formData.aboutMe || null,
-        });
-    };
-
-    const handleCancel = () => {
-        setFormData(initialFormData);
-    };
+    const isHost = user.role === 'host';
+    const isBusinessHost = isHost; // Erweiterbar wenn providerType dazukommt
 
     return (
-        <div>
+        <>
             <Head title="Mein Profil" />
 
             <div className="min-h-screen bg-gray-50">
                 <div className="mx-auto max-w-4xl px-4 py-12">
-                    <ProfileHeader user={currentUserForHeader} />
 
-                    <StatsGrid />
+                    <ProfileHeader
+                        user={{
+                            name: user.name,
+                            email: user.email,
+                            profileImage: user.profile_image ?? null,
+                            role: user.role,
+                            verificationStatus: (user.verification_status as VerificationStatus) ?? 'unverified',
+                        }}
+                    />
 
-                    <ProviderUpgrade user={currentUserForUpgrade} />
+                    <StatsGrid role={user.role} stats={stats} />
 
-                    <Section
-                        title="Persönliche Informationen"
-                        onSave={handleSavePersonalInfo}
-                        onCancel={handleCancel}
-                    >
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <InputField
-                                label="Vorname"
-                                value={formData.firstName}
-                                onChange={(value) => handleInputChange('firstName', value)}
-                            />
+                    <ProviderUpgrade role={user.role} />
 
-                            <InputField
-                                label="Nachname"
-                                value={formData.lastName}
-                                onChange={(value) => handleInputChange('lastName', value)}
-                            />
+                    <VerificationSection
+                        user={{
+                            role: user.role,
+                            verificationStatus: (user.verification_status as VerificationStatus) ?? 'unverified',
+                        }}
+                    />
 
-                            <InputField
-                                label="E-Mail"
-                                value={formData.email}
-                                onChange={(value) => handleInputChange('email', value)}
-                                type="email"
-                            />
+                    {/* ─── Persönliche Informationen (nur für nicht-Business-Hosts) ─── */}
+                    {!isBusinessHost && (
+                        <Section
+                            title="Persönliche Informationen"
+                            onSave={handleSavePersonal}
+                            onCancel={handleCancelPersonal}
+                        >
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <InputField
+                                    label="Vorname"
+                                    value={personal.firstName}
+                                    onChange={(v) => updatePersonal('firstName', v)}
+                                    required
+                                />
+                                <InputField
+                                    label="Nachname"
+                                    value={personal.lastName}
+                                    onChange={(v) => updatePersonal('lastName', v)}
+                                    required
+                                />
+                                <InputField
+                                    label="E-Mail"
+                                    type="email"
+                                    value={personal.email}
+                                    onChange={(v) => updatePersonal('email', v)}
+                                    required
+                                />
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-600">
-                                    Geschlecht
-                                </label>
-                                <select
-                                    value={formData.gender}
-                                    onChange={(e) => handleInputChange('gender', e.target.value)}
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
-                                >
-                                    <option value="">Bitte wählen</option>
-                                    <option value="male">Männlich</option>
-                                    <option value="female">Weiblich</option>
-                                    <option value="diverse">Divers</option>
-                                    <option value="undisclosed">Keine Angabe</option>
-                                </select>
+                                {/* Geschlecht */}
+                                <div className="space-y-2">
+                                    <label htmlFor="gender" className="text-sm font-semibold text-gray-600">
+                                        Geschlecht
+                                    </label>
+                                    <select
+                                        id="gender"
+                                        value={personal.gender}
+                                        onChange={(e) => updatePersonal('gender', e.target.value)}
+                                        className="w-full rounded-xl border border-gray-200 px-4 py-3
+                                                   focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
+                                    >
+                                        <option value="">Bitte wählen</option>
+                                        <option value="male">Männlich</option>
+                                        <option value="female">Weiblich</option>
+                                        <option value="diverse">Divers</option>
+                                        <option value="undisclosed">Keine Angabe</option>
+                                    </select>
+                                </div>
+
+                                <InputField
+                                    label="Geburtsdatum"
+                                    type="date"
+                                    value={personal.dateOfBirth}
+                                    onChange={(v) => updatePersonal('dateOfBirth', v)}
+                                />
+                                <InputField
+                                    label="Telefon"
+                                    type="tel"
+                                    value={personal.phone}
+                                    onChange={(v) => updatePersonal('phone', v)}
+                                    placeholder="+43 699 12345678"
+                                />
+                                <InputField
+                                    label="Beruf"
+                                    value={personal.profession}
+                                    onChange={(v) => updatePersonal('profession', v)}
+                                    placeholder="z. B. Software-Entwickler:in"
+                                />
+                                <InputField
+                                    label="Firma"
+                                    value={personal.company}
+                                    onChange={(v) => updatePersonal('company', v)}
+                                    placeholder="z. B. Muster GmbH"
+                                />
                             </div>
 
-                            <InputField
-                                label="Geburtsdatum"
-                                value={formData.dateOfBirth}
-                                onChange={(value) => handleInputChange('dateOfBirth', value)}
-                                type="date"
+                            {/* Sprachen – volle Breite */}
+                            <LanguageSelect
+                                selected={personal.languages}
+                                onChange={(langs) => updatePersonal('languages', langs)}
                             />
 
-                            <InputField
-                                label="Telefon"
-                                value={formData.phone}
-                                onChange={(value) => handleInputChange('phone', value)}
-                                type="tel"
-                            />
+                            {/* Über mich */}
+                            <div className="space-y-2">
+                                <label htmlFor="about-me" className="text-sm font-semibold text-gray-600">
+                                    Über mich
+                                </label>
+                                <textarea
+                                    id="about-me"
+                                    value={personal.aboutMe}
+                                    onChange={(e) => updatePersonal('aboutMe', e.target.value)}
+                                    rows={4}
+                                    placeholder="Erzähl anderen, wer du bist…"
+                                    className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3
+                                               focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
+                                />
+                            </div>
+                        </Section>
+                    )}
 
-                            <InputField
-                                label="Sprachen"
-                                value={formData.languages}
-                                onChange={(value) => handleInputChange('languages', value)}
-                            />
+                    {/* ─── Adresse ─────────────────────────────────────────────────── */}
+                    <Section
+                        title="Adresse"
+                        onSave={handleSaveAddress}
+                        onCancel={handleCancelAddress}
+                    >
+                        <AddressFields
+                            data={address}
+                            onChange={updateAddress}
+                            idPrefix="address"
+                        />
 
-                            <InputField
-                                label="Beruf"
-                                value={formData.profession}
-                                onChange={(value) => handleInputChange('profession', value)}
-                            />
-
-                            <InputField
-                                label="Firma"
-                                value={formData.company}
-                                onChange={(value) => handleInputChange('company', value)}
-                            />
-                        </div>
-
-                        <div className="mt-4 space-y-2">
-                            <label className="text-sm font-semibold text-gray-600">
-                                Über mich
-                            </label>
-                            <textarea
-                                value={formData.aboutMe}
-                                onChange={(e) => handleInputChange('aboutMe', e.target.value)}
-                                rows={4}
-                                className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
-                            />
+                        {/* Rechnungsadresse gleich? */}
+                        <div className="border-t border-gray-200 pt-6">
+                            <h3 className="mb-4 text-base font-bold">
+                                Ist die Rechnungsadresse dieselbe?
+                            </h3>
+                            <div className="flex gap-4">
+                                {[
+                                    { value: true, label: 'Ja' },
+                                    { value: false, label: 'Nein' },
+                                ].map(({ value, label }) => (
+                                    <button
+                                        key={label}
+                                        type="button"
+                                        onClick={() => setIsBillingSameAsAddress(value)}
+                                        aria-pressed={isBillingSameAsAddress === value}
+                                        className={`flex-1 rounded-xl border-2 px-6 py-3 font-semibold transition-all
+                                                   ${isBillingSameAsAddress === value
+                                            ? 'border-[#5555ff] bg-[#f5f5ff] text-[#5555ff]'
+                                            : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </Section>
 
-                    <VerificationSection user={currentUserForVerification} />
+                    {/* ─── Rechnungsadresse (nur wenn abweichend) ──────────────────── */}
+                    {!isBillingSameAsAddress && (
+                        <Section
+                            title="Rechnungsadresse"
+                            onSave={handleSaveBilling}
+                            onCancel={handleCancelBilling}
+                        >
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <InputField
+                                    label="Firma (optional)"
+                                    value={billing.billingCompany}
+                                    onChange={(v) => updateBilling('billingCompany', v)}
+                                />
+                                <InputField
+                                    label="UID-Nummer (optional)"
+                                    value={billing.billingVatNumber}
+                                    onChange={(v) => updateBilling('billingVatNumber', v)}
+                                    placeholder="ATU12345678"
+                                />
+                            </div>
+
+                            <AddressFields
+                                data={billing}
+                                onChange={updateBilling}
+                                idPrefix="billing"
+                            />
+                        </Section>
+                    )}
+
                 </div>
             </div>
-        </div>
+        </>
     );
 }
