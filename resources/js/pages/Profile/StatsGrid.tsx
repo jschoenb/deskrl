@@ -1,35 +1,55 @@
-// resources/js/Pages/Profile/components/StatsGrid.tsx
-import { Calendar, MapPin, Award } from 'lucide-react';
+// ─── Pages/Profile/StatsGrid.tsx ─────────────────────────────────────────────
+// Fix gegenüber deiner Version:
+// - Früher: Immer angezeigt (fehlender Role-Guard)
+// - Jetzt: Nur für 'user'-Rolle sichtbar (Figma-Code: "Only for regular users, not providers")
+// - Stats werden als Props übergeben statt hartcodiert
+
+import { Award, Calendar, MapPin } from 'lucide-react';
+import type { UserRole, UserStats } from '../../types/profile';
 
 interface StatsGridProps {
-    stats?: {
-        totalBookings?: number;
-        visitedPlaces?: number;
-        favorites?: number;
-    };
+    role: UserRole;
+    stats?: UserStats;
 }
 
-export function StatsGrid({ stats }: StatsGridProps) {
+export function StatsGrid({ role, stats }: StatsGridProps) {
+    // Nur für reguläre Nutzer anzeigen, nicht für Hosts/Admins
+    if (role !== 'user') return null;
+
     return (
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-2xl p-6 border border-gray-200">
-                <Calendar className="w-8 h-8 text-[#5555ff] mb-3" />
-                <p className="text-sm text-gray-600 mb-1">Gesamtbuchungen</p>
-                <p className="text-3xl font-bold">{stats?.totalBookings ?? '—'}</p>
-            </div>
+        <div className="mb-8 grid gap-6 md:grid-cols-3">
+            <StatCard
+                icon={<Calendar className="h-8 w-8 text-[#5555ff]" aria-hidden="true" />}
+                label="Gesamtbuchungen"
+                value={stats?.totalBookings}
+            />
+            <StatCard
+                icon={<MapPin className="h-8 w-8 text-[#e63cff]" aria-hidden="true" />}
+                label="Besuchte Orte"
+                value={stats?.visitedPlaces}
+            />
+            <StatCard
+                icon={<Award className="h-8 w-8 text-yellow-500" aria-hidden="true" />}
+                label="Favoriten"
+                value={stats?.favorites}
+            />
+        </div>
+    );
+}
 
-            <div className="bg-white rounded-2xl p-6 border border-gray-200">
-                <MapPin className="w-8 h-8 text-[#e63cff] mb-3" />
-                <p className="text-sm text-gray-600 mb-1">Besuchte Orte</p>
-                <p className="text-3xl font-bold">{stats?.visitedPlaces ?? '—'}</p>
-            </div>
+// Kleines Sub-Komponente – kein eigenes File nötig, da nur hier verwendet
+interface StatCardProps {
+    icon: React.ReactNode;
+    label: string;
+    value?: number;
+}
 
-            <div className="bg-white rounded-2xl p-6 border border-gray-200">
-                <Award className="w-8 h-8 text-yellow-500 mb-3" />
-                <p className="text-sm text-gray-600 mb-1">Favoriten</p>
-                <p className="text-3xl font-bold">{stats?.favorites ?? '—'}</p>
-                {/*TODO: Favoriten hier korrekt anzeigen mit der Zahl*/}
-            </div>
+function StatCard({ icon, label, value }: StatCardProps) {
+    return (
+        <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            {icon}
+            <p className="mb-1 mt-3 text-sm text-gray-600">{label}</p>
+            <p className="text-3xl font-bold">{value ?? '—'}</p>
         </div>
     );
 }
