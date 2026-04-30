@@ -2,14 +2,14 @@ import { Link } from '@inertiajs/react';
 import React from "react";
 import { Mail } from 'lucide-react';
 import { IconType } from "react-icons";
-import { FaInstagram, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
+import { FaInstagram, FaLinkedinIn, FaFacebookF } from "react-icons/fa6";
 
 //Rendering footer
 export default function Footer() {
 
     //Icon & links for Social Media Channels
     const socialLinks: { Icon: IconType; url: string; label: string }[] = [
-        { Icon: FaXTwitter, url: "https://x.com", label: "X" },
+        { Icon: FaFacebookF, url: "https://facebook.com", label: "Facebook" },
         { Icon: FaInstagram, url: "https://instagram.com", label: "Instagram" },
         { Icon: FaLinkedinIn, url: "https://linkedin.com", label: "LinkedIn" },
     ];
