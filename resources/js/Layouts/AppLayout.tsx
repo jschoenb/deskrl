@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/react';
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
+import { Toaster } from 'sonner'; // ← neu
 
 type Props = {
     children: React.ReactNode;
@@ -22,6 +23,7 @@ export default function Welcome({ children }: Props) {
                 </main>
                 <Footer />
             </div>
+            <Toaster position="bottom-right" richColors /> {/* ← neu */}
         </FavoritesProvider>
     );
 }
