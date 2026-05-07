@@ -7,12 +7,19 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations. hu
+     * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('languages', function (Blueprint $table) {
             $table->id();
+
+            // Name der Sprache, z. B. Deutsch, Englisch
+            $table->string('name');
+
+            // Optionaler Pfad zu einem Icon, z. B. Flagge
+            $table->string('icon_path')->nullable();
+
             $table->timestamps();
         });
     }

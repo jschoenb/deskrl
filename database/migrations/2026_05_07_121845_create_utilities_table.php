@@ -13,6 +13,16 @@ return new class extends Migration
     {
         Schema::create('utilities', function (Blueprint $table) {
             $table->id();
+
+            // Verknüpfung zur Kategorie, z. B. Technik, Komfort, Mobilität
+            $table->foreignId('utility_category_id')
+                ->constrained('utility_categories')
+                ->cascadeOnDelete();
+
+            // Name als JSON für spätere Übersetzungen,
+            // z. B. {"de": "WLAN", "en": "WiFi"}
+            $table->json('name');
+
             $table->timestamps();
         });
     }
