@@ -13,6 +13,14 @@ return new class extends Migration
     {
         Schema::create('account_addresses', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('account_id')
+                ->constrained('accounts')->cascadeOnDelete();
+            $table->foreignId('address_id')
+                ->constrained('addresses')->cascadeOnDelete();
+            $table->boolean('is_default')->default(false);
+            $table->string('company_name')->nullable();
+            $table->string('vat_nr')->nullable();
+            $table->boolean('is_billing_address')->default(false);
             $table->timestamps();
         });
     }

@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('commercial_accounts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('account_id')->constrained('accounts')
+                ->cascadeOnDelete();
+            $table->string('company_name');
+            $table->string('company_nr');
+            $table->string('vat_nr');
+            $table->boolean('is_verified')->default(false);
             $table->timestamps();
         });
     }
