@@ -13,6 +13,18 @@ return new class extends Migration
     {
         Schema::create('deskrl_addresses', function (Blueprint $table) {
             $table->id();
+
+            // Each Deskrl can have only one address link.
+            $table->foreignId('deskrl_id')
+                ->unique()
+                ->constrained('deskrls')
+                ->cascadeOnDelete();
+
+            // The same address can be reused by multiple Deskrls.
+            $table->foreignId('address_id')
+                ->constrained('addresses')
+                ->restrictOnDelete();
+
             $table->timestamps();
         });
     }
