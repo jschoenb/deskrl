@@ -15,4 +15,9 @@ class DeskrlCategory extends Model
     protected $casts = [
         'activated' => 'boolean',
     ];
+
+    public function deskrls(): HasMany
+    {
+        return $this->hasMany(Deskrl::class);
+    }
 }

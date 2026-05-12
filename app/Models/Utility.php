@@ -16,8 +16,20 @@ class Utility extends Model
         'name' => 'array',
     ];
 
+    /**
+     * Eine Utility gehört zu einer Utility-Kategorie.
+     */
     public function utilityCategory(): BelongsTo
     {
         return $this->belongsTo(UtilityCategory::class);
+    }
+
+    /**
+     * Eine Utility kann mehreren Deskrls zugeordnet werden.
+     * Pivot-Tabelle: deskrl_utility
+     */
+    public function deskrls(): BelongsToMany
+    {
+        return $this->belongsToMany(Deskrl::class, 'deskrl_utility');
     }
 }

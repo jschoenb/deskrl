@@ -17,4 +17,9 @@ class Country extends Model
     protected $casts = [
         'name' => 'array',
     ];
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
+    }
 }

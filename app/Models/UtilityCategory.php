@@ -15,6 +15,9 @@ class UtilityCategory extends Model
         'category_name' => 'array',
     ];
 
+    /**
+     * Eine Utility-Kategorie enthält mehrere Utilities.
+     */
     public function utilities(): HasMany
     {
         return $this->hasMany(Utility::class);

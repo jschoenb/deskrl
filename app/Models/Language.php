@@ -10,4 +10,9 @@ class Language extends Model
         'name',
         'icon_path',
     ];
+
+    public function accounts(): BelongsToMany
+    {
+        return $this->belongsToMany(Account::class, 'account_language');
+    }
 }
