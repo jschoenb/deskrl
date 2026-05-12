@@ -19,11 +19,11 @@ return new class extends Migration
                 ->constrained('accounts')
                 ->cascadeOnDelete();
 
-            // A Deskrl belongs to one listing category.
+            // A Deskrl belongs to one Deskrl category.
             // Nullable because a Deskrl can be saved as draft before all steps are completed.
-            $table->foreignId('listing_category_id')
+            $table->foreignId('deskrl_category_id')
                 ->nullable()
-                ->constrained('listing_categories')
+                ->constrained('deskrl_categories')
                 ->nullOnDelete();
 
             // Multilingual fields stored as JSON, e.g. {"de": "Meetingraum", "en": "Meeting room"}.
@@ -54,14 +54,15 @@ return new class extends Migration
             $table->unsignedInteger('min_hours')->nullable();
             $table->unsignedInteger('max_hours')->nullable();
 
-            // How far in advance do I need to make a booking in hours
+            // How far in advance a booking must be made in hours.
             $table->unsignedInteger('bookable_before_hours')->nullable();
 
-            // How far in advance can the Deskrl be booked in months
+            // How far in advance the Deskrl can be booked in months.
             $table->unsignedInteger('bookable_until_months')->nullable();
 
             $table->timestamps();
-            // Adds deleted_at for soft deletes, so Deskrls can be hidden instead of permanently deleted.
+
+            // Adds deleted_at for soft deletes.
             $table->softDeletes();
         });
     }

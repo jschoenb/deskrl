@@ -15,7 +15,7 @@ class Deskrl extends Model
 
     protected $fillable = [
         'host_account_id',
-        'listing_category_id',
+        'deskrl_category_id',
         'title',
         'description',
         'status',
@@ -61,7 +61,7 @@ class Deskrl extends Model
      */
     public function deskrlCategory(): BelongsTo
     {
-        return $this->belongsTo(DeskrlCategory::class, 'listing_category_id');
+        return $this->belongsTo(DeskrlCategory::class, 'deskrl_category_id');
     }
 
     /**

@@ -5,21 +5,18 @@ namespace Database\Seeders;
 use App\Models\Account;
 use App\Models\Deskrl;
 use App\Models\DeskrlCategory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DeskrlSeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     * (at least one account and at least one ListingCategory
-     * need to exist before seeding DeskrlSeeder)
+     * At least one account and one DeskrlCategory must exist before this seeder runs.
      */
     public function run(): void
     {
-        // Deskrls need an existing host account and listing category.
         $hostAccount = Account::query()->first();
-        $workspaceCategory = ListingCategory::query()->first();
+        $workspaceCategory = DeskrlCategory::query()->first();
 
         if (!$hostAccount) {
             $this->command->warn('No account found. Please seed accounts before deskrls.');
@@ -27,7 +24,7 @@ class DeskrlSeeder extends Seeder
         }
 
         if (!$workspaceCategory) {
-            $this->command->warn('No listing category found. Please seed listing categories before deskrls.');
+            $this->command->warn('No deskrl category found. Please seed deskrl categories before deskrls.');
             return;
         }
 
@@ -37,7 +34,7 @@ class DeskrlSeeder extends Seeder
                 'title->de' => 'Moderner Meetingraum in Linz',
             ],
             [
-                'listing_category_id' => $workspaceCategory->id,
+                'deskrl_category_id' => $workspaceCategory->id,
                 'title' => [
                     'de' => 'Moderner Meetingraum in Linz',
                 ],
@@ -65,7 +62,7 @@ class DeskrlSeeder extends Seeder
                 'title->de' => 'Flexibler Arbeitsplatz in Wien',
             ],
             [
-                'listing_category_id' => $workspaceCategory->id,
+                'deskrl_category_id' => $workspaceCategory->id,
                 'title' => [
                     'de' => 'Flexibler Arbeitsplatz in Wien',
                 ],
@@ -93,7 +90,7 @@ class DeskrlSeeder extends Seeder
                 'title->de' => 'Seminarraum für Workshops',
             ],
             [
-                'listing_category_id' => $workspaceCategory->id,
+                'deskrl_category_id' => $workspaceCategory->id,
                 'title' => [
                     'de' => 'Seminarraum für Workshops',
                 ],

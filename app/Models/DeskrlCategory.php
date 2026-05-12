@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DeskrlCategory extends Model
 {
-    protected $table = 'listing_categories';
+    protected $table = 'deskrl_categories';
 
     protected $fillable = [
         'name',
@@ -21,6 +21,6 @@ class DeskrlCategory extends Model
 
     public function deskrls(): HasMany
     {
-        return $this->hasMany(Deskrl::class, 'listing_category_id');
+        return $this->hasMany(Deskrl::class, 'deskrl_category_id');
     }
 }
