@@ -1,5 +1,6 @@
 <?php
 
+/*
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FavouriteController;
 use App\Http\Controllers\UserController;
@@ -121,4 +122,38 @@ Route::middleware('auth')->group(function () {
     Route::get('/favourites', [FavouriteController::class, 'index']);
     Route::post('/favourites/{listing}', [FavouriteController::class, 'store']);
     Route::delete('/favourites/{listing}', [FavouriteController::class, 'destroy']);
+});*/
+
+use App\Models\Deskrl;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+Route::get('/', function (Request $request) {
+    $deskrls = Deskrl::query()
+        ->where('status', 'active')
+        ->get();
+
+    return Inertia::render('Home', [
+        'deskrls' => $deskrls,
+    ]);
 });
+
+Route::get('/bookings', fn () => Inertia::render('Bookings'));
+Route::get('/favorites', fn () => Inertia::render('Favorites'));
+
+Route::get('/faq-user', fn () => Inertia::render('FaqUser'));
+Route::get('/cancellation', fn () => Inertia::render('Cancellation'));
+Route::get('/support-user', fn () => Inertia::render('SupportUser'));
+Route::get('/become-provider', fn () => Inertia::render('BecomeProvider'));
+Route::get('/faq-provider', fn () => Inertia::render('FaqProvider'));
+Route::get('/support-provider', fn () => Inertia::render('SupportProvider'));
+Route::get('/about', fn () => Inertia::render('About'));
+Route::get('/career', fn () => Inertia::render('Career'));
+Route::get('/legal-notice', fn () => Inertia::render('LegalNotice'));
+Route::get('/terms', fn () => Inertia::render('Terms'));
+Route::get('/revocation', fn () => Inertia::render('Revocation'));
+Route::get('/privacy-policy', fn () => Inertia::render('PrivacyPolicy'));
+Route::get('/accessibility', fn () => Inertia::render('Accessibility'));
+Route::get('/contact', fn () => Inertia::render('Contact'));
+Route::get('/news', fn () => Inertia::render('News'));
