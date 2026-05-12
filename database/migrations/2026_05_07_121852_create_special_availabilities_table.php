@@ -6,20 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('special_availabilities', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('listing_id')->constrained('deskrls')->onDelete('cascade');
+            $table->date('exception_date');
+            $table->time('start_time');
+            $table->time('end_time');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('special_availabilities');
