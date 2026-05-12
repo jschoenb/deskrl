@@ -13,6 +13,15 @@ return new class extends Migration
     {
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('country_id')->constrained('countries');
+            $table->string('state')->nullable();
+            $table->string('city');
+            $table->string('street');
+            $table->string('house_nr');
+            $table->string('postal_code');
+            $table->string('stair')->nullable();
+            $table->string('door')->nullable();
+
             $table->timestamps();
         });
     }

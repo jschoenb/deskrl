@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ListingCategory extends Model
+class DeskrlCategory extends Model
 {
     protected $fillable = [
         'name',

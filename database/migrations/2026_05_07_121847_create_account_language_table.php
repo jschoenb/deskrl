@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('account_language', function (Blueprint $table) {
-            $table->id();
+            $table->foreignId('account_id')
+                ->constrained('accounts')->cascadeOnDelete();
+            $table->foreignId('language_id')
+                ->constrained('languages')->cascadeOnDelete();
+            $table->primary(['account_id', 'language_id']);
             $table->timestamps();
         });
     }
