@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\ListingController;
+use App\Http\Controllers\DeskrlController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -9,6 +9,6 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// public listing-routes
-Route::get('/listings', [ListingController::class, 'index']);
-Route::get('/listings/{listing}', [ListingController::class, 'show']);
+// public deskrl routes
+Route::get('/deskrls', [DeskrlController::class, 'index']);
+Route::get('/deskrls/{deskrl}', [DeskrlController::class, 'show']);
