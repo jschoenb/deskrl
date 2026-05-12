@@ -6,5 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class SpecialDayPrice extends Model
 {
-    //
+    protected $fillable = ['listing_id', 'date', 'special_price_per_day'];
+
+    public function deskrl()
+    {
+        return $this->belongsTo(Deskrl::class, 'listing_id');
+    }
 }
