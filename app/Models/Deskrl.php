@@ -59,9 +59,9 @@ class Deskrl extends Model
     /**
      * A Deskrl belongs to one listing category.
      */
-    public function listingCategory(): BelongsTo
+    public function deskrlCategory(): BelongsTo
     {
-        return $this->belongsTo(ListingCategory::class, 'listing_category_id');
+        return $this->belongsTo(DeskrlCategory::class, 'listing_category_id');
     }
 
     /**
