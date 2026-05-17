@@ -124,6 +124,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/favourites/{listing}', [FavouriteController::class, 'destroy']);
 });*/
 
+use App\Http\Controllers\DeskrlAddressController;
 use App\Http\Controllers\DeskrlController;
 use App\Models\Deskrl;
 use Illuminate\Http\Request;
@@ -182,3 +183,11 @@ Route::patch('/deskrls/{deskrl}/deactivate', [DeskrlController::class, 'deactiva
     ->name('deskrls.deactivate');
 Route::get('/deskrls/{deskrl}', [DeskrlController::class, 'show'])
     ->name('deskrls.show');
+
+// Deskrl address
+Route::post('/deskrls/{deskrl}/address', [DeskrlAddressController::class, 'store'])
+    ->name('deskrls.address.store');
+Route::put('/deskrls/{deskrl}/address', [DeskrlAddressController::class, 'update'])
+    ->name('deskrls.address.update');
+Route::delete('/deskrls/{deskrl}/address', [DeskrlAddressController::class, 'destroy'])
+    ->name('deskrls.address.destroy');
