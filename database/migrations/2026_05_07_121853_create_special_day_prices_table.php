@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('special_day_prices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('listing_id')->constrained('deskrls')->onDelete('cascade');
+            $table->foreignId('deskrl_id')->constrained('deskrls')->onDelete('cascade');
             $table->date('date');
             $table->decimal('special_price_per_day', 10, 2);
             $table->timestamps();

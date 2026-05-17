@@ -19,7 +19,7 @@ class SpecialAvailabilitySeeder extends Seeder
 
         SpecialAvailability::query()->updateOrCreate(
             [
-                'listing_id' => $deskrl->id,
+                'deskrl_id' => $deskrl->id,
                 'exception_date' => '2026-06-15',
             ],
             [
@@ -30,7 +30,7 @@ class SpecialAvailabilitySeeder extends Seeder
 
         SpecialAvailability::query()->updateOrCreate(
             [
-                'listing_id' => $deskrl->id,
+                'deskrl_id' => $deskrl->id,
                 'exception_date' => '2026-07-01',
             ],
             [

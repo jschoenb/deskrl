@@ -124,6 +124,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/favourites/{listing}', [FavouriteController::class, 'destroy']);
 });*/
 
+use App\Http\Controllers\DeskrlController;
 use App\Models\Deskrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -157,3 +158,27 @@ Route::get('/privacy-policy', fn () => Inertia::render('PrivacyPolicy'));
 Route::get('/accessibility', fn () => Inertia::render('Accessibility'));
 Route::get('/contact', fn () => Inertia::render('Contact'));
 Route::get('/news', fn () => Inertia::render('News'));
+
+// Deskrls
+Route::get('/deskrls', [DeskrlController::class, 'index'])
+    ->name('deskrls.index');
+Route::get('/deskrls/create', [DeskrlController::class, 'create'])
+    ->name('deskrls.create');
+Route::post('/deskrls', [DeskrlController::class, 'store'])
+    ->name('deskrls.store');
+Route::get('/deskrls/{deskrl}/edit', [DeskrlController::class, 'edit'])
+    ->name('deskrls.edit');
+Route::put('/deskrls/{deskrl}', [DeskrlController::class, 'update'])
+    ->name('deskrls.update');
+Route::delete('/deskrls/{deskrl}', [DeskrlController::class, 'destroy'])
+    ->name('deskrls.destroy');
+Route::patch('/deskrls/{deskrl}/publish', [DeskrlController::class, 'publish'])
+    ->name('deskrls.publish');
+Route::patch('/deskrls/{deskrl}/archive', [DeskrlController::class, 'archive'])
+    ->name('deskrls.archive');
+Route::patch('/deskrls/{deskrl}/activate', [DeskrlController::class, 'activate'])
+    ->name('deskrls.activate');
+Route::patch('/deskrls/{deskrl}/deactivate', [DeskrlController::class, 'deactivate'])
+    ->name('deskrls.deactivate');
+Route::get('/deskrls/{deskrl}', [DeskrlController::class, 'show'])
+    ->name('deskrls.show');

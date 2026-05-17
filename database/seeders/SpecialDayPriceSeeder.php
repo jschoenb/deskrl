@@ -19,7 +19,7 @@ class SpecialDayPriceSeeder extends Seeder
 
         SpecialDayPrice::query()->updateOrCreate(
             [
-                'listing_id' => $deskrl->id,
+                'deskrl_id' => $deskrl->id,
                 'date' => '2026-06-15',
             ],
             [
@@ -29,7 +29,7 @@ class SpecialDayPriceSeeder extends Seeder
 
         SpecialDayPrice::query()->updateOrCreate(
             [
-                'listing_id' => $deskrl->id,
+                'deskrl_id' => $deskrl->id,
                 'date' => '2026-07-01',
             ],
             [

@@ -23,7 +23,7 @@ class AvailabilitySeeder extends Seeder
             foreach ($weekdays as $weekday) {
                 Availability::query()->updateOrCreate(
                     [
-                        'listing_id' => $deskrl->id,
+                        'deskrl_id' => $deskrl->id,
                         'weekday' => $weekday,
                     ],
                     [

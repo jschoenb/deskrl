@@ -31,7 +31,7 @@ class FavoriteSeeder extends Seeder
             Favorite::query()->updateOrCreate(
                 [
                     'user_id' => $user->id,
-                    'listing_id' => $deskrl->id,
+                    'deskrl_id' => $deskrl->id,
                 ],
                 []
             );
