@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('special_availabilities', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('listing_id')->constrained('deskrls')->onDelete('cascade');
+            $table->foreignId('deskrl_id')->constrained('deskrls')->onDelete('cascade');
             $table->date('exception_date');
             $table->time('start_time');
             $table->time('end_time');

@@ -6,11 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Favorite extends Model
 {
-    protected $fillable = ['user_id', 'listing_id'];
+
+    protected $fillable = ['user_id', 'deskrl_id'];
 
     public function deskrl()
     {
-        return $this->belongsTo(Deskrl::class, 'listing_id');
+
+        return $this->belongsTo(Deskrl::class, 'deskrl_id');
     }
 
     public function account()
