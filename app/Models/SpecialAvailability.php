@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class SpecialAvailability extends Model
 {
-    protected $fillable = ['listing_id', 'exception_date', 'start_time', 'end_time'];
+    protected $fillable = ['deskrl_id', 'exception_date', 'start_time', 'end_time'];
 
     public function deskrl()
     {
-        return $this->belongsTo(Deskrl::class, 'listing_id');
+        return $this->belongsTo(Deskrl::class, 'deskrl_id');
     }
 }
