@@ -3,26 +3,134 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class AccountController extends Controller
 {
-    public function show()
+    /**
+     * Shows the profile page of the currently logged-in account.
+     *
+     * The account is loaded from the authenticated session.
+     * Related data such as addresses, languages and commercial account
+     * can also be loaded here if needed for the profile page.
+     */
+    public function show(Request $request)
     {
-        //
+        // Gets the currently authenticated account.
+        $account = $request->user();
+
+        // Returns the Inertia React component for the account profile page.
+        // The account data is passed to React as a prop.
+        return Inertia::render('Account/Show', [
+            'account' => $account,
+        ]);
     }
 
-    public function edit()
+    /**
+     * Shows the edit form for the currently logged-in account.
+     *
+     * This method does not update any data yet.
+     * It only returns the React component containing the edit form.
+     */
+    public function edit(Request $request)
     {
-        //
+        // Gets the currently authenticated account.
+        $account = $request->user();
+
+        // Returns the Inertia React component for editing the account.
+        return Inertia::render('Account/Edit', [
+            'account' => $account,
+        ]);
     }
 
+    /**
+     * Updates the currently logged-in account.
+     *
+     * The method validates the submitted profile data and updates
+     * the account record in the database.
+     * If a new password is submitted, it is hashed before saving.
+     */
     public function update(Request $request)
     {
-        //
+        // Gets the currently authenticated account.
+        $account = $request->user();
+
+        // Validates the submitted account data.
+        // The email must be unique, but the current account's email is ignored.
+        $validated = $request->validate([
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('accounts', 'email')->ignore($account->id),
+            ],
+
+            'phone' => ['nullable', 'string', 'max:255'],
+            'birthdate' => ['nullable', 'date'],
+
+            'gender' => [
+                'required',
+                Rule::in(['male', 'female', 'diverse', 'undefined']),
+            ],
+
+            'about_me' => ['nullable', 'array'],
+
+            // Password is optional during profile update.
+            // If it is provided, it must be confirmed with password_confirmation.
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        // If a new password was entered, it is hashed before being saved.
+        // If no password was entered, the password field is removed
+        // so the existing password stays unchanged.
+        if (! empty($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
+
+        // Updates the account with the validated data.
+        $account->update($validated);
+
+        // Redirects back to the account profile page after successful update.
+        return redirect()
+            ->route('account.show')
+            ->with('success', 'Account wurde aktualisiert.');
     }
 
-    public function destroy()
+    /**
+     * Deletes or deactivates the currently logged-in account.
+     *
+     * For the MVP, the account is not physically deleted from the database.
+     * Instead, its status is set to "deleted". This keeps related data stable,
+     * for example bookings, addresses or deskrls connected to the account.
+     */
+    public function destroy(Request $request)
     {
-        //
+        // Gets the currently authenticated account.
+        $account = $request->user();
+
+        // Logs the account out before marking it as deleted.
+        Auth::logout();
+
+        // Soft-deactivates the account by changing its status.
+        $account->update([
+            'status' => 'deleted',
+        ]);
+
+        // Invalidates the current session.
+        $request->session()->invalidate();
+
+        // Regenerates the CSRF token for security.
+        $request->session()->regenerateToken();
+
+        // Redirects the user to the login page after account deletion.
+        return redirect()->route('login');
     }
 }
