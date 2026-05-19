@@ -1,68 +1,71 @@
 <?php
 
-/*
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\FavouriteController;
-use App\Http\Controllers\UserController;
-use App\Models\Listing;
+use App\Models\Deskrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// =========================================================
-// Test
-// =========================================================
-Route::get('/users', [UserController::class, 'index']);
+use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\SpecialDayPriceController;
+use App\Http\Controllers\SpecialAvailabilityController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\HostBookingController;
 
 // =========================================================
-// Hauptseite mit Suche & Filter
+// Hauptseite
 // =========================================================
 Route::get('/', function (Request $request) {
-    $query = Listing::query()->where('status', 'active');
-
-    if ($request->filled('search')) {
-        $query->where(function ($q) use ($request) {
-            $q->where('title', 'like', '%'.$request->search.'%')
-                ->orWhere('description', 'like', '%'.$request->search.'%')
-                ->orWhereHas('address', function ($aq) use ($request) {
-                    $aq->where('city', 'like', '%'.$request->search.'%')
-                        ->orWhere('street', 'like', '%'.$request->search.'%')
-                        ->orWhere('postal_code', 'like', '%'.$request->search.'%');
-                });
-        });
-    }
-
-    if ($request->filled('type')) {
-        $query->where('type', $request->type);
-    }
-
-    if ($request->filled('date') && $request->filled('start_time') && $request->filled('end_time')) {
-        $weekday = strtolower(date('l', strtotime($request->date)));
-        $query->whereHas('availability', function ($q) use ($request, $weekday) {
-            $q->where('weekday', $weekday)
-                ->where('start_time', '<=', $request->start_time)
-                ->where('end_time', '>=', $request->end_time);
-        });
-    }
+    $deskrls = Deskrl::query()
+        ->where('status', 'active')
+        ->get();
 
     return Inertia::render('Home', [
-        'listings' => $query->with('address')->get(),
-        'filters' => $request->only(['search', 'type', 'date', 'start_time', 'end_time']),
+        'deskrls' => $deskrls,
     ]);
 });
 
 // =========================================================
-// Statische Seiten
+// KELLYS ROUTES — Sonderzeiten, Sonderpreise, Favoriten, Buchungen
 // =========================================================
-Route::get('/bookings', fn () => Inertia::render('Bookings'));
-Route::get('/favorites', function () {
-    return Inertia::render('Favorites', [
-        'listings' => Listing::where('status', 'active')->with('address')->get(),
-    ]);
-});
+// HINWEIS: Tobis auth-Middleware ist noch nicht aktiv.
+// Sobald Login läuft, die middleware-Zeile + schließende Klammer
+// am Ende wieder einkommentieren.
+
+// Route::middleware(['auth'])->group(function () {   // <- später aktivieren
+
+// ---- Favoriten ----
+Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+Route::post('/favorites', [FavoriteController::class, 'store'])->name('favorites.store');
+Route::delete('/favorites/{favorite}', [FavoriteController::class, 'destroy'])->name('favorites.destroy');
+
+// ---- Sonderpreise (an ein Deskrl gebunden) ----
+Route::get('/deskrls/{deskrl}/special-prices', [SpecialDayPriceController::class, 'index'])->name('special-prices.index');
+Route::post('/deskrls/{deskrl}/special-prices', [SpecialDayPriceController::class, 'store'])->name('special-prices.store');
+Route::put('/deskrls/{deskrl}/special-prices/{specialDayPrice}', [SpecialDayPriceController::class, 'update'])->name('special-prices.update');
+Route::delete('/deskrls/{deskrl}/special-prices/{specialDayPrice}', [SpecialDayPriceController::class, 'destroy'])->name('special-prices.destroy');
+
+// ---- Sonderverfügbarkeit (an ein Deskrl gebunden) ----
+Route::get('/deskrls/{deskrl}/special-availability', [SpecialAvailabilityController::class, 'index'])->name('special-availability.index');
+Route::post('/deskrls/{deskrl}/special-availability', [SpecialAvailabilityController::class, 'store'])->name('special-availability.store');
+Route::put('/deskrls/{deskrl}/special-availability/{specialAvailability}', [SpecialAvailabilityController::class, 'update'])->name('special-availability.update');
+Route::delete('/deskrls/{deskrl}/special-availability/{specialAvailability}', [SpecialAvailabilityController::class, 'destroy'])->name('special-availability.destroy');
+
+// ---- Buchungen (Nutzer-Sicht) ----
+Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
+Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+Route::post('/deskrls/{deskrl}/bookings', [BookingController::class, 'store'])->name('bookings.store');
+Route::patch('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+
+// ---- Buchungen (Host-Sicht) ----
+Route::get('/host/bookings', [HostBookingController::class, 'index'])->name('host.bookings.index');
+Route::patch('/host/bookings/{booking}/accept', [HostBookingController::class, 'accept'])->name('host.bookings.accept');
+Route::patch('/host/bookings/{booking}/reject', [HostBookingController::class, 'reject'])->name('host.bookings.reject');
+Route::patch('/host/bookings/{booking}/cancel', [HostBookingController::class, 'cancel'])->name('host.bookings.cancel');
+
+// });   // <- später aktivieren (schließende Klammer der middleware-Gruppe)
 
 // =========================================================
-// Footer-Seiten
+// Footer-Seiten (statisch)
 // =========================================================
 Route::get('/faq-user', fn () => Inertia::render('FaqUser'));
 Route::get('/cancellation', fn () => Inertia::render('Cancellation'));
@@ -80,49 +83,53 @@ Route::get('/accessibility', fn () => Inertia::render('Accessibility'));
 Route::get('/contact', fn () => Inertia::render('Contact'));
 Route::get('/news', fn () => Inertia::render('News'));
 
-// =========================================================
-// Auth
-// =========================================================
-Route::get('/register', fn () => Inertia::render('Register'));
-Route::get('/login', fn () => Inertia::render('Login'));
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout']);
 
 // =========================================================
-// Profil (eingeloggt)
+// ⚠️ TEMPORÄRE TEST-ROUTE — VOR PUSH/ABGABE LÖSCHEN!
 // =========================================================
-Route::middleware('auth')->group(function () {
+Route::get('/kelly-test', function () {
+    $log = [];
+    $account = \App\Models\Account::where('account_type', 'user')->first();
+    $deskrl  = \App\Models\Deskrl::first();
+    if (! $account) { return response('Kein User-Account. Erst migrate:fresh --seed.'); }
+    if (! $deskrl)  { return response('Kein Deskrl. Erst migrate:fresh --seed.'); }
 
-    // Profil anzeigen
-    Route::get('/profile', [UserController::class, 'show'])
-        ->name('profile');
+    $log[] = "Test-Account ID: {$account->id} ({$account->email})";
+    $log[] = "Test-Deskrl ID: {$deskrl->id}";
+    $log[] = "Deskrl Host-Account ID: {$deskrl->host_account_id}";
+    $log[] = str_repeat('-', 50);
 
-    // Persönliche Infos (Name, E-Mail, Beruf, etc.)
-    Route::put('/profile', [UserController::class, 'update'])
-        ->name('profile.update');
+    // 1. FAVORIT
+    try {
+        $fav = \App\Models\Favorite::firstOrCreate(['user_id' => $account->id, 'deskrl_id' => $deskrl->id]);
+        $log[] = "OK  Favorit angelegt (ID {$fav->id})";
+        $fav->delete();
+        $log[] = "OK  Favorit geloescht";
+    } catch (\Throwable $e) { $log[] = "ERR Favorit: ".$e->getMessage(); }
 
-    // Wohnadresse (+ optional Rechnungsadresse wenn gleich)
-    Route::put('/profile/address', [UserController::class, 'updateAddress'])
-        ->name('profile.address');
+    // 2. SONDERPREIS
+    try {
+        $p = \App\Models\SpecialDayPrice::updateOrCreate(
+            ['deskrl_id' => $deskrl->id, 'date' => '2026-09-01'],
+            ['special_price_per_day' => 99.00]);
+        $log[] = "OK  Sonderpreis angelegt (99.00)";
+        $p->update(['special_price_per_day' => 149.00]);
+        $log[] = "OK  Sonderpreis geaendert (149.00)";
+        $p->delete();
+        $log[] = "OK  Sonderpreis geloescht";
+    } catch (\Throwable $e) { $log[] = "ERR Sonderpreis: ".$e->getMessage(); }
 
-    // Rechnungsadresse (nur wenn abweichend)
-    Route::put('/profile/billing', [UserController::class, 'updateBilling'])
-        ->name('profile.billing');
-
-    // Profilbild
-    Route::post('/profile/image', [UserController::class, 'updateImage'])
-        ->name('profile.image');
-
-    // Account löschen
-    Route::delete('/profile', [UserController::class, 'destroy'])
-        ->name('profile.destroy');
-
-    // Favoriten
-    Route::get('/favourites', [FavouriteController::class, 'index']);
-    Route::post('/favourites/{listing}', [FavouriteController::class, 'store']);
-    Route::delete('/favourites/{listing}', [FavouriteController::class, 'destroy']);
-});*/
+    // 3. SONDERVERFUEGBARKEIT
+    try {
+        $sa = \App\Models\SpecialAvailability::updateOrCreate(
+            ['deskrl_id' => $deskrl->id, 'exception_date' => '2026-09-02'],
+            ['start_time' => '10:00:00', 'end_time' => '15:00:00']);
+        $log[] = "OK  Sonderverfuegbarkeit angelegt (10-15 Uhr)";
+        $sa->update(['start_time' => '08:00:00', 'end_time' => '12:00:00']);
+        $log[] = "OK  Sonderverfuegbarkeit geaendert (08-12 Uhr)";
+        $sa->delete();
+        $log[] = "OK  Sonderverfuegbarkeit geloescht";
+    } catch (\Throwable $e) { $log[] = "ERR Sonderverfuegbarkeit: ".$e->getMessage(); }
 
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\DeskrlAddressController;
@@ -133,15 +140,35 @@ use App\Models\Deskrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+    // 4-6. BUCHUNG  (Status: pending -> confirmed -> cancelled)
+    try {
+        $addr = \App\Models\Address::first();
+        $rate = $deskrl->price_per_half_day ?? 50;
+        $b = \App\Models\Booking::create([
+            'user_id' => $account->id,
+            'deskrl_id' => $deskrl->id,
+            'billing_address_id' => $addr ? $addr->id : null,
+            'from' => now()->addDays(5)->setTime(9, 0),
+            'until' => now()->addDays(5)->setTime(13, 0),
+            'booking_date' => now(),
+            'price_rate' => $rate,
+            'price' => $rate,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+        $log[] = "OK  Buchung erstellt (ID {$b->id}, Status pending)";
+        $b->update(['status' => 'confirmed']);
+        $log[] = "OK  Host hat akzeptiert (Status confirmed)";
+        $b->update(['status' => 'cancelled']);
+        $log[] = "OK  Storniert (Status cancelled)";
+        $b->delete();
+        $log[] = "OK  Test-Buchung geloescht";
+    } catch (\Throwable $e) { $log[] = "ERR Buchung: ".$e->getMessage(); }
 
-Route::get('/', function (Request $request) {
-    $deskrls = Deskrl::query()
-        ->where('status', 'active')
-        ->get();
+    $log[] = str_repeat('-', 50);
+    $log[] = "FERTIG. Alle OK = Business-Logik funktioniert. ERR = Problem.";
 
-    return Inertia::render('Home', [
-        'deskrls' => $deskrls,
-    ]);
+    return response('<pre style="font-size:15px;line-height:1.7">'.implode("\n", $log).'</pre>');
 });
 
 Route::get('/bookings', fn () => Inertia::render('Bookings'));
