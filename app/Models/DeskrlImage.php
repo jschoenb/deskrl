@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DeskrlImage extends Model
 {
-    /*testhasdf*/
+
     protected $fillable = [
         'deskrl_id',
         'path',
