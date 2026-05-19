@@ -124,8 +124,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/favourites/{listing}', [FavouriteController::class, 'destroy']);
 });*/
 
+use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\DeskrlAddressController;
 use App\Http\Controllers\DeskrlController;
+use App\Http\Controllers\DeskrlImageController;
+use App\Http\Controllers\DeskrlUtilityController;
 use App\Models\Deskrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -191,3 +194,45 @@ Route::put('/deskrls/{deskrl}/address', [DeskrlAddressController::class, 'update
     ->name('deskrls.address.update');
 Route::delete('/deskrls/{deskrl}/address', [DeskrlAddressController::class, 'destroy'])
     ->name('deskrls.address.destroy');
+
+// Deskrl utilities
+Route::post('/deskrls/{deskrl}/utilities/sync', [DeskrlUtilityController::class, 'sync'])
+    ->name('deskrls.utilities.sync');
+
+Route::post('/deskrls/{deskrl}/utilities', [DeskrlUtilityController::class, 'store'])
+    ->name('deskrls.utilities.store');
+
+Route::put('/deskrls/{deskrl}/utilities/{utility}', [DeskrlUtilityController::class, 'update'])
+    ->name('deskrls.utilities.update');
+
+Route::delete('/deskrls/{deskrl}/utilities/{utility}', [DeskrlUtilityController::class, 'destroy'])
+    ->name('deskrls.utilities.destroy');
+
+// Deskrl images
+Route::get('/deskrls/{deskrl}/images', [DeskrlImageController::class, 'index'])
+    ->name('deskrls.images.index');
+
+Route::post('/deskrls/{deskrl}/images', [DeskrlImageController::class, 'store'])
+    ->name('deskrls.images.store');
+
+Route::delete('/deskrls/{deskrl}/images/{image}', [DeskrlImageController::class, 'destroy'])
+    ->name('deskrls.images.destroy');
+
+Route::patch('/deskrls/{deskrl}/images/{image}/main', [DeskrlImageController::class, 'setMain'])
+    ->name('deskrls.images.setMain');
+
+Route::patch('/deskrls/{deskrl}/images/reorder', [DeskrlImageController::class, 'reorder'])
+    ->name('deskrls.images.reorder');
+
+// Deskrl availabilities
+Route::get('/deskrls/{deskrl}/availabilities', [AvailabilityController::class, 'index'])
+    ->name('deskrls.availabilities.index');
+
+Route::post('/deskrls/{deskrl}/availabilities', [AvailabilityController::class, 'store'])
+    ->name('deskrls.availabilities.store');
+
+Route::put('/deskrls/{deskrl}/availabilities/{availability}', [AvailabilityController::class, 'update'])
+    ->name('deskrls.availabilities.update');
+
+Route::post('/deskrls/{deskrl}/availabilities/sync', [AvailabilityController::class, 'sync'])
+    ->name('deskrls.availabilities.sync');

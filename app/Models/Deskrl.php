@@ -106,10 +106,14 @@ class Deskrl extends Model
 
     /**
      * A Deskrl can have multiple utilities.
+     * This many-to-many relationship uses the deskrl_utility pivot table.
+     * The pivot table stores the connection between a Deskrl and a Utility,
+     * including optional extra data such as quantity.
      */
     public function utilities(): BelongsToMany
     {
         return $this->belongsToMany(Utility::class, 'deskrl_utility')
+            ->withPivot('quantity')
             ->withTimestamps();
     }
 
