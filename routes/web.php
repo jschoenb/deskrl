@@ -52,7 +52,7 @@ Route::get('/', function (Request $request) {
             'end_time' => $request->input('end_time'),
         ],
     ]);
-});
+})->name('home');
 
 // =========================================================
 // Auth
@@ -72,7 +72,7 @@ Route::post('/login', [AuthController::class, 'login'])
 Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout');
 
-/*// =========================================================
+// =========================================================
 // Account / Profile
 // =========================================================
 Route::middleware(['auth'])->group(function () {
@@ -91,21 +91,21 @@ Route::middleware(['auth'])->group(function () {
     // =========================================================
     // Commercial account
     // =========================================================
-    Route::get('/commercial-account', [CommercialAccountController::class, 'show'])
-        ->name('commercial-account.show');
-
-    Route::get('/commercial-account/create', [CommercialAccountController::class, 'create'])
-        ->name('commercial-account.create');
-
-    Route::post('/commercial-account', [CommercialAccountController::class, 'store'])
-        ->name('commercial-account.store');
-
-    Route::get('/commercial-account/edit', [CommercialAccountController::class, 'edit'])
-        ->name('commercial-account.edit');
-
-    Route::put('/commercial-account', [CommercialAccountController::class, 'update'])
-        ->name('commercial-account.update');
-});*/
+//    Route::get('/commercial-account', [CommercialAccountController::class, 'show'])
+//        ->name('commercial-account.show');
+//
+//    Route::get('/commercial-account/create', [CommercialAccountController::class, 'create'])
+//        ->name('commercial-account.create');
+//
+//    Route::post('/commercial-account', [CommercialAccountController::class, 'store'])
+//        ->name('commercial-account.store');
+//
+//    Route::get('/commercial-account/edit', [CommercialAccountController::class, 'edit'])
+//        ->name('commercial-account.edit');
+//
+//    Route::put('/commercial-account', [CommercialAccountController::class, 'update'])
+//        ->name('commercial-account.update');
+});
 
 // =========================================================
 // Static pages

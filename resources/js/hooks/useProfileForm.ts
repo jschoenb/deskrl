@@ -16,16 +16,18 @@ import type {
 
 export function useProfileForm(user: UserFromBackend) {
     // ─── Name splitten ────────────────────────────────────────────────────────
-    const splitName = useMemo(() => {
-        const parts = user.name?.trim().split(/\s+/) ?? [];
-        return { firstName: parts[0] ?? '', lastName: parts.slice(1).join(' ') };
-    }, [user.name]);
+    const initialName = useMemo(() => {
+        return {
+            firstName: user.first_name ?? '',
+            lastName: user.last_name ?? '',
+        };
+    }, [user.first_name, user.last_name]);
 
     // ─── Initial States ───────────────────────────────────────────────────────
     const initialPersonal: PersonalFormData = useMemo(
         () => ({
-            firstName: splitName.firstName,
-            lastName: splitName.lastName,
+            firstName: initialName.firstName,
+            lastName: initialName.lastName,
             email: user.email ?? '',
             gender: user.gender ?? '',
             dateOfBirth: user.birthday ?? '',
@@ -38,7 +40,7 @@ export function useProfileForm(user: UserFromBackend) {
             company: user.company ?? '',
             aboutMe: user.about_me ?? '',
         }),
-        [splitName, user]
+        [initialName, user]
     );
 
     const initialAddress: AddressFormData = useMemo(

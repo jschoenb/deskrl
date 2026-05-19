@@ -1,8 +1,8 @@
-import { Link, usePage } from '@inertiajs/react';
 import React, { useState, useEffect } from "react";
 import { Home, Calendar, LayoutGrid, User, LogOut, Heart, Menu, X, Building2, Globe } from 'lucide-react';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import AuthModal from './AuthModal';
+import { Link, router, usePage } from '@inertiajs/react';
 
 export default function Header() {
     const { url, props } = usePage();
@@ -11,8 +11,22 @@ export default function Header() {
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const { favorites, clearFavorites } = useFavorites();
 
-    // Check if the logged-in user has the host role
-    const isHost = auth?.user?.role === 'host';
+    const isHost: boolean = auth?.user?.role === 'host';
+
+    const displayName = auth?.user
+        ? `${auth.user.first_name ?? ''} ${auth.user.last_name ?? ''}`.trim() || auth.user.email
+        : '';
+
+    const handleLogout = () => {
+        clearFavorites();
+        setIsMobileMenuOpen(false);
+
+        router.post('/logout', {}, {
+            replace: true,
+            preserveState: false,
+            preserveScroll: false,
+        });
+    };
 
     // Returns true if the given path matches the current URL.
     // Root path "/" requires an exact match to avoid false positives on "/bookings" etc.
@@ -125,17 +139,18 @@ export default function Header() {
                                     )}
                                     <Link href="/profile" className={navLinkClass('/profile')}>
                                         <User className="w-5 h-5" />
-                                        <span className="font-medium">{auth.user.name}</span>
+                                        <span className="font-medium">{displayName}</span>
                                     </Link>
-                                    <Link
-                                        href="/logout"
-                                        method="post"
-                                        as="button"
+                                    <button
+                                        // href="/logout"
+                                        // // method="post"
+                                        // as="button"
                                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
-                                        onClick={() => clearFavorites()}
+                                        // onClick={() => clearFavorites()}
+                                        onClick={handleLogout}
                                     >
                                         <LogOut className="w-5 h-5" />
-                                    </Link>
+                                    </button>
                                 </>
                             ) : (
                                 <button
@@ -235,18 +250,18 @@ export default function Header() {
                             )}
                             <Link href="/profile" className={mobileNavLinkClass('/profile')}>
                                 <User className="w-5 h-5" />
-                                <span className="font-semibold">{auth.user.name}</span>
+                                <span className="font-semibold">{displayName}</span>
                             </Link>
-                            <Link
-                                href="/logout"
-                                method="post"
-                                as="button"
+                            <button
+                                // href="/logout"
+                                // // method="post"
+                                // as="button"
                                 className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg text-gray-900 w-full text-left"
-                                onClick={() => clearFavorites()}
+                                onClick={handleLogout}
                             >
                                 <LogOut className="w-5 h-5" />
                                 <span className="font-semibold">Abmelden</span>
-                            </Link>
+                            </button>
                         </>
                     ) : (
                         // Not logged in – login button also closes the drawer first
