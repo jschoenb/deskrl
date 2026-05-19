@@ -10,6 +10,10 @@ use App\Http\Controllers\DeskrlUtilityController;
 // use App\Http\Controllers\SpecialAvailabilityController;
 // use App\Http\Controllers\BookingController;
 // use App\Http\Controllers\HostBookingController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CommercialAccountController;
+use App\Http\Controllers\AddressController;
 use App\Models\Deskrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,7 +22,7 @@ use Inertia\Inertia;
 // =========================================================
 // Home
 // =========================================================
-Route::get('/', function (Request $request) {
+/*Route::get('/', function (Request $request) {
     $deskrls = Deskrl::query()
         ->where('status', 'active')
         ->get();
@@ -26,7 +30,82 @@ Route::get('/', function (Request $request) {
     return Inertia::render('Home', [
         'deskrls' => $deskrls,
     ]);
+});*/
+Route::get('/', function (Request $request) {
+    $deskrls = Deskrl::query()
+        ->with([
+            'deskrlCategory',
+            'deskrlAddress.address',
+            'images',
+            'utilities',
+        ])
+        ->where('status', 'active')
+        ->get();
+
+    return Inertia::render('Home', [
+        'deskrls' => $deskrls,
+        'filters' => [
+            'search' => $request->input('search'),
+            'type' => $request->input('type'),
+            'date' => $request->input('date'),
+            'start_time' => $request->input('start_time'),
+            'end_time' => $request->input('end_time'),
+        ],
+    ]);
 });
+
+// =========================================================
+// Auth
+// =========================================================
+Route::get('/register', [AuthController::class, 'showRegister'])
+    ->name('register');
+
+Route::post('/register', [AuthController::class, 'register'])
+    ->name('register.store');
+
+Route::get('/login', [AuthController::class, 'showLogin'])
+    ->name('login');
+
+Route::post('/login', [AuthController::class, 'login'])
+    ->name('login.store');
+
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->name('logout');
+
+/*// =========================================================
+// Account / Profile
+// =========================================================
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [AccountController::class, 'show'])
+        ->name('account.show');
+
+    Route::get('/profile/edit', [AccountController::class, 'edit'])
+        ->name('account.edit');
+
+    Route::put('/profile', [AccountController::class, 'update'])
+        ->name('account.update');
+
+    Route::delete('/profile', [AccountController::class, 'destroy'])
+        ->name('account.destroy');
+
+    // =========================================================
+    // Commercial account
+    // =========================================================
+    Route::get('/commercial-account', [CommercialAccountController::class, 'show'])
+        ->name('commercial-account.show');
+
+    Route::get('/commercial-account/create', [CommercialAccountController::class, 'create'])
+        ->name('commercial-account.create');
+
+    Route::post('/commercial-account', [CommercialAccountController::class, 'store'])
+        ->name('commercial-account.store');
+
+    Route::get('/commercial-account/edit', [CommercialAccountController::class, 'edit'])
+        ->name('commercial-account.edit');
+
+    Route::put('/commercial-account', [CommercialAccountController::class, 'update'])
+        ->name('commercial-account.update');
+});*/
 
 // =========================================================
 // Static pages

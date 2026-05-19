@@ -2,7 +2,7 @@ import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { JSX, ReactNode } from 'react';
-import { createRoot } from "react-dom/client";
+import { createRoot } from 'react-dom/client';
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
 
 createInertiaApp({
@@ -25,8 +25,13 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
+        const pageProps = props.initialPage.props as any;
+        const isLoggedIn = !!pageProps.auth?.user;
+
         root.render(
+            <FavoritesProvider isLoggedIn={isLoggedIn}>
                 <App {...props} />
+            </FavoritesProvider>
         );
     },
 });
