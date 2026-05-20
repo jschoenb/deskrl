@@ -5,7 +5,7 @@ use App\Http\Controllers\DeskrlAddressController;
 use App\Http\Controllers\DeskrlController;
 use App\Http\Controllers\DeskrlImageController;
 use App\Http\Controllers\DeskrlUtilityController;
-// use App\Http\Controllers\FavoriteController;
+ use App\Http\Controllers\FavoriteController;
 // use App\Http\Controllers\SpecialDayPriceController;
 // use App\Http\Controllers\SpecialAvailabilityController;
 // use App\Http\Controllers\BookingController;
@@ -126,13 +126,37 @@ Route::middleware(['auth'])->group(function () {
 
     Route::put('/commercial-account', [CommercialAccountController::class, 'update'])
         ->name('commercial-account.update');
+
+
+    // =========================================================
+    // Favorites
+    // =========================================================
+
+    // Returns only the favorite Deskrl IDs of the logged-in account.
+    Route::get('/favorites/ids', [FavoriteController::class, 'ids'])
+        ->name('favorites.ids');
+
+    // Saves one Deskrl as favorite for the logged-in account.
+    Route::post('/deskrls/{deskrl}/favorite', [FavoriteController::class, 'store'])
+        ->name('deskrls.favorite.store');
+
+    // Removes one Deskrl from the favorites of the logged-in account.
+    Route::delete('/deskrls/{deskrl}/favorite', [FavoriteController::class, 'destroy'])
+        ->name('deskrls.favorite.destroy');
 });
+
+// =========================================================
+// Favorites
+// =========================================================
+
+// Shows the favorites page.
+Route::get('/favorites', [FavoriteController::class, 'index'])
+    ->name('favorites.index');
 
 // =========================================================
 // Static pages
 // =========================================================
 Route::get('/bookings', fn () => Inertia::render('Bookings'));
-Route::get('/favorites', fn () => Inertia::render('Favorites'));
 
 Route::get('/faq-user', fn () => Inertia::render('FaqUser'));
 Route::get('/cancellation', fn () => Inertia::render('Cancellation'));

@@ -2,69 +2,79 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Deskrl;
 use App\Models\Favorite;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class FavoriteController extends Controller
 {
     /**
-     * Liste aller Favoriten des eingeloggten Accounts.
-     * GET /favorites
+     * Shows the favorites page.
+     *
+     * The page receives all active Deskrls.
+     * The frontend filters them by the favorite IDs from FavoritesContext.
      */
     public function index()
     {
-        $favorites = Favorite::query()
-            ->where('user_id', Auth::id())
-            ->with(['deskrl' => function ($q) {
-                $q->with(['images', 'deskrlAddress', 'deskrlCategory']);
-            }])
-            ->latest()
+        $deskrls = Deskrl::query()
+            ->with([
+                'deskrlCategory',
+                'deskrlAddress.address',
+                'images',
+                'utilities',
+            ])
+            ->where('status', 'active')
             ->get();
 
-        return Inertia::render('Favorites/Index', [
-            'favorites' => $favorites,
+        return Inertia::render('Favorites', [
+            'deskrls' => $deskrls,
         ]);
     }
 
     /**
-     * Ein Deskrl als Favorit speichern.
-     * POST /favorites
+     * Returns only the favorite Deskrl IDs of the logged-in account.
      *
-     * Hinweis: Eure Kollegin hat listing_id -> deskrl_id umbenannt.
-     * Falls eure Migration noch listing_id nutzt, hier (und im Model
-     * Favorite::$fillable) entsprechend auf 'listing_id' zurückändern.
+     * This is used by FavoritesContext to initialize the favorite state.
      */
-    public function store(Request $request)
+    public function ids(Request $request)
     {
-        $validated = $request->validate([
-            'deskrl_id' => ['required', 'exists:deskrls,id'],
-        ]);
+        $favoriteIds = Favorite::query()
+            ->where('user_id', $request->user()->id)
+            ->pluck('deskrl_id');
 
-        // firstOrCreate verhindert doppelte Favoriten
-        Favorite::firstOrCreate([
-            'user_id'   => Auth::id(),
-            'deskrl_id' => $validated['deskrl_id'],
-        ]);
-
-        return redirect()->back();
+        return response()->json($favoriteIds);
     }
 
     /**
-     * Einen Favoriten wieder entfernen.
-     * DELETE /favorites/{favorite}
+     * Saves one Deskrl as favorite for the logged-in account.
      */
-    public function destroy(Favorite $favorite)
+    public function store(Request $request, Deskrl $deskrl)
     {
-        // Nur eigene Favoriten löschen
-        if ($favorite->user_id !== Auth::id()) {
-            abort(403);
-        }
+        Favorite::query()->firstOrCreate([
+            'user_id' => $request->user()->id,
+            'deskrl_id' => $deskrl->id,
+        ]);
 
-        $favorite->delete();
+        return response()->json([
+            'success' => true,
+            'deskrl_id' => $deskrl->id,
+        ]);
+    }
 
-        return redirect()->back();
+    /**
+     * Removes one Deskrl from the favorites of the logged-in account.
+     */
+    public function destroy(Request $request, Deskrl $deskrl)
+    {
+        Favorite::query()
+            ->where('user_id', $request->user()->id)
+            ->where('deskrl_id', $deskrl->id)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'deskrl_id' => $deskrl->id,
+        ]);
     }
 }
-
