@@ -88,6 +88,9 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/profile', [AccountController::class, 'update'])
         ->name('account.update');
 
+    Route::post('/profile/image', [AccountController::class, 'updateImage'])
+        ->name('account.image.update');
+
     Route::delete('/profile', [AccountController::class, 'destroy'])
         ->name('account.destroy');
 

@@ -1,7 +1,7 @@
 // resources/js/hooks/useProfileForm.ts
 
 // This hook contains the complete profile form logic.
-// It maps the new Laravel database structure to the existing profile form UI.
+// It maps the current Laravel database structure to the existing profile form UI.
 
 import { useCallback, useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
@@ -41,6 +41,16 @@ function formatDateForInput(value?: string | null): string {
     }
 
     return String(value).slice(0, 10);
+}
+
+// Normalizes Inertia validation errors so they can be shown next to form fields.
+function normalizeErrors(errors: Record<string, string | string[]>): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(errors).map(([key, value]) => [
+            key,
+            Array.isArray(value) ? value[0] : value,
+        ])
+    );
 }
 
 export function useProfileForm(user: UserFromBackend) {
@@ -156,6 +166,10 @@ export function useProfileForm(user: UserFromBackend) {
     const [business, setBusiness] = useState<BusinessFormData>(initialBusiness);
     const [isBillingSameAsAddress, setIsBillingSameAsAddress] = useState(initialBillingSameAsAddress);
 
+    // Store validation errors for address forms.
+    const [addressErrors, setAddressErrors] = useState<Record<string, string>>({});
+    const [billingErrors, setBillingErrors] = useState<Record<string, string>>({});
+
     // Update a single field in the personal form.
     const updatePersonal = useCallback(
         <K extends keyof PersonalFormData>(field: K, value: PersonalFormData[K]) =>
@@ -163,17 +177,79 @@ export function useProfileForm(user: UserFromBackend) {
         []
     );
 
-    // Update a single field in the main address form.
+    // Update a single field in the main address form and remove its error message.
     const updateAddress = useCallback(
-        <K extends keyof AddressFormData>(field: K, value: AddressFormData[K]) =>
-            setAddress((prev) => ({ ...prev, [field]: value })),
+        <K extends keyof AddressFormData>(field: K, value: AddressFormData[K]) => {
+            setAddress((prev) => ({ ...prev, [field]: value }));
+
+            setAddressErrors((prev) => {
+                const next = { ...prev };
+
+                if (field === 'countryId') {
+                    delete next.country_id;
+                }
+
+                if (field === 'houseNumber') {
+                    delete next.house_nr;
+                }
+
+                if (field === 'postalCode') {
+                    delete next.postal_code;
+                }
+
+                if (field === 'city') {
+                    delete next.city;
+                }
+
+                if (field === 'street') {
+                    delete next.street;
+                }
+
+                return next;
+            });
+        },
         []
     );
 
-    // Update a single field in the billing address form.
+    // Update a single field in the billing address form and remove its error message.
     const updateBilling = useCallback(
-        <K extends keyof BillingFormData>(field: K, value: BillingFormData[K]) =>
-            setBilling((prev) => ({ ...prev, [field]: value })),
+        <K extends keyof BillingFormData>(field: K, value: BillingFormData[K]) => {
+            setBilling((prev) => ({ ...prev, [field]: value }));
+
+            setBillingErrors((prev) => {
+                const next = { ...prev };
+
+                if (field === 'countryId') {
+                    delete next.country_id;
+                }
+
+                if (field === 'houseNumber') {
+                    delete next.house_nr;
+                }
+
+                if (field === 'postalCode') {
+                    delete next.postal_code;
+                }
+
+                if (field === 'city') {
+                    delete next.city;
+                }
+
+                if (field === 'street') {
+                    delete next.street;
+                }
+
+                if (field === 'billingCompany') {
+                    delete next.company_name;
+                }
+
+                if (field === 'billingVatNumber') {
+                    delete next.vat_nr;
+                }
+
+                return next;
+            });
+        },
         []
     );
 
@@ -200,8 +276,10 @@ export function useProfileForm(user: UserFromBackend) {
                 },
             },
             {
-                onSuccess: () => toast.success('Persönliche Informationen gespeichert.'),
-                onError: () => toast.error('Fehler beim Speichern.'),
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => toast.success('Persönliche Informationen wurden gespeichert.'),
+                onError: () => toast.error('Persönliche Informationen konnten nicht gespeichert werden.'),
             }
         );
     }, [personal]);
@@ -223,37 +301,15 @@ export function useProfileForm(user: UserFromBackend) {
             vat_nr: isBillingSameAsAddress ? billing.billingVatNumber || null : null,
         };
 
-        if (defaultAddressRelation?.address_id) {
-            router.put(`/addresses/${defaultAddressRelation.address_id}`, payload, {
-                onSuccess: () => {
-                    toast.success('Adresse gespeichert.');
-
-                    if (isBillingSameAsAddress) {
-                        setBilling((prev) => ({
-                            ...prev,
-                            country: address.country,
-                            countryId: address.countryId,
-                            street: address.street,
-                            houseNumber: address.houseNumber,
-                            staircase: address.staircase,
-                            apartment: address.apartment,
-                            door: address.door,
-                            postalCode: address.postalCode,
-                            city: address.city,
-                            state: address.state,
-                        }));
-                    }
-                },
-                onError: () => toast.error('Fehler beim Speichern.'),
-            });
-
-            return;
-        }
-
-        router.post('/addresses', payload, {
+        const options = {
+            preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
-                toast.success('Adresse gespeichert.');
+                setAddressErrors({});
+                toast.success('Adresse wurde gespeichert.');
 
+                // If billing address is the same as the main address,
+                // keep the local billing form in sync with the address form.
                 if (isBillingSameAsAddress) {
                     setBilling((prev) => ({
                         ...prev,
@@ -268,10 +324,22 @@ export function useProfileForm(user: UserFromBackend) {
                         city: address.city,
                         state: address.state,
                     }));
+
+                    setBillingErrors({});
                 }
             },
-            onError: () => toast.error('Fehler beim Speichern.'),
-        });
+            onError: (errors: Record<string, string | string[]>) => {
+                setAddressErrors(normalizeErrors(errors));
+                toast.error('Adresse konnte nicht gespeichert werden. Bitte prüfe die markierten Felder.');
+            },
+        };
+
+        if (defaultAddressRelation?.address_id) {
+            router.put(`/addresses/${defaultAddressRelation.address_id}`, payload, options);
+            return;
+        }
+
+        router.post('/addresses', payload, options);
     }, [address, billing, defaultAddressRelation, isBillingSameAsAddress]);
 
     // Save or update the billing address through the new AddressController structure.
@@ -291,19 +359,33 @@ export function useProfileForm(user: UserFromBackend) {
             vat_nr: billing.billingVatNumber || null,
         };
 
-        if (billingAddressRelation?.address_id) {
-            router.put(`/addresses/${billingAddressRelation.address_id}`, payload, {
-                onSuccess: () => toast.success('Rechnungsadresse gespeichert.'),
-                onError: () => toast.error('Fehler beim Speichern.'),
-            });
+        const options = {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setBillingErrors({});
 
+                // Keep the billing address section open after saving.
+                setIsBillingSameAsAddress(false);
+
+                toast.success('Rechnungsadresse wurde gespeichert.');
+            },
+            onError: (errors: Record<string, string | string[]>) => {
+                setBillingErrors(normalizeErrors(errors));
+
+                // Keep the billing address section open even if validation fails.
+                setIsBillingSameAsAddress(false);
+
+                toast.error('Rechnungsadresse konnte nicht gespeichert werden. Bitte prüfe die markierten Felder.');
+            },
+        };
+
+        if (billingAddressRelation?.address_id) {
+            router.put(`/addresses/${billingAddressRelation.address_id}`, payload, options);
             return;
         }
 
-        router.post('/addresses', payload, {
-            onSuccess: () => toast.success('Rechnungsadresse gespeichert.'),
-            onError: () => toast.error('Fehler beim Speichern.'),
-        });
+        router.post('/addresses', payload, options);
     }, [billing, billingAddressRelation]);
 
     // Save or update commercial account data.
@@ -316,41 +398,47 @@ export function useProfileForm(user: UserFromBackend) {
 
         if (user.commercial_account) {
             router.put('/commercial-account', payload, {
-                onSuccess: () => toast.success('Unternehmensdaten gespeichert.'),
-                onError: () => toast.error('Fehler beim Speichern.'),
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => toast.success('Unternehmensdaten wurden gespeichert.'),
+                onError: () => toast.error('Unternehmensdaten konnten nicht gespeichert werden.'),
             });
 
             return;
         }
 
         router.post('/commercial-account', payload, {
-            onSuccess: () => toast.success('Unternehmensdaten gespeichert.'),
-            onError: () => toast.error('Fehler beim Speichern.'),
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => toast.success('Unternehmensdaten wurden gespeichert.'),
+            onError: () => toast.error('Unternehmensdaten konnten nicht gespeichert werden.'),
         });
     }, [business, user.commercial_account]);
 
     // Reset personal form changes.
     const handleCancelPersonal = useCallback(() => {
         setPersonal(initialPersonal);
-        toast.info('Änderungen verworfen.');
+        toast.info('Änderungen wurden verworfen.');
     }, [initialPersonal]);
 
     // Reset main address form changes.
     const handleCancelAddress = useCallback(() => {
         setAddress(initialAddress);
-        toast.info('Änderungen verworfen.');
+        setAddressErrors({});
+        toast.info('Änderungen wurden verworfen.');
     }, [initialAddress]);
 
     // Reset billing address form changes.
     const handleCancelBilling = useCallback(() => {
         setBilling(initialBilling);
-        toast.info('Änderungen verworfen.');
+        setBillingErrors({});
+        toast.info('Änderungen wurden verworfen.');
     }, [initialBilling]);
 
     // Reset business form changes.
     const handleCancelBusiness = useCallback(() => {
         setBusiness(initialBusiness);
-        toast.info('Änderungen verworfen.');
+        toast.info('Änderungen wurden verworfen.');
     }, [initialBusiness]);
 
     return {
@@ -360,6 +448,10 @@ export function useProfileForm(user: UserFromBackend) {
         billing,
         business,
         isBillingSameAsAddress,
+
+        // Validation errors
+        addressErrors,
+        billingErrors,
 
         // Field update functions
         updatePersonal,

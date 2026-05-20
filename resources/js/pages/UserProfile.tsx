@@ -1,16 +1,16 @@
 import AppLayout from '@/Layouts/AppLayout';
-import { InertiaPage } from '@/types/inertia';
-import { Head } from '@inertiajs/react';
-import { useProfileForm } from '../hooks/useProfileForm';
-import { ProfileHeader } from './Profile/ProfileHeader';
-import { StatsGrid } from './Profile/StatsGrid';
-import { ProviderUpgrade } from './Profile/ProviderUpgrade';
-import { VerificationSection } from './Profile/VerificationSection';
-import { Section } from './Profile/Section';
-import { InputField } from './Profile/InputField';
-import { LanguageSelect } from './Profile/LanguageSelect';
-import { AddressFields } from './Profile/AddressFields';
-import type { UserFromBackend, VerificationStatus } from '../types/profile';
+import {InertiaPage} from '@/types/inertia';
+import {Head} from '@inertiajs/react';
+import {useProfileForm} from '@/hooks/useProfileForm';
+import {ProfileHeader} from './Profile/ProfileHeader';
+import {StatsGrid} from './Profile/StatsGrid';
+import {ProviderUpgrade} from './Profile/ProviderUpgrade';
+import {VerificationSection} from './Profile/VerificationSection';
+import {Section} from './Profile/Section';
+import {InputField} from './Profile/InputField';
+import {LanguageSelect} from './Profile/LanguageSelect';
+import {AddressFields} from './Profile/AddressFields';
+import type {UserFromBackend, VerificationStatus} from '@/types/profile';
 
 interface UserProfileProps {
     account: UserFromBackend;
@@ -21,10 +21,11 @@ interface UserProfileProps {
     };
 }
 
-const UserProfile: InertiaPage<UserProfileProps> = ({ account, stats }) => {
+const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
     const {
         personal, address, billing, business,
         isBillingSameAsAddress,
+        addressErrors, billingErrors,
         updatePersonal, updateAddress, updateBilling, updateBusiness,
         setIsBillingSameAsAddress,
         handleSavePersonal, handleCancelPersonal,
@@ -37,17 +38,17 @@ const UserProfile: InertiaPage<UserProfileProps> = ({ account, stats }) => {
 
     const isHost =
         role === 'private_host' ||
-        role === 'commercial_host' ||
-        role === 'admin';
+        role === 'commercial_host';
 
     const isBusinessHost = role === 'commercial_host';
 
     const verificationStatus: VerificationStatus =
         account.email_verified ? 'verified' : 'unverified';
 
+    // @ts-ignore
     return (
         <>
-            <Head title="Mein Profil" />
+            <Head title="Mein Profil"/>
 
             <div className="min-h-screen bg-gray-50">
                 <div className="mx-auto max-w-4xl px-4 py-12">
@@ -62,16 +63,18 @@ const UserProfile: InertiaPage<UserProfileProps> = ({ account, stats }) => {
                         }}
                     />
 
-                    <StatsGrid role={role} stats={stats} />
+                    <StatsGrid role={role} stats={stats}/>
 
-                    <ProviderUpgrade role={role} />
+                    <ProviderUpgrade role={role}/>
 
-                    <VerificationSection
-                        user={{
-                            role: role,
-                            verificationStatus: verificationStatus,
-                        }}
-                    />
+                    {isHost && (
+                        <VerificationSection
+                            user={{
+                                role: role,
+                                verificationStatus: verificationStatus,
+                            }}
+                        />
+                    )}
 
                     {!isBusinessHost && (
                         <Section
@@ -182,6 +185,7 @@ const UserProfile: InertiaPage<UserProfileProps> = ({ account, stats }) => {
                             data={address}
                             onChange={updateAddress}
                             idPrefix="address"
+                            errors={addressErrors}
                         />
 
                         <div className="border-t border-gray-200 pt-6">
@@ -191,9 +195,9 @@ const UserProfile: InertiaPage<UserProfileProps> = ({ account, stats }) => {
 
                             <div className="flex gap-4">
                                 {[
-                                    { value: true, label: 'Ja' },
-                                    { value: false, label: 'Nein' },
-                                ].map(({ value, label }) => (
+                                    {value: true, label: 'Ja'},
+                                    {value: false, label: 'Nein'},
+                                ].map(({value, label}) => (
                                     <button
                                         key={label}
                                         type="button"
@@ -237,6 +241,7 @@ const UserProfile: InertiaPage<UserProfileProps> = ({ account, stats }) => {
                                 data={billing}
                                 onChange={updateBilling}
                                 idPrefix="billing"
+                                errors={billingErrors}
                             />
                         </Section>
                     )}
