@@ -60,16 +60,43 @@ export default function Header() {
                 : 'hover:bg-gray-100 text-gray-900'
         }`;
 
-    // Language selector button – Globe icon + label, no functionality yet (TODO)
-    const LanguageButton = () => (
-        <button
-            onClick={() => { /* TODO: implement language switching */ }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 font-medium"
-        >
-            <Globe className="w-5 h-5" />
-            <span>Sprachauswahl</span>
-        </button>
-    );
+// Language dropdown for the header.
+// Currently only German is available. More languages can be added later.
+    const LanguageDropdown = () => {
+        const [isOpen, setIsOpen] = useState(false);
+        const currentLanguage = 'DE';
+
+        return (
+            <div className="relative">
+                <button
+                    type="button"
+                    onClick={() => setIsOpen((open) => !open)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 font-medium"
+                    aria-haspopup="listbox"
+                    aria-expanded={isOpen}
+                >
+                    <Globe className="w-5 h-5" />
+                    <span>{currentLanguage}</span>
+                    <span className="text-xs text-gray-400">▾</span>
+                </button>
+
+                {isOpen && (
+                    <div className="absolute right-0 mt-2 w-40 rounded-xl border border-gray-200 bg-white shadow-lg z-50 overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => setIsOpen(false)}
+                            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-[#5555ff] bg-[#f5f5ff]"
+                        >
+                            <span>Deutsch</span>
+                            <span>DE</span>
+                        </button>
+
+                        {/* Add more languages here later, for example English. */}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <>
@@ -120,7 +147,7 @@ export default function Header() {
                             )}
 
                             {/* Language selector */}
-                            <LanguageButton />
+                            <LanguageDropdown />
 
                             {/* Divider between nav links and auth area */}
                             <div className="w-px h-6 bg-gray-200 mx-2" />
@@ -231,7 +258,7 @@ export default function Header() {
 
                     {/* Language selector in mobile drawer */}
                     <div className="px-2">
-                        <LanguageButton />
+                        <LanguageDropdown />
                     </div>
 
                     <div className="border-t border-gray-200 my-2" />
