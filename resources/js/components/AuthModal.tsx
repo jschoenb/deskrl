@@ -81,7 +81,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                 </button>
 
                 <div className="text-center mb-8">
-                    <div className="text-5xl mb-4">😊</div>
+{/*                    <div className="text-5xl mb-4">😊</div>*/}
 
                     <h2 className="text-3xl font-bold mb-2 text-gray-900">
                         {mode === 'login' ? 'Willkommen zurück!' : 'Jetzt registrieren'}
