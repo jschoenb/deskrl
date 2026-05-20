@@ -1,19 +1,15 @@
-// resources/js/pages/Profile/AddressFields.tsx
-
 // Reusable address form for the main address and billing address.
-// The component is adapted to the current database schema:
-// addresses.country_id, street, house_nr, postal_code, city, state, stair, door.
+// The component only edits address fields, but it can receive extended form data like BillingFormData.
 
-import { AddressFormData, BillingFormData } from '../../types/profile';
+import { AddressFormData, BillingFormData } from '@/types/profile';
 import { CountrySelect } from './CountrySelect';
 import { InputField } from './InputField';
 
+type AddressFieldKey = keyof AddressFormData;
+
 interface AddressFieldsProps {
     data: AddressFormData | BillingFormData;
-    onChange: <K extends keyof (AddressFormData | BillingFormData)>(
-        field: K,
-        value: (AddressFormData | BillingFormData)[K]
-    ) => void;
+    onChange: (field: AddressFieldKey, value: string | number | null) => void;
     idPrefix?: string;
     errors?: Record<string, string>;
 }
@@ -26,13 +22,18 @@ export function AddressFields({
                               }: AddressFieldsProps) {
     const prefix = idPrefix ? `${idPrefix}-` : '';
 
-    // Set country name and a default country_id for Austria.
-    // Later this should be replaced by a real country dropdown with IDs.
+    // Updates one address field and keeps the typing simple for both address and billing forms.
+    const handleChange = (field: AddressFieldKey, value: string | number | null) => {
+        onChange(field, value);
+    };
+
+    // Sets the visible country text and a temporary default country ID.
+    // Later this should be replaced by a real country dropdown using database IDs.
     const handleCountryChange = (value: string) => {
-        onChange('country', value);
+        handleChange('country', value);
 
         if (value && !data.countryId) {
-            onChange('countryId', 1);
+            handleChange('countryId', 1);
         }
     };
 
@@ -64,7 +65,7 @@ export function AddressFields({
                         id={`${prefix}street`}
                         label="Straße *"
                         value={data.street}
-                        onChange={(value) => onChange('street', value)}
+                        onChange={(value) => handleChange('street', value)}
                         placeholder="z. B. Musterstraße"
                     />
 
@@ -80,7 +81,7 @@ export function AddressFields({
                         id={`${prefix}houseNumber`}
                         label="Hausnummer *"
                         value={data.houseNumber}
-                        onChange={(value) => onChange('houseNumber', value)}
+                        onChange={(value) => handleChange('houseNumber', value)}
                         placeholder="z. B. 12"
                     />
 
@@ -99,7 +100,7 @@ export function AddressFields({
                         id={`${prefix}staircase`}
                         label="Stiege (optional)"
                         value={data.staircase}
-                        onChange={(value) => onChange('staircase', value)}
+                        onChange={(value) => handleChange('staircase', value)}
                         placeholder="z. B. 1"
                     />
 
@@ -115,7 +116,7 @@ export function AddressFields({
                         id={`${prefix}apartment`}
                         label="Top (optional)"
                         value={data.apartment}
-                        onChange={(value) => onChange('apartment', value)}
+                        onChange={(value) => handleChange('apartment', value)}
                         placeholder="z. B. 4"
                     />
                 </div>
@@ -123,9 +124,9 @@ export function AddressFields({
                 <div>
                     <InputField
                         id={`${prefix}door`}
-                        label="Tür (optional)"
+                        label="Tür / Top (optional)"
                         value={data.door}
-                        onChange={(value) => onChange('door', value)}
+                        onChange={(value) => handleChange('door', value)}
                         placeholder="z. B. A"
                     />
 
@@ -141,7 +142,7 @@ export function AddressFields({
                         id={`${prefix}postalCode`}
                         label="PLZ *"
                         value={data.postalCode}
-                        onChange={(value) => onChange('postalCode', value)}
+                        onChange={(value) => handleChange('postalCode', value)}
                         placeholder="z. B. 1010"
                     />
 
@@ -160,7 +161,7 @@ export function AddressFields({
                         id={`${prefix}city`}
                         label="Stadt *"
                         value={data.city}
-                        onChange={(value) => onChange('city', value)}
+                        onChange={(value) => handleChange('city', value)}
                         placeholder="z. B. Wien"
                     />
 
@@ -176,7 +177,7 @@ export function AddressFields({
                         id={`${prefix}state`}
                         label="Bundesland (optional)"
                         value={data.state}
-                        onChange={(value) => onChange('state', value)}
+                        onChange={(value) => handleChange('state', value)}
                         placeholder="z. B. Wien"
                     />
 

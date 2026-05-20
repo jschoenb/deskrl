@@ -239,7 +239,7 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
 
                             <AddressFields
                                 data={billing}
-                                onChange={updateBilling}
+                                onChange={(field, value) => updateBilling(field, value)}
                                 idPrefix="billing"
                                 errors={billingErrors}
                             />
