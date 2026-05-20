@@ -89,8 +89,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
                     <p className="text-gray-600">
                         {mode === 'login'
-                            ? 'Melden Sie sich an, um fortzufahren'
-                            : 'Erstellen Sie Ihr Deskrl-Konto'}
+                            ? 'Melde dich an, um fortzufahren'
+                            : 'Erstelle dein Deskrl-Konto'}
                     </p>
                 </div>
 
@@ -158,7 +158,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                             type="email"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
-                            placeholder="ihre@email.com"
+                            placeholder="deine@email.com"
                             className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${
                                 errors.email
                                     ? 'border-red-500'

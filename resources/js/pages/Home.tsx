@@ -299,11 +299,8 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
     const [visibleCount, setVisibleCount] = useState(6);
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
     const [amenities, setAmenities] = useState<string[]>([]);
-    const [showLoginPopup, setShowLoginPopup] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
-    const [loginEmail, setLoginEmail] = useState('');
-    const [loginPassword, setLoginPassword] = useState('');
 
     const locationRef = useRef<HTMLDivElement>(null);
     const dateRef = useRef<HTMLDivElement>(null);
@@ -567,7 +564,10 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
                                     <DeskrlCard
                                         key={deskrl.id}
                                         deskrl={deskrl}
-                                        onLoginRequired={() => setShowLoginPopup(true)}
+                                        onLoginRequired={() => {
+                                            setAuthModalMode('login');
+                                            setShowAuthModal(true);
+                                        }}
                                     />
                                 ))}
                             </div>
@@ -606,7 +606,7 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
                 )}
             </div>
 
-            {showLoginPopup && (
+{/*            {showLoginPopup && (
                 <>
                     <div
                         className="fixed inset-0 bg-black/40 z-40"
@@ -680,7 +680,7 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
                         </div>
                     </div>
                 </>
-            )}
+            )}*/}
 
             {filterOpen && (
                 <>
