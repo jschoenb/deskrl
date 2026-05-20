@@ -11,6 +11,7 @@ use App\Http\Controllers\DeskrlUtilityController;
 // use App\Http\Controllers\BookingController;
 // use App\Http\Controllers\HostBookingController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CommercialAccountController;
 use App\Http\Controllers\AddressController;
 use App\Models\Deskrl;
@@ -72,9 +73,12 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout');
 
 // =========================================================
-// Account / Profile
+// Account / Profile, Addresses, Commercial Account
 // =========================================================
 Route::middleware(['auth'])->group(function () {
+    // =========================================================
+    // Account / Profile
+    // =========================================================
     Route::get('/profile', [AccountController::class, 'show'])
         ->name('account.show');
 
@@ -88,22 +92,37 @@ Route::middleware(['auth'])->group(function () {
         ->name('account.destroy');
 
     // =========================================================
+    // Account addresses
+    // =========================================================
+    Route::get('/addresses', [AddressController::class, 'index'])
+        ->name('addresses.index');
+
+    Route::post('/addresses', [AddressController::class, 'store'])
+        ->name('addresses.store');
+
+    Route::put('/addresses/{address}', [AddressController::class, 'update'])
+        ->name('addresses.update');
+
+    Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])
+        ->name('addresses.destroy');
+
+    // =========================================================
     // Commercial account
     // =========================================================
-//    Route::get('/commercial-account', [CommercialAccountController::class, 'show'])
-//        ->name('commercial-account.show');
-//
-//    Route::get('/commercial-account/create', [CommercialAccountController::class, 'create'])
-//        ->name('commercial-account.create');
-//
-//    Route::post('/commercial-account', [CommercialAccountController::class, 'store'])
-//        ->name('commercial-account.store');
-//
-//    Route::get('/commercial-account/edit', [CommercialAccountController::class, 'edit'])
-//        ->name('commercial-account.edit');
-//
-//    Route::put('/commercial-account', [CommercialAccountController::class, 'update'])
-//        ->name('commercial-account.update');
+    Route::get('/commercial-account', [CommercialAccountController::class, 'show'])
+        ->name('commercial-account.show');
+
+    Route::get('/commercial-account/create', [CommercialAccountController::class, 'create'])
+        ->name('commercial-account.create');
+
+    Route::post('/commercial-account', [CommercialAccountController::class, 'store'])
+        ->name('commercial-account.store');
+
+    Route::get('/commercial-account/edit', [CommercialAccountController::class, 'edit'])
+        ->name('commercial-account.edit');
+
+    Route::put('/commercial-account', [CommercialAccountController::class, 'update'])
+        ->name('commercial-account.update');
 });
 
 // =========================================================

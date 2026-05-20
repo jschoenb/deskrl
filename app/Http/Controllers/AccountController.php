@@ -19,13 +19,20 @@ class AccountController extends Controller
      */
     public function show(Request $request)
     {
-        // Gets the currently authenticated account.
-        $account = $request->user();
+        // Load the authenticated account with all relations needed by the profile page.
+        $account = $request->user()->load([
+            'languages',
+            'accountAddresses.address.country',
+            'commercialAccount',
+        ]);
 
-        // Returns the Inertia React component for the account profile page.
-        // The account data is passed to React as a prop.
         return Inertia::render('UserProfile', [
             'account' => $account,
+            'stats' => [
+                'totalBookings' => $account->bookings()->count(),
+                'visitedPlaces' => 0,
+                'favorites' => $account->favorites()->count(),
+            ],
         ]);
     }
 
@@ -37,12 +44,20 @@ class AccountController extends Controller
      */
     public function edit(Request $request)
     {
-        // Gets the currently authenticated account.
-        $account = $request->user();
+        // The edit page uses the same data as the show page.
+        $account = $request->user()->load([
+            'languages',
+            'accountAddresses.address.country',
+            'commercialAccount',
+        ]);
 
-        // Returns the Inertia React component for editing the account.
         return Inertia::render('UserProfile', [
             'account' => $account,
+            'stats' => [
+                'totalBookings' => $account->bookings()->count(),
+                'visitedPlaces' => 0,
+                'favorites' => $account->favorites()->count(),
+            ],
         ]);
     }
 
