@@ -24,7 +24,7 @@ class AccountController extends Controller
 
         // Returns the Inertia React component for the account profile page.
         // The account data is passed to React as a prop.
-        return Inertia::render('Account/Show', [
+        return Inertia::render('UserProfile', [
             'account' => $account,
         ]);
     }
@@ -41,7 +41,7 @@ class AccountController extends Controller
         $account = $request->user();
 
         // Returns the Inertia React component for editing the account.
-        return Inertia::render('Account/Edit', [
+        return Inertia::render('UserProfile', [
             'account' => $account,
         ]);
     }

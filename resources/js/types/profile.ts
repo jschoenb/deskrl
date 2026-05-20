@@ -12,7 +12,8 @@ export type Gender = 'male' | 'female' | 'diverse' | 'undisclosed';
 // Spiegelt exakt die Felder wider, die der Controller mitgibt.
 export interface UserFromBackend {
     id: number;
-    name: string;
+    first_name: string;
+    last_name: string;
     email: string;
     role: UserRole;
     gender?: Gender | null;
