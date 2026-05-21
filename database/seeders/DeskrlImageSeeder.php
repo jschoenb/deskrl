@@ -22,34 +22,38 @@ class DeskrlImageSeeder extends Seeder
             return;
         }
 
-        foreach ($deskrls as $deskrl) {
-            $images = [
-                [
-                    'path' => 'images/deskrls/deskrl-' . $deskrl->id . '-main.jpg',
-                    'is_main' => true,
-                    'sort_order' => 1,
-                ],
-                [
-                    'path' => 'images/deskrls/deskrl-' . $deskrl->id . '-detail-1.jpg',
-                    'is_main' => false,
-                    'sort_order' => 2,
-                ],
-                [
-                    'path' => 'images/deskrls/deskrl-' . $deskrl->id . '-detail-2.jpg',
-                    'is_main' => false,
-                    'sort_order' => 3,
-                ],
-            ];
+        // External image URLs are used for the MVP so no local image files are required.
+        $imageSets = [
+            [
+                'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80',
+                'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=80',
+                'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=1200&q=80',
+            ],
+            [
+                'https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=1200&q=80',
+                'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=80',
+                'https://images.unsplash.com/photo-1604328698692-f76ea9498e76?w=1200&q=80',
+            ],
+            [
+                'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200&q=80',
+                'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&q=80',
+                'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&q=80',
+            ],
+        ];
 
-            foreach ($images as $image) {
+        foreach ($deskrls as $index => $deskrl) {
+            // Reuse image sets if there are more Deskrls than image sets.
+            $selectedImages = $imageSets[$index % count($imageSets)];
+
+            foreach ($selectedImages as $imageIndex => $imageUrl) {
                 DeskrlImage::query()->updateOrCreate(
                     [
                         'deskrl_id' => $deskrl->id,
-                        'path' => $image['path'],
+                        'path' => $imageUrl,
                     ],
                     [
-                        'is_main' => $image['is_main'],
-                        'sort_order' => $image['sort_order'],
+                        'is_main' => $imageIndex === 0,
+                        'sort_order' => $imageIndex + 1,
                     ]
                 );
             }

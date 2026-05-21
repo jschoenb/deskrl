@@ -60,7 +60,7 @@ class DeskrlController extends Controller
     public function show(Deskrl $deskrl): Response
     {
         $deskrl->load([
-            'hostAccount',
+            'hostAccount.commercialAccount',
             'deskrlCategory',
             'images',
             'utilities.utilityCategory',

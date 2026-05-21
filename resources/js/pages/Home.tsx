@@ -12,7 +12,7 @@ import {
     CoffeeCup, Home as HomeIcon, SnowFlake, Healthcare,
     Parking, EvPlugCharging, Tree, Building
 } from 'iconoir-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
 
 const PLACEHOLDER_IMAGES: Record<string, string> = {
     default: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
@@ -237,7 +237,30 @@ function DeskrlCard({ deskrl, onLoginRequired }: { deskrl: Deskrl; onLoginRequir
     const fallbackImage = getPlaceholderByCategory(category);
     const utilities = deskrl.utilities ?? [];
 
-    const handleFavorite = () => {
+    /**
+     * Opens the detail page for the selected Deskrl.
+     */
+    const openDetailPage = () => {
+        router.visit(`/deskrls/${deskrl.id}`);
+    };
+
+    /**
+     * Allows keyboard users to open the detail page with Enter or Space.
+     */
+    const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openDetailPage();
+        }
+    };
+
+    /**
+     * Handles the favorite button without opening the detail page.
+     */
+    const handleFavorite = (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        event.preventDefault();
+
         if (!isLoggedIn) {
             onLoginRequired();
             return;
@@ -247,7 +270,14 @@ function DeskrlCard({ deskrl, onLoginRequired }: { deskrl: Deskrl; onLoginRequir
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow hover:shadow-xl transition-all overflow-hidden flex flex-col border border-gray-100 group">
+        <div
+            role="link"
+            tabIndex={0}
+            onClick={openDetailPage}
+            onKeyDown={handleCardKeyDown}
+            aria-label={`Details zu ${title} öffnen`}
+            className="bg-white rounded-2xl shadow hover:shadow-xl transition-all overflow-hidden flex flex-col border border-gray-100 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#5555ff] focus:ring-offset-2"
+        >
             <div className="relative h-56 overflow-hidden">
                 <img
                     src={imageFromDb}
