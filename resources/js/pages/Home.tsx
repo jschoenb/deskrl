@@ -343,11 +343,9 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], utilities = [], filters = 
         const arr = Array.isArray(raw) ? raw : String(raw).split(',');
         return arr.map(v => Number(v)).filter(v => !Number.isNaN(v));
     });
-    const [showLoginPopup, setShowLoginPopup] = useState(false);
+    /*const [showLoginPopup, setShowLoginPopup] = useState(false);*/
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
-    const [loginEmail, setLoginEmail] = useState('');
-    const [loginPassword, setLoginPassword] = useState('');
 
     const locationRef = useRef<HTMLDivElement>(null);
     const dateRef = useRef<HTMLDivElement>(null);
@@ -642,7 +640,10 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], utilities = [], filters = 
                                     <DeskrlCard
                                         key={deskrl.id}
                                         deskrl={deskrl}
-                                        onLoginRequired={() => setShowLoginPopup(true)}
+                                        onLoginRequired={() => {
+                                            setAuthModalMode('login');
+                                            setShowAuthModal(true);
+                                        }}
                                     />
                                 ))}
                             </div>
@@ -681,7 +682,7 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], utilities = [], filters = 
                 )}
             </div>
 
-            {showLoginPopup && (
+{/*            {showLoginPopup && (
                 <>
                     <div
                         className="fixed inset-0 bg-black/40 z-40"
@@ -755,7 +756,7 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], utilities = [], filters = 
                         </div>
                     </div>
                 </>
-            )}
+            )}*/}
 
             {filterOpen && (
                 <>

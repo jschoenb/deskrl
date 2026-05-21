@@ -1,47 +1,54 @@
-// ─── Pages/Profile/VerificationSection.tsx ───────────────────────────────────
-// GROSSER FIX: Im Figma-Code gab es 3 fast identische Verification-Blöcke
-// (für user, private provider, business provider). Das war ~300 Zeilen duplizierter Code.
-// Jetzt: 1 Komponente mit rollenspezifischer Konfiguration.
+// Verification section for provider accounts.
+// Regular users and admins do not need verification in the current MVP.
 
 import { Award, CheckCircle, Clock, FileText, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import type { UserRole, VerificationStatus } from '../../types/profile';
+import type { AccountType, VerificationStatus } from '@/types/profile';
 
 interface VerificationSectionProps {
     user: {
-        role: UserRole;
+        role: AccountType;
         verificationStatus: VerificationStatus;
     };
 }
 
-// Rollenspezifische Texte
+// Role-specific verification configuration.
+// Normal users and admins return null and therefore do not see this section.
 const ROLE_CONFIG = {
-    user: {
-        title: 'Persönliche Verifizierung',
-        recommendedText:
-            'Erhöhe dein Vertrauen bei Anbieter:innen, indem du dein Profil verifizierst.',
-        verifiedText: 'Dein Profil ist verifiziert. Buchungsanfragen werden bevorzugt behandelt.',
-        benefits: ['Höheres Vertrauen', 'Bevorzugte Buchungen', 'Vertrauens-Badge'],
-        isRequired: false,
-    },
-    host: {
+    user: null,
+
+    private_host: {
         title: 'Anbieter-Verifizierung',
         recommendedText:
-            'Verifiziere dein Anbieter-Profil für höhere Sichtbarkeit und mehr Buchungen.',
+            'Verifiziere dein Anbieter-Profil für höhere Sichtbarkeit und mehr Vertrauen bei Buchungen.',
         verifiedText:
-            'Dein Anbieter-Profil ist verifiziert. Deine Angebote werden bevorzugt angezeigt.',
+            'Dein Anbieter-Profil ist verifiziert. Deine Angebote werden vertrauenswürdiger angezeigt.',
         benefits: ['Höheres Vertrauen', 'Bessere Sichtbarkeit', 'Vertrauens-Badge'],
         isRequired: false,
     },
-    admin: null, // Admins brauchen keine Verifizierung
+
+    commercial_host: {
+        title: 'Unternehmens-Verifizierung',
+        recommendedText:
+            'Verifiziere dein Unternehmensprofil, damit Nutzer:innen deine Räume mit mehr Vertrauen buchen können.',
+        verifiedText:
+            'Dein Unternehmensprofil ist verifiziert.',
+        benefits: ['Höheres Vertrauen', 'Professioneller Auftritt', 'Vertrauens-Badge'],
+        isRequired: true,
+    },
+
+    admin: null,
 } as const;
 
 export function VerificationSection({ user }: VerificationSectionProps) {
     const config = ROLE_CONFIG[user.role];
-    // Admins überspringen
-    if (!config) return null;
+
+    // Regular users and admins do not need verification.
+    if (!config) {
+        return null;
+    }
 
     const status = user.verificationStatus;
 
@@ -62,13 +69,15 @@ export function VerificationSection({ user }: VerificationSectionProps) {
     );
 }
 
-// ─── Sub-Komponenten ──────────────────────────────────────────────────────────
-
 function VerifiedState({ text }: { text: string }) {
     return (
         <div className="rounded-xl border border-green-200 bg-green-50 p-6">
             <div className="flex items-start gap-4">
-                <CheckCircle className="mt-1 h-8 w-8 flex-shrink-0 text-green-600" aria-hidden="true" />
+                <CheckCircle
+                    className="mt-1 h-8 w-8 flex-shrink-0 text-green-600"
+                    aria-hidden="true"
+                />
+
                 <div>
                     <h3 className="mb-2 text-lg font-bold">Verifiziert ✓</h3>
                     <p className="text-gray-700">{text}</p>
@@ -82,7 +91,11 @@ function PendingState() {
     return (
         <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6">
             <div className="flex items-start gap-4">
-                <Clock className="mt-1 h-8 w-8 flex-shrink-0 text-yellow-600" aria-hidden="true" />
+                <Clock
+                    className="mt-1 h-8 w-8 flex-shrink-0 text-yellow-600"
+                    aria-hidden="true"
+                />
+
                 <div>
                     <h3 className="mb-2 text-lg font-bold">Verifizierung ausstehend</h3>
                     <p className="text-gray-700">
@@ -105,16 +118,23 @@ function UnverifiedState({ text, benefits, wasRejected }: UnverifiedStateProps) 
     const [docType, setDocType] = useState('personalausweis');
     const [isUploading, setIsUploading] = useState(false);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    // Store the selected file locally before upload.
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
         if (file.size > 10 * 1024 * 1024) {
             toast.error('Datei zu groß. Maximale Größe: 10 MB');
             return;
         }
+
         setSelectedFile(file);
     };
 
+    // Send the verification document to the backend.
     const handleUpload = () => {
         if (!selectedFile) {
             toast.error('Bitte wähle zuerst eine Datei aus.');
@@ -122,11 +142,16 @@ function UnverifiedState({ text, benefits, wasRejected }: UnverifiedStateProps) 
         }
 
         setIsUploading(true);
+
         router.post(
             '/profile/verify',
-            { document: selectedFile, document_type: docType },
+            {
+                document: selectedFile,
+                document_type: docType,
+            },
             {
                 forceFormData: true,
+                preserveScroll: true,
                 onSuccess: () => {
                     toast.success('Dokument eingereicht. Wir melden uns bald.');
                     setSelectedFile(null);
@@ -145,20 +170,27 @@ function UnverifiedState({ text, benefits, wasRejected }: UnverifiedStateProps) 
                 </div>
             )}
 
-            {/* Info-Box */}
             <div className="mb-6 rounded-xl border border-[#5555ff]/20 bg-[#f5f5ff] p-6">
                 <div className="flex items-start gap-4">
-                    <Award className="mt-1 h-8 w-8 flex-shrink-0 text-[#5555ff]" aria-hidden="true" />
+                    <Award
+                        className="mt-1 h-8 w-8 flex-shrink-0 text-[#5555ff]"
+                        aria-hidden="true"
+                    />
+
                     <div>
                         <h3 className="mb-2 text-lg font-bold">Verifizierung empfohlen</h3>
                         <p className="mb-4 text-gray-700">{text}</p>
+
                         <div className="flex flex-wrap gap-2">
                             {benefits.map((benefit) => (
                                 <span
                                     key={benefit}
                                     className="flex items-center gap-1 rounded-lg bg-white px-3 py-1 text-sm"
                                 >
-                                    <CheckCircle className="h-4 w-4 text-green-600" aria-hidden="true" />
+                                    <CheckCircle
+                                        className="h-4 w-4 text-green-600"
+                                        aria-hidden="true"
+                                    />
                                     {benefit}
                                 </span>
                             ))}
@@ -167,18 +199,17 @@ function UnverifiedState({ text, benefits, wasRejected }: UnverifiedStateProps) 
                 </div>
             </div>
 
-            {/* Upload-Formular */}
             <div className="space-y-4">
                 <div className="space-y-2">
                     <label htmlFor="doc-type" className="text-sm font-semibold text-gray-700">
                         Dokumenttyp
                     </label>
+
                     <select
                         id="doc-type"
                         value={docType}
-                        onChange={(e) => setDocType(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-3
-                                   focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
+                        onChange={(event) => setDocType(event.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
                     >
                         <option value="personalausweis">Personalausweis</option>
                         <option value="reisepass">Reisepass</option>
@@ -189,14 +220,17 @@ function UnverifiedState({ text, benefits, wasRejected }: UnverifiedStateProps) 
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700">Dokument hochladen</label>
-                    <label className="flex cursor-pointer items-center justify-center gap-3 rounded-xl
-                                      border-2 border-dashed border-gray-300 px-4 py-6
-                                      transition-colors hover:border-[#5555ff]">
+                    <label className="text-sm font-semibold text-gray-700">
+                        Dokument hochladen
+                    </label>
+
+                    <label className="flex cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 px-4 py-6 transition-colors hover:border-[#5555ff]">
                         <FileText className="h-5 w-5 text-gray-400" aria-hidden="true" />
+
                         <span className="text-gray-600">
                             {selectedFile ? selectedFile.name : 'Datei auswählen…'}
                         </span>
+
                         <input
                             type="file"
                             accept=".pdf,.jpg,.jpeg,.png"
@@ -205,17 +239,18 @@ function UnverifiedState({ text, benefits, wasRejected }: UnverifiedStateProps) 
                             aria-label="Verifizierungsdokument auswählen"
                         />
                     </label>
-                    <p className="text-xs text-gray-500">Erlaubte Formate: PDF, JPG, PNG – max. 10 MB</p>
+
+                    <p className="text-xs text-gray-500">
+                        Erlaubte Formate: PDF, JPG, PNG – max. 10 MB
+                    </p>
                 </div>
 
                 <button
+                    type="button"
                     onClick={handleUpload}
                     disabled={!selectedFile || isUploading}
                     aria-busy={isUploading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3
-                               font-semibold transition-colors
-                               enabled:bg-[#5555ff] enabled:text-white enabled:hover:bg-[#4444ee]
-                               disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 font-semibold transition-colors enabled:bg-[#5555ff] enabled:text-white enabled:hover:bg-[#4444ee] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                 >
                     <Upload className="h-5 w-5" aria-hidden="true" />
                     {isUploading ? 'Wird eingereicht…' : 'Einreichen & verifizieren'}

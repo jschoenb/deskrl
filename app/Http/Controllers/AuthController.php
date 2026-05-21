@@ -133,7 +133,7 @@ class AuthController extends Controller
         // This prevents the old token from being reused.
         $request->session()->regenerateToken();
 
-        // Redirects the user to the login page after logout.
-        return redirect()->route('login');
+        // Redirects the user to the home page after logout.
+        return redirect()->route('home');
     }
 }

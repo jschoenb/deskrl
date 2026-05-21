@@ -67,7 +67,7 @@ class AddressController extends Controller
         ]);
 
         return redirect()
-            ->route('addresses.index')
+            ->back()
             ->with('success', 'Adresse wurde gespeichert.');
     }
 
@@ -120,7 +120,7 @@ class AddressController extends Controller
         ]);
 
         return redirect()
-            ->route('addresses.index')
+            ->back()
             ->with('success', 'Adresse wurde aktualisiert.');
     }
 
@@ -146,7 +146,7 @@ class AddressController extends Controller
         }
 
         return redirect()
-            ->route('addresses.index')
+            ->back()
             ->with('success', 'Adresse wurde gelöscht.');
     }
 
@@ -158,21 +158,46 @@ class AddressController extends Controller
      */
     private function validateAddressData(Request $request): array
     {
-        return $request->validate([
-            'country_id' => ['required', 'exists:countries,id'],
-            'state' => ['nullable', 'string', 'max:255'],
-            'city' => ['required', 'string', 'max:255'],
-            'street' => ['required', 'string', 'max:255'],
-            'house_nr' => ['required', 'string', 'max:50'],
-            'postal_code' => ['required', 'string', 'max:50'],
-            'stair' => ['nullable', 'string', 'max:50'],
-            'door' => ['nullable', 'string', 'max:50'],
+        return $request->validate(
+            [
+                'country_id' => ['required', 'exists:countries,id'],
+                'state' => ['nullable', 'string', 'max:255'],
+                'city' => ['required', 'string', 'max:255'],
+                'street' => ['required', 'string', 'max:255'],
+                'house_nr' => ['required', 'string', 'max:50'],
+                'postal_code' => ['required', 'string', 'max:50'],
+                'stair' => ['nullable', 'string', 'max:50'],
+                'door' => ['nullable', 'string', 'max:50'],
 
-            'is_default' => ['nullable', 'boolean'],
-            'company_name' => ['nullable', 'string', 'max:255'],
-            'vat_nr' => ['nullable', 'string', 'max:255'],
-            'is_billing_address' => ['nullable', 'boolean'],
-        ]);
+                'is_default' => ['nullable', 'boolean'],
+                'company_name' => ['nullable', 'string', 'max:255'],
+                'vat_nr' => ['nullable', 'string', 'max:255'],
+                'is_billing_address' => ['nullable', 'boolean'],
+            ],
+            [
+                'country_id.required' => 'Bitte wähle ein Land aus.',
+                'country_id.exists' => 'Das ausgewählte Land ist ungültig.',
+
+                'city.required' => 'Bitte gib eine Stadt ein.',
+                'city.max' => 'Die Stadt darf maximal 255 Zeichen lang sein.',
+
+                'street.required' => 'Bitte gib eine Straße ein.',
+                'street.max' => 'Die Straße darf maximal 255 Zeichen lang sein.',
+
+                'house_nr.required' => 'Bitte gib eine Hausnummer ein.',
+                'house_nr.max' => 'Die Hausnummer darf maximal 50 Zeichen lang sein.',
+
+                'postal_code.required' => 'Bitte gib eine Postleitzahl ein.',
+                'postal_code.max' => 'Die Postleitzahl darf maximal 50 Zeichen lang sein.',
+
+                'state.max' => 'Das Bundesland darf maximal 255 Zeichen lang sein.',
+                'stair.max' => 'Die Stiege darf maximal 50 Zeichen lang sein.',
+                'door.max' => 'Die Türnummer darf maximal 50 Zeichen lang sein.',
+
+                'company_name.max' => 'Der Firmenname darf maximal 255 Zeichen lang sein.',
+                'vat_nr.max' => 'Die UID-Nummer darf maximal 255 Zeichen lang sein.',
+            ]
+        );
     }
 
     /**

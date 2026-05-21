@@ -7,6 +7,7 @@ use App\Http\Controllers\DeskrlImageController;
 use App\Http\Controllers\DeskrlUtilityController;
 use App\Models\Utility;
 // use App\Http\Controllers\FavoriteController;
+ use App\Http\Controllers\FavoriteController;
 // use App\Http\Controllers\SpecialDayPriceController;
 // use App\Http\Controllers\SpecialAvailabilityController;
 // use App\Http\Controllers\BookingController;
@@ -108,8 +109,7 @@ Route::get('/', function (Request $request) {
             'amenities' => $request->input('amenities'),
         ],
     ]);
-});
-
+})->name('home');
 
 // =========================================================
 // Auth
@@ -129,10 +129,13 @@ Route::post('/login', [AuthController::class, 'login'])
 Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout');
 
-/*// =========================================================
-// Account / Profile
+// =========================================================
+// Account / Profile, Addresses, Commercial Account
 // =========================================================
 Route::middleware(['auth'])->group(function () {
+    // =========================================================
+    // Account / Profile
+    // =========================================================
     Route::get('/profile', [AccountController::class, 'show'])
         ->name('account.show');
 
@@ -142,8 +145,26 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/profile', [AccountController::class, 'update'])
         ->name('account.update');
 
+    Route::post('/profile/image', [AccountController::class, 'updateImage'])
+        ->name('account.image.update');
+
     Route::delete('/profile', [AccountController::class, 'destroy'])
         ->name('account.destroy');
+
+    // =========================================================
+    // Account addresses
+    // =========================================================
+    Route::get('/addresses', [AddressController::class, 'index'])
+        ->name('addresses.index');
+
+    Route::post('/addresses', [AddressController::class, 'store'])
+        ->name('addresses.store');
+
+    Route::put('/addresses/{address}', [AddressController::class, 'update'])
+        ->name('addresses.update');
+
+    Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])
+        ->name('addresses.destroy');
 
     // =========================================================
     // Commercial account
@@ -162,13 +183,37 @@ Route::middleware(['auth'])->group(function () {
 
     Route::put('/commercial-account', [CommercialAccountController::class, 'update'])
         ->name('commercial-account.update');
-});*/
+
+
+    // =========================================================
+    // Favorites
+    // =========================================================
+
+    // Returns only the favorite Deskrl IDs of the logged-in account.
+    Route::get('/favorites/ids', [FavoriteController::class, 'ids'])
+        ->name('favorites.ids');
+
+    // Saves one Deskrl as favorite for the logged-in account.
+    Route::post('/deskrls/{deskrl}/favorite', [FavoriteController::class, 'store'])
+        ->name('deskrls.favorite.store');
+
+    // Removes one Deskrl from the favorites of the logged-in account.
+    Route::delete('/deskrls/{deskrl}/favorite', [FavoriteController::class, 'destroy'])
+        ->name('deskrls.favorite.destroy');
+});
+
+// =========================================================
+// Favorites
+// =========================================================
+
+// Shows the favorites page.
+Route::get('/favorites', [FavoriteController::class, 'index'])
+    ->name('favorites.index');
 
 // =========================================================
 // Static pages
 // =========================================================
 Route::get('/bookings', fn () => Inertia::render('Bookings'));
-Route::get('/favorites', fn () => Inertia::render('Favorites'));
 
 Route::get('/faq-user', fn () => Inertia::render('FaqUser'));
 Route::get('/cancellation', fn () => Inertia::render('Cancellation'));

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -19,13 +20,20 @@ class AccountController extends Controller
      */
     public function show(Request $request)
     {
-        // Gets the currently authenticated account.
-        $account = $request->user();
+        // Load the authenticated account with all relations needed by the profile page.
+        $account = $request->user()->load([
+            'languages',
+            'accountAddresses.address.country',
+            'commercialAccount',
+        ]);
 
-        // Returns the Inertia React component for the account profile page.
-        // The account data is passed to React as a prop.
-        return Inertia::render('Account/Show', [
+        return Inertia::render('UserProfile', [
             'account' => $account,
+            'stats' => [
+                'totalBookings' => $account->bookings()->count(),
+                'visitedPlaces' => 0,
+                'favorites' => $account->favorites()->count(),
+            ],
         ]);
     }
 
@@ -37,12 +45,20 @@ class AccountController extends Controller
      */
     public function edit(Request $request)
     {
-        // Gets the currently authenticated account.
-        $account = $request->user();
+        // The edit page uses the same data as the show page.
+        $account = $request->user()->load([
+            'languages',
+            'accountAddresses.address.country',
+            'commercialAccount',
+        ]);
 
-        // Returns the Inertia React component for editing the account.
-        return Inertia::render('Account/Edit', [
+        return Inertia::render('UserProfile', [
             'account' => $account,
+            'stats' => [
+                'totalBookings' => $account->bookings()->count(),
+                'visitedPlaces' => 0,
+                'favorites' => $account->favorites()->count(),
+            ],
         ]);
     }
 
@@ -103,6 +119,44 @@ class AccountController extends Controller
             ->route('account.show')
             ->with('success', 'Account wurde aktualisiert.');
     }
+
+    /**
+     * Updates the profile image of the currently logged-in account.
+     *
+     * The uploaded image is stored in the public storage disk.
+     * Only the image path is saved in the accounts table.
+     */
+    public function updateImage(Request $request)
+    {
+        // Gets the currently authenticated account.
+        $account = $request->user();
+
+        // Validates the uploaded profile image.
+        $request->validate([
+            'profile_image' => ['required', 'image', 'max:4096'],
+        ]);
+
+        // Deletes the old profile image from storage if it exists.
+        if (
+            $account->profile_image &&
+            Storage::disk('public')->exists($account->profile_image)
+        ) {
+            Storage::disk('public')->delete($account->profile_image);
+        }
+
+        // Stores the new image in storage/app/public/profile_images.
+        $path = $request->file('profile_image')->store('profile_images', 'public');
+
+        // Saves only the image path in the database.
+        $account->update([
+            'profile_image' => $path,
+        ]);
+
+        return redirect()
+            ->route('account.show')
+            ->with('success', 'Profilbild wurde aktualisiert.');
+    }
+
 
     /**
      * Deletes or deactivates the currently logged-in account.
