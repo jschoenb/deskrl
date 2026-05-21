@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import React, {ReactNode, useMemo, useState} from 'react';
 import {
     ArrowLeft,
     Bike,
@@ -22,6 +22,9 @@ import {
 import { toast } from 'sonner';
 import { DatePicker } from '@/components/DatePicker';
 import AuthModal from '@/components/AuthModal';
+import AppLayout from "@/Layouts/AppLayout";
+
+import About from "@/pages/About";
 
 /**
  * Localized fields can either be plain strings or translation objects.
@@ -868,3 +871,8 @@ export default function Show({ deskrl }: Props) {
         </div>
     );
 }
+/**
+ * Wraps the Deskrl detail page with the global app layout.
+ * The layout is responsible for rendering shared elements like header and footer.
+ */
+Show.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
