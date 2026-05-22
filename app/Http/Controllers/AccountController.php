@@ -17,6 +17,7 @@ class AccountController extends Controller
      * The account is loaded from the authenticated session.
      * Related data such as addresses, languages and commercial account
      * can also be loaded here if needed for the profile page.
+     * Test
      */
     public function show(Request $request)
     {
