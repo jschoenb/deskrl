@@ -74,7 +74,7 @@ class BookingController extends Controller
             'from'               => ['required', 'date', 'after:now'],
             'until'              => ['required', 'date', 'after:from'],
             'price_rate'         => ['required', 'in:hourly,half_day,daily,weekly,monthly'],
-            'billing_address_id' => ['required', 'exists:addresses,id'],
+            'billing_address_id' => ['nullable', 'exists:addresses,id'],
         ]);
 
         $from  = Carbon::parse($validated['from']);
@@ -145,18 +145,18 @@ class BookingController extends Controller
         $booking = Booking::create([
             'user_id'            => Auth::id(),
             'deskrl_id'          => $deskrl->id,
-            'billing_address_id' => $validated['billing_address_id'],
+            'billing_address_id' => $validated['billing_address_id'] ?? null,
             'from'               => $from,
             'until'              => $until,
             'booking_date'       => now(),
-            'price_rate'         => $price,
+            'price_rate'         => $validated['price_rate'],
             'price'              => $price,
-            // instant_bookable → direkt confirmed, sonst pending (Host muss bestätigen)
             'status'             => $deskrl->instant_bookable ? 'confirmed' : 'pending',
             'payment_status'     => 'unpaid',
         ]);
 
-        return redirect()->route('bookings.show', $booking);
+//        return redirect()->route('bookings.show', $booking);
+        return redirect()->back()->with('success', 'Buchungsanfrage wurde gesendet.');
     }
 
     /**

@@ -10,7 +10,7 @@ use App\Models\Utility;
  use App\Http\Controllers\FavoriteController;
 // use App\Http\Controllers\SpecialDayPriceController;
 // use App\Http\Controllers\SpecialAvailabilityController;
-// use App\Http\Controllers\BookingController;
+ use App\Http\Controllers\BookingController;
 // use App\Http\Controllers\HostBookingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AccountController;
@@ -200,6 +200,15 @@ Route::middleware(['auth'])->group(function () {
     // Removes one Deskrl from the favorites of the logged-in account.
     Route::delete('/deskrls/{deskrl}/favorite', [FavoriteController::class, 'destroy'])
         ->name('deskrls.favorite.destroy');
+
+    // =========================================================
+    // Bookings
+    // =========================================================
+
+    Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
+    Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+    Route::post('/deskrls/{deskrl}/bookings', [BookingController::class, 'store'])->name('bookings.store');
+    Route::patch('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
 });
 
 // =========================================================
