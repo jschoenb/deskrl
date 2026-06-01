@@ -11,29 +11,32 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->dropColumn('price_rate');
-        });
+        if (Schema::hasColumn('bookings', 'price_rate')) {
+            Schema::table('bookings', function (Blueprint $table) {
+                $table->dropColumn('price_rate');
+            });
+        }
 
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->enum('price_rate', [
-                'hourly',
-                'half_day',
-                'daily',
-                'weekly',
-                'monthly',
-            ])->after('booking_date');
-        });
+        if (!Schema::hasColumn('bookings', 'price_rate')) {
+            Schema::table('bookings', function (Blueprint $table) {
+                $table->enum('price_rate', [
+                    'hourly',
+                    'half_day',
+                    'daily',
+                    'weekly',
+                    'monthly',
+                ])->after('booking_date');
+            });
+        }
     }
 
-    /**
-     * Revert bookings.price_rate back to decimal.
-     */
     public function down(): void
     {
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->dropColumn('price_rate');
-        });
+        if (Schema::hasColumn('bookings', 'price_rate')) {
+            Schema::table('bookings', function (Blueprint $table) {
+                $table->dropColumn('price_rate');
+            });
+        }
 
         Schema::table('bookings', function (Blueprint $table) {
             $table->decimal('price_rate', 10, 2)->after('booking_date');

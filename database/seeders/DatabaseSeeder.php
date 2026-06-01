@@ -37,6 +37,8 @@ class DatabaseSeeder extends Seeder
 
             FavoriteSeeder::class,
             BookingSeeder::class,
+
+            TestScenarioSeeder::class,
         ]);
     }
 }
