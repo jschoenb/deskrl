@@ -157,6 +157,32 @@ class AccountController extends Controller
             ->with('success', 'Profilbild wurde aktualisiert.');
     }
 
+    /**
+     * Upgrades the currently logged-in account to a host account.
+     *
+     * For the MVP, the commercial verification upload is not implemented yet.
+     * The account type is updated directly so the provider view can be tested.
+     */
+    public function becomeProvider(Request $request)
+    {
+        // Gets the currently authenticated account.
+        $account = $request->user();
+
+        // Validates the selected provider type.
+        $validated = $request->validate([
+            'provider_type' => ['required', 'string', 'in:private_host,commercial_host'],
+        ]);
+
+        // Updates the account type so the frontend can show the correct provider profile.
+        $account->update([
+            'account_type' => $validated['provider_type'],
+        ]);
+
+        return redirect()
+            ->route('account.show')
+            ->with('success', 'Dein Anbieterprofil wurde aktiviert.');
+    }
+
 
     /**
      * Deletes or deactivates the currently logged-in account.

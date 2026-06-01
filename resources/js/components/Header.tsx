@@ -3,15 +3,23 @@ import { Home, Calendar, LayoutGrid, User, LogOut, Heart, Menu, X, Building2, Gl
 import { useFavorites } from '@/contexts/FavoritesContext';
 import AuthModal from './AuthModal';
 import { Link, router, usePage } from '@inertiajs/react';
+import { CommercialVerificationModal } from '@/pages/Profile/CommercialVerificationModal';
 
 export default function Header() {
     const { url, props } = usePage();
     const { auth } = props as any;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isCommercialVerificationModalOpen, setIsCommercialVerificationModalOpen] = useState(false);
     const { favorites, clearFavorites } = useFavorites();
 
-    const isHost: boolean = auth?.user?.role === 'host';
+    // Check whether the logged-in account already has a host role.
+    const accountType = auth?.user?.account_type ?? auth?.user?.role;
+
+    const isHost: boolean =
+        accountType === 'private_host' ||
+        accountType === 'commercial_host' ||
+        accountType === 'host';
 
     const displayName = auth?.user
         ? `${auth.user.first_name ?? ''} ${auth.user.last_name ?? ''}`.trim() || auth.user.email
@@ -156,13 +164,17 @@ export default function Header() {
                             {auth?.user ? (
                                 <>
                                     {!isHost && (
-                                        <Link
-                                            href="/become-provider"
-                                            className="flex items-center gap-2 px-4 py-2 bg-[#e63cff] hover:bg-[#d12ee6] text-white rounded-lg transition-colors font-semibold"
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsMobileMenuOpen(false);
+                                                setIsCommercialVerificationModalOpen(true);
+                                            }}
+                                            className="flex items-center gap-3 px-4 py-3 bg-[#e63cff] hover:bg-[#d12ee6] text-white rounded-lg transition-colors font-semibold"
                                         >
                                             <Building2 className="w-5 h-5" />
                                             <span>Werde Anbieter</span>
-                                        </Link>
+                                        </button>
                                     )}
                                     <Link href="/profile" className={navLinkClass('/profile')}>
                                         <User className="w-5 h-5" />
@@ -267,13 +279,14 @@ export default function Header() {
                         <>
                             {/* "Become a provider" CTA in mobile drawer – hidden for existing hosts */}
                             {!isHost && (
-                                <Link
-                                    href="/become-provider"
-                                    className="flex items-center gap-3 px-4 py-3 bg-[#e63cff] hover:bg-[#d12ee6] text-white rounded-lg transition-colors font-semibold"
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCommercialVerificationModalOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-[#e63cff] hover:bg-[#d12ee6] text-white rounded-lg transition-colors font-semibold"
                                 >
                                     <Building2 className="w-5 h-5" />
                                     <span>Werde Anbieter</span>
-                                </Link>
+                                </button>
                             )}
                             <Link href="/profile" className={mobileNavLinkClass('/profile')}>
                                 <User className="w-5 h-5" />
@@ -302,6 +315,12 @@ export default function Header() {
                     )}
                 </div>
             </div>
+
+            {/* Provider upgrade modal */}
+            <CommercialVerificationModal
+                isOpen={isCommercialVerificationModalOpen}
+                onClose={() => setIsCommercialVerificationModalOpen(false)}
+            />
 
             {/* ── Auth modal (login / register) ───────────────────────────── */}
             <AuthModal
