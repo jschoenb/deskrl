@@ -1,8 +1,5 @@
-// ─── Pages/Profile/InputField.tsx ────────────────────────────────────────────
-// Kleine Verbesserungen gegenüber deiner Version:
-// - htmlFor + id für Barrierefreiheit (Screen Reader, Klick auf Label)
-// - aria-required für Pflichtfelder
-// - disabled-State
+// Reusable input field for profile forms.
+// The component keeps labels, accessibility attributes and styling consistent.
 
 interface InputFieldProps {
     label: string;
@@ -25,27 +22,32 @@ export function InputField({
                                disabled = false,
                                id,
                            }: InputFieldProps) {
-    // Fallback-ID aus Label ableiten wenn nicht angegeben
+    // Generate a fallback ID from the label when no custom ID is provided.
     const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
     return (
         <div className="space-y-2">
             <label htmlFor={fieldId} className="text-sm font-semibold text-gray-600">
                 {label}
-                {required && <span className="ml-1 text-red-500" aria-hidden="true">*</span>}
+
+                {/* Mark required fields visually without changing the label text. */}
+                {required && (
+                    <span className="ml-1 text-red-500" aria-hidden="true">
+                        *
+                    </span>
+                )}
             </label>
+
             <input
                 id={fieldId}
                 type={type}
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
+                onChange={(event) => onChange(event.target.value)}
                 placeholder={placeholder}
                 required={required}
                 disabled={disabled}
                 aria-required={required}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 transition-colors
-                           focus:outline-none focus:ring-2 focus:ring-[#5555ff]
-                           disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5555ff] disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
             />
         </div>
     );
