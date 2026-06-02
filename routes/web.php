@@ -169,6 +169,20 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/become-provider', [AccountController::class, 'becomeProvider'])
         ->name('account.become-provider');
 
+
+    // =========================================================
+    // Provider placeholder pages
+    // =========================================================
+    Route::get('/provider', function () {
+        return Inertia::render('Provider/ProviderDashboard');
+    })->name('provider.dashboard');
+
+    Route::get('/provider/bookings', function () {
+        return Inertia::render('Provider/ProviderBookings');
+    })->name('provider.bookings');
+
+
+
     // =========================================================
     // Commercial account
     // =========================================================
@@ -186,7 +200,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::put('/commercial-account', [CommercialAccountController::class, 'update'])
         ->name('commercial-account.update');
-
 
     // =========================================================
     // Favorites

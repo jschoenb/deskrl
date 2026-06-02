@@ -25,7 +25,7 @@ import AuthModal from '@/components/AuthModal';
 import AppLayout from "@/Layouts/AppLayout";
 import {useFavorites} from '@/contexts/FavoritesContext';
 
-import About from "@/pages/About";
+import About from "@/Pages/About";
 
 /**
  * Localized fields can either be plain strings or translation objects.

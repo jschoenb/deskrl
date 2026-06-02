@@ -1,6 +1,7 @@
+/*
 import { Link } from '@inertiajs/react';
 import {BrowserRouter, Route, Routes} from "react-router";
-import Users_old from "@/pages/Users_old";
+import Users_old from "@/Pages/Users_old";
 import React from "react";
 
 type Props = {
@@ -19,3 +20,4 @@ export default function Welcome({ children }: Props) {
         </div>
     );
 }
+*/
