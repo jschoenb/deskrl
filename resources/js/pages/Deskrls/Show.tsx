@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import {Link, usePage} from '@inertiajs/react';
 import React, {ReactNode, useMemo, useState} from 'react';
 import {
     ArrowLeft,
@@ -19,10 +19,11 @@ import {
     Users,
     X,
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { DatePicker } from '@/components/DatePicker';
+import {toast} from 'sonner';
+import {DatePicker} from '@/components/DatePicker';
 import AuthModal from '@/components/AuthModal';
 import AppLayout from "@/Layouts/AppLayout";
+import {useFavorites} from '@/contexts/FavoritesContext';
 
 import About from "@/pages/About";
 
@@ -282,7 +283,23 @@ function getUtilityIcon(utilityName: string) {
     return Check;
 }
 
-export default function Show({ deskrl }: Props) {
+export default function Show({deskrl}: Props) {
+    const {props} = usePage();
+    const {auth} = props as any;
+
+    // Read the current login state from the shared Inertia props.
+    const isLoggedIn = Boolean(auth?.user);
+
+    // Only regular users should save Deskrls as favorites in the MVP.
+    const accountType = auth?.user?.account_type ?? auth?.user?.role ?? 'guest';
+    const isRegularUser = accountType === 'user';
+
+    // Access the global favorites state from FavoritesContext.
+    const {toggleFavorite, isFavorited} = useFavorites();
+
+    // Check whether this Deskrl is already saved as a favorite.
+    const isCurrentDeskrlFavorited = isFavorited(deskrl.id);
+
     /**
      * Stores the currently selected image index for gallery and lightbox.
      */
@@ -360,11 +377,11 @@ export default function Show({ deskrl }: Props) {
      * Empty prices are filtered out so only existing prices are displayed.
      */
     const priceOptions = [
-        { label: 'Stunde', value: formatPrice(deskrl.price_per_hour) },
-        { label: 'Halbtag', value: formatPrice(deskrl.price_per_half_day) },
-        { label: 'Tag', value: formatPrice(deskrl.price_per_day) },
-        { label: 'Woche', value: formatPrice(deskrl.price_per_week) },
-        { label: 'Monat', value: formatPrice(deskrl.price_per_month) },
+        {label: 'Stunde', value: formatPrice(deskrl.price_per_hour)},
+        {label: 'Halbtag', value: formatPrice(deskrl.price_per_half_day)},
+        {label: 'Tag', value: formatPrice(deskrl.price_per_day)},
+        {label: 'Woche', value: formatPrice(deskrl.price_per_week)},
+        {label: 'Monat', value: formatPrice(deskrl.price_per_month)},
     ].filter(price => price.value);
 
     /**
@@ -430,11 +447,31 @@ export default function Show({ deskrl }: Props) {
     };
 
     /**
-     * Placeholder handler for favorites.
-     * Later this can call the FavoriteController through Inertia.
+     * Handles favorite actions for the Deskrl detail page.
+     * Guests are asked to log in, regular users save the Deskrl through FavoritesContext.
      */
-    const handleFavoriteClick = () => {
-        toast.info('Favoriten-Funktion wird später angebunden.');
+    const handleFavoriteClick = async () => {
+        if (!isLoggedIn) {
+            setShowAuthModal(true);
+            return;
+        }
+
+        if (!isRegularUser) {
+            toast.info('Favoriten können aktuell nur von Nutzer:innen gespeichert werden.');
+            return;
+        }
+
+        try {
+            await toggleFavorite(deskrl.id);
+
+            toast.success(
+                isCurrentDeskrlFavorited
+                    ? 'Deskrl wurde aus deinen Gemerkten entfernt.'
+                    : 'Deskrl wurde zu deinen Gemerkten hinzugefügt.',
+            );
+        } catch {
+            toast.error('Favorit konnte nicht gespeichert werden.');
+        }
     };
 
     /**
@@ -458,7 +495,7 @@ export default function Show({ deskrl }: Props) {
                         className="absolute right-6 top-6 text-white hover:text-gray-300"
                         aria-label="Lightbox schließen"
                     >
-                        <X className="h-8 w-8" />
+                        <X className="h-8 w-8"/>
                     </button>
 
                     <button
@@ -467,7 +504,7 @@ export default function Show({ deskrl }: Props) {
                         className="absolute left-6 text-white hover:text-gray-300"
                         aria-label="Vorheriges Bild"
                     >
-                        <ChevronLeft className="h-12 w-12" />
+                        <ChevronLeft className="h-12 w-12"/>
                     </button>
 
                     <img
@@ -482,7 +519,7 @@ export default function Show({ deskrl }: Props) {
                         className="absolute right-6 text-white hover:text-gray-300"
                         aria-label="Nächstes Bild"
                     >
-                        <ChevronRight className="h-12 w-12" />
+                        <ChevronRight className="h-12 w-12"/>
                     </button>
 
                     <div className="absolute bottom-6 text-lg text-white">
@@ -494,7 +531,7 @@ export default function Show({ deskrl }: Props) {
             <div className="mx-auto max-w-7xl px-4 py-8">
                 {/* Back link to overview/search page */}
                 <Link href="/" className="mb-6 inline-flex items-center gap-2 text-gray-600 hover:text-[#5555ff]">
-                    <ArrowLeft className="h-5 w-5" />
+                    <ArrowLeft className="h-5 w-5"/>
                     Zurück zur Suche
                 </Link>
 
@@ -502,7 +539,8 @@ export default function Show({ deskrl }: Props) {
                 <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
                     <div>
                         {category?.name && (
-                            <span className="mb-3 inline-block rounded-full bg-[#f4f3ff] px-4 py-1 text-sm font-semibold text-[#5555ff]">
+                            <span
+                                className="mb-3 inline-block rounded-full bg-[#f4f3ff] px-4 py-1 text-sm font-semibold text-[#5555ff]">
                                 {category.name}
                             </span>
                         )}
@@ -540,19 +578,20 @@ export default function Show({ deskrl }: Props) {
                                 onClick={() => setShowShareMenu(!showShareMenu)}
                                 className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-semibold hover:border-[#5555ff]"
                             >
-                                <Share2 className="h-5 w-5" />
+                                <Share2 className="h-5 w-5"/>
                                 Teilen
                             </button>
 
                             {/* Share dropdown menu */}
                             {showShareMenu && (
-                                <div className="absolute right-0 top-full z-10 mt-2 min-w-[200px] rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
+                                <div
+                                    className="absolute right-0 top-full z-10 mt-2 min-w-[200px] rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
                                     <button
                                         type="button"
                                         onClick={() => handleShare('whatsapp')}
                                         className="flex w-full items-center gap-3 px-4 py-2 hover:bg-gray-50"
                                     >
-                                        <MessageCircle className="h-5 w-5" />
+                                        <MessageCircle className="h-5 w-5"/>
                                         WhatsApp
                                     </button>
 
@@ -561,7 +600,7 @@ export default function Show({ deskrl }: Props) {
                                         onClick={() => handleShare('email')}
                                         className="flex w-full items-center gap-3 px-4 py-2 hover:bg-gray-50"
                                     >
-                                        <Mail className="h-5 w-5" />
+                                        <Mail className="h-5 w-5"/>
                                         E-Mail
                                     </button>
 
@@ -570,7 +609,7 @@ export default function Show({ deskrl }: Props) {
                                         onClick={() => handleShare('copy')}
                                         className="flex w-full items-center gap-3 px-4 py-2 hover:bg-gray-50"
                                     >
-                                        <Share2 className="h-5 w-5" />
+                                        <Share2 className="h-5 w-5"/>
                                         Link kopieren
                                     </button>
                                 </div>
@@ -580,10 +619,16 @@ export default function Show({ deskrl }: Props) {
                         <button
                             type="button"
                             onClick={handleFavoriteClick}
-                            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-semibold hover:border-[#e63cff] hover:text-[#e63cff]"
+                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold transition-colors ${
+                                isCurrentDeskrlFavorited
+                                    ? 'border-[#e63cff] bg-[#fff1fb] text-[#e63cff]'
+                                    : 'border-gray-200 bg-white hover:border-[#e63cff] hover:text-[#e63cff]'
+                            }`}
                         >
-                            <Heart className="h-5 w-5" />
-                            Merken
+                            <Heart
+                                className={`h-5 w-5 ${isCurrentDeskrlFavorited ? 'fill-[#e63cff] text-[#e63cff]' : ''}`}
+                            />
+                            {isCurrentDeskrlFavorited ? 'Gemerkt' : 'Merken'}
                         </button>
                     </div>
                 </div>
@@ -625,7 +670,8 @@ export default function Show({ deskrl }: Props) {
                         ))}
                     </div>
                 ) : (
-                    <div className="mb-10 flex h-[360px] items-center justify-center rounded-3xl border-2 border-dashed border-red-300 bg-red-50 text-center">
+                    <div
+                        className="mb-10 flex h-[360px] items-center justify-center rounded-3xl border-2 border-dashed border-red-300 bg-red-50 text-center">
                         <div>
                             <p className="text-xl font-bold text-red-700">Keine Bilder vorhanden</p>
                             <p className="mt-2 text-sm text-red-600">
@@ -645,13 +691,13 @@ export default function Show({ deskrl }: Props) {
                                 <div className="border-b border-gray-200 pb-8">
                                     <div className="flex items-center gap-5">
                                         <div className="flex h-12 w-12 items-center justify-center text-[#5555ff]">
-                                            <Users className="h-7 w-7" />
+                                            <Users className="h-7 w-7"/>
                                         </div>
 
                                         <div>
                                             <p className="text-sm text-gray-500 md:text-base">Maximale Personenzahl</p>
                                             <p className="text-xl font-bold text-gray-800">
-                                            Bis zu {deskrl.capacity} Personen
+                                                Bis zu {deskrl.capacity} Personen
                                             </p>
                                         </div>
                                     </div>
@@ -680,7 +726,7 @@ export default function Show({ deskrl }: Props) {
                                                 <div key={group.categoryName}>
                                                     {/* Utility category headline */}
                                                     <div className="mb-5 flex items-center gap-3">
-                                                        <CategoryIcon className="h-6 w-6 text-[#5555ff]" />
+                                                        <CategoryIcon className="h-6 w-6 text-[#5555ff]"/>
                                                         <h3 className="text-lg font-bold text-gray-950 md:text-xl">
                                                             {group.categoryName}
                                                         </h3>
@@ -697,8 +743,9 @@ export default function Show({ deskrl }: Props) {
                                                                     key={utility.id}
                                                                     className="flex items-center gap-4 rounded-2xl bg-[#f4f3ff] px-4 py-4"
                                                                 >
-                                                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#5555ff] text-white">
-                                                                        <UtilityIcon className="h-5 w-5" />
+                                                                    <div
+                                                                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#5555ff] text-white">
+                                                                        <UtilityIcon className="h-5 w-5"/>
                                                                     </div>
 
                                                                     <span
@@ -746,9 +793,10 @@ export default function Show({ deskrl }: Props) {
                             </p>
 
                             {/* Static map placeholder until a real map integration is added */}
-                            <div className="mb-6 flex h-80 items-center justify-center rounded-3xl bg-gradient-to-br from-[#f0edff] to-[#fff1fb]">
+                            <div
+                                className="mb-6 flex h-80 items-center justify-center rounded-3xl bg-gradient-to-br from-[#f0edff] to-[#fff1fb]">
                                 <div className="text-center">
-                                    <MapPin className="mx-auto mb-4 h-20 w-20 text-[#5555ff]" />
+                                    <MapPin className="mx-auto mb-4 h-20 w-20 text-[#5555ff]"/>
                                     <p className="text-xl text-gray-600">{formatAddress(address)}</p>
                                 </div>
                             </div>
@@ -759,7 +807,7 @@ export default function Show({ deskrl }: Props) {
                                 onClick={handleRoutePlanning}
                                 className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5555ff] py-4 text-base font-bold text-white transition hover:bg-[#4444ee] md:text-lg"
                             >
-                                <Navigation className="h-7 w-7" />
+                                <Navigation className="h-7 w-7"/>
                                 Route planen
                             </button>
                         </section>
@@ -781,7 +829,8 @@ export default function Show({ deskrl }: Props) {
                                         className="h-20 w-20 rounded-2xl object-cover"
                                     />
                                 ) : (
-                                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#f4f3ff] text-2xl font-bold text-[#5555ff]">
+                                    <div
+                                        className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#f4f3ff] text-2xl font-bold text-[#5555ff]">
                                         {(host?.first_name?.[0] || 'D').toUpperCase()}
                                     </div>
                                 )}
