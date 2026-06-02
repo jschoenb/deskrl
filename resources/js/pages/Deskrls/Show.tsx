@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { DatePicker } from '@/components/DatePicker';
 import AuthModal from '@/components/AuthModal';
 import AppLayout from "@/Layouts/AppLayout";
+import DeskrlLocationMap from '@/components/maps/DeskrlLocationMap';
 
 import About from "@/pages/About";
 
@@ -93,6 +94,8 @@ type Address = {
     house_nr?: string;
     postal_code?: string;
     state?: string | null;
+    latitude?: number | string | null;
+    longitude?: number | string | null;
 };
 
 /**
@@ -438,11 +441,12 @@ export default function Show({ deskrl }: Props) {
     };
 
     /**
-     * Opens route planning in Google Maps.
+     * Opens Google Maps route planning for the current Deskrl address.
+     * This link works independently of the embedded map API key.
      */
     const handleRoutePlanning = () => {
         window.open(
-            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formatAddress(address))}`,
+            `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(formatAddress(address))}`,
             '_blank',
         );
     };
@@ -745,12 +749,12 @@ export default function Show({ deskrl }: Props) {
                                 {formatAddress(address)}
                             </p>
 
-                            {/* Static map placeholder until a real map integration is added */}
-                            <div className="mb-6 flex h-80 items-center justify-center rounded-3xl bg-gradient-to-br from-[#f0edff] to-[#fff1fb]">
-                                <div className="text-center">
-                                    <MapPin className="mx-auto mb-4 h-20 w-20 text-[#5555ff]" />
-                                    <p className="text-xl text-gray-600">{formatAddress(address)}</p>
-                                </div>
+                            {/* Interactive Google Map; it becomes active once an API key is configured. */}
+                            <div className="mb-6">
+                                <DeskrlLocationMap
+                                    latitude={address?.latitude}
+                                    longitude={address?.longitude}
+                                />
                             </div>
 
                             {/* Opens Google Maps route planning in a new browser tab */}
