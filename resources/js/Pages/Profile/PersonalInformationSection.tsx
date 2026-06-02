@@ -5,6 +5,7 @@ import type { PersonalFormData } from '@/types/profile';
 
 interface PersonalInformationSectionProps {
     personal: PersonalFormData;
+    personalErrors: Record<string, string>;
     isCommercialHost: boolean;
     updatePersonal: <K extends keyof PersonalFormData>(
         field: K,
@@ -16,6 +17,7 @@ interface PersonalInformationSectionProps {
 
 export function PersonalInformationSection({
                                                personal,
+                                               personalErrors,
                                                isCommercialHost,
                                                updatePersonal,
                                                onSave,
@@ -27,12 +29,12 @@ export function PersonalInformationSection({
             onSave={onSave}
             onCancel={onCancel}
         >
-            {/* Basic personal fields */}
             <div className="grid gap-4 md:grid-cols-2">
                 <InputField
                     label="Vorname"
                     value={personal.firstName}
                     onChange={(value) => updatePersonal('firstName', value)}
+                    error={personalErrors.first_name}
                     required
                 />
 
@@ -40,6 +42,7 @@ export function PersonalInformationSection({
                     label="Nachname"
                     value={personal.lastName}
                     onChange={(value) => updatePersonal('lastName', value)}
+                    error={personalErrors.last_name}
                     required
                 />
 
@@ -48,6 +51,7 @@ export function PersonalInformationSection({
                     type="email"
                     value={personal.email}
                     onChange={(value) => updatePersonal('email', value)}
+                    error={personalErrors.email}
                     required
                 />
 
@@ -56,6 +60,7 @@ export function PersonalInformationSection({
                     type="date"
                     value={personal.dateOfBirth}
                     onChange={(value) => updatePersonal('dateOfBirth', value)}
+                    error={personalErrors.birthdate}
                 />
 
                 <InputField
@@ -64,9 +69,9 @@ export function PersonalInformationSection({
                     value={personal.phone}
                     onChange={(value) => updatePersonal('phone', value)}
                     placeholder="+43 699 12345678"
+                    error={personalErrors.phone}
                 />
 
-                {/* Regular users and private hosts can maintain public profile details. */}
                 {!isCommercialHost && (
                     <>
                         <InputField
@@ -86,7 +91,6 @@ export function PersonalInformationSection({
                 )}
             </div>
 
-            {/* Public profile fields are hidden for commercial hosts. */}
             {!isCommercialHost && (
                 <>
                     <LanguageSelect
@@ -107,6 +111,12 @@ export function PersonalInformationSection({
                             placeholder="Erzähl anderen, wer du bist…"
                             className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
                         />
+
+                        {personalErrors.about_me && (
+                            <p className="text-xs text-red-500">
+                                {personalErrors.about_me}
+                            </p>
+                        )}
                     </div>
                 </>
             )}

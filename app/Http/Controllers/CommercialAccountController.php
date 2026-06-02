@@ -10,75 +10,60 @@ use Inertia\Inertia;
 class CommercialAccountController extends Controller
 {
     /**
-     * Shows the commercial account profile of the currently logged-in account.
-     *
-     * If the authenticated account does not have a commercial account yet,
-     * the user is redirected to the create page.
+     * Redirect commercial account profile to the main user profile.
      */
     public function show(Request $request)
     {
-        // Gets the currently authenticated account.
-        $account = $request->user();
-
-        // Loads the related commercial account.
-        $commercialAccount = $account->commercialAccount;
-
-        // If no commercial account exists yet, redirect to the create form.
-        if (! $commercialAccount) {
-            return redirect()->route('commercial-account.create');
-        }
-
-        // Returns the Inertia React component for showing the commercial profile.
-        return Inertia::render('CommercialAccount/Show', [
-            'commercialAccount' => $commercialAccount,
-        ]);
+        return redirect()->route('account.show');
     }
 
     /**
-     * Shows the form for creating a commercial account.
-     *
-     * If the authenticated account already has a commercial account,
-     * the user is redirected to the existing commercial account page.
+     * Show create page only if a separate page is needed.
      */
     public function create(Request $request)
     {
-        // Gets the currently authenticated account.
         $account = $request->user();
 
-        // Prevents creating more than one commercial account for the same account.
         if ($account->commercialAccount) {
-            return redirect()->route('commercial-account.show');
+            return redirect()->route('account.show');
         }
 
-        // Returns the Inertia React component for creating a commercial account.
         return Inertia::render('CommercialAccount/Create');
     }
 
     /**
-     * Stores a new commercial account for the currently logged-in account.
-     *
-     * The method validates the submitted company data, creates the commercial
-     * account and updates the account type of the authenticated account.
+     * Store a new commercial account.
      */
     public function store(Request $request)
     {
-        // Gets the currently authenticated account.
         $account = $request->user();
 
-        // Prevents creating a second commercial account for the same account.
         if ($account->commercialAccount) {
-            return redirect()->route('commercial-account.show');
+            return redirect()
+                ->back()
+                ->with('success', 'Unternehmensdaten wurden bereits angelegt.');
         }
 
-        // Validates the submitted company data.
-        // company_nr and vat_nr must be unique in the commercial_accounts table.
-        $validated = $request->validate([
-            'company_name' => ['required', 'string', 'max:255'],
-            'company_nr' => ['required', 'string', 'max:255', 'unique:commercial_accounts,company_nr'],
-            'vat_nr' => ['required', 'string', 'max:255', 'unique:commercial_accounts,vat_nr'],
-        ]);
+        $validated = $request->validate(
+            [
+                'company_name' => ['required', 'string', 'max:255'],
+                'company_nr' => ['required', 'string', 'max:255', 'unique:commercial_accounts,company_nr'],
+                'vat_nr' => ['required', 'string', 'max:255', 'unique:commercial_accounts,vat_nr'],
+            ],
+            [
+                'company_name.required' => 'Bitte gib einen Firmennamen ein.',
+                'company_name.max' => 'Der Firmenname darf maximal 255 Zeichen lang sein.',
 
-        // Creates the commercial account and connects it to the logged-in account.
+                'company_nr.required' => 'Bitte gib eine Firmenbuchnummer ein.',
+                'company_nr.max' => 'Die Firmenbuchnummer darf maximal 255 Zeichen lang sein.',
+                'company_nr.unique' => 'Diese Firmenbuchnummer wird bereits verwendet.',
+
+                'vat_nr.required' => 'Bitte gib eine UID-Nummer ein.',
+                'vat_nr.max' => 'Die UID-Nummer darf maximal 255 Zeichen lang sein.',
+                'vat_nr.unique' => 'Diese UID-Nummer wird bereits verwendet.',
+            ]
+        );
+
         CommercialAccount::create([
             'account_id' => $account->id,
             'company_name' => $validated['company_name'],
@@ -87,87 +72,80 @@ class CommercialAccountController extends Controller
             'is_verified' => false,
         ]);
 
-        // Updates the account type so the system knows that this account
-        // is now a commercial host account.
         $account->update([
             'account_type' => 'commercial_host',
         ]);
 
-        // Redirects to the commercial account profile page after creation.
         return redirect()
-            ->route('commercial-account.show')
-            ->with('success', 'Gewerblicher Account wurde erstellt.');
+            ->back()
+            ->with('success', 'Unternehmensdaten wurden gespeichert.');
     }
 
     /**
-     * Shows the edit form for the commercial account.
-     *
-     * If no commercial account exists yet, the user is redirected
-     * to the create page.
+     * Redirect edit page to the main user profile.
      */
     public function edit(Request $request)
     {
-        // Gets the currently authenticated account.
-        $account = $request->user();
-
-        // Loads the related commercial account.
-        $commercialAccount = $account->commercialAccount;
-
-        // If no commercial account exists yet, redirect to the create form.
-        if (! $commercialAccount) {
-            return redirect()->route('commercial-account.create');
-        }
-
-        // Returns the Inertia React component for editing the commercial account.
-        return Inertia::render('CommercialAccount/Edit', [
-            'commercialAccount' => $commercialAccount,
-        ]);
+        return redirect()->route('account.show');
     }
 
     /**
-     * Updates the commercial account of the currently logged-in account.
-     *
-     * The method validates the submitted company data and updates
-     * the existing commercial account.
+     * Update the commercial account.
      */
     public function update(Request $request)
     {
-        // Gets the currently authenticated account.
         $account = $request->user();
 
-        // Loads the related commercial account.
         $commercialAccount = $account->commercialAccount;
 
-        // If no commercial account exists yet, redirect to the create form.
         if (! $commercialAccount) {
-            return redirect()->route('commercial-account.create');
+            return redirect()
+                ->back()
+                ->withErrors([
+                    'company_name' => 'Es wurde noch kein gewerblicher Account angelegt.',
+                ]);
         }
 
-        // Validates the submitted company data.
-        $validated = $request->validate([
-            'company_name' => ['required', 'string', 'max:255'],
+        $validated = $request->validate(
+            [
+                'company_name' => ['required', 'string', 'max:255'],
 
-            'company_nr' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('commercial_accounts', 'company_nr')->ignore($commercialAccount->id),
-            ],
+                'company_nr' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('commercial_accounts', 'company_nr')->ignore($commercialAccount->id),
+                ],
 
-            'vat_nr' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('commercial_accounts', 'vat_nr')->ignore($commercialAccount->id),
+                'vat_nr' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('commercial_accounts', 'vat_nr')->ignore($commercialAccount->id),
+                ],
             ],
+            [
+                'company_name.required' => 'Bitte gib einen Firmennamen ein.',
+                'company_name.max' => 'Der Firmenname darf maximal 255 Zeichen lang sein.',
+
+                'company_nr.required' => 'Bitte gib eine Firmenbuchnummer ein.',
+                'company_nr.max' => 'Die Firmenbuchnummer darf maximal 255 Zeichen lang sein.',
+                'company_nr.unique' => 'Diese Firmenbuchnummer wird bereits verwendet.',
+
+                'vat_nr.required' => 'Bitte gib eine UID-Nummer ein.',
+                'vat_nr.max' => 'Die UID-Nummer darf maximal 255 Zeichen lang sein.',
+                'vat_nr.unique' => 'Diese UID-Nummer wird bereits verwendet.',
+            ]
+        );
+
+        $commercialAccount->update([
+            'company_name' => $validated['company_name'],
+            'company_nr' => $validated['company_nr'],
+            'vat_nr' => $validated['vat_nr'],
         ]);
 
-        // Updates the commercial account with the validated data.
-        $commercialAccount->update($validated);
-
-        // Redirects back to the commercial account profile page after update.
         return redirect()
-            ->route('commercial-account.show')
-            ->with('success', 'Gewerblicher Account wurde aktualisiert.');
+            ->back()
+            ->with('success', 'Unternehmensdaten wurden gespeichert.');
     }
 }

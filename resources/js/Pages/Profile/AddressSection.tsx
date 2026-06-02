@@ -104,6 +104,7 @@ export function AddressSection({
                             label="Firma (optional)"
                             value={billing.billingCompany}
                             onChange={(value) => updateBilling('billingCompany', value)}
+                            error={billingErrors.company_name}
                         />
 
                         <InputField
@@ -111,6 +112,7 @@ export function AddressSection({
                             value={billing.billingVatNumber}
                             onChange={(value) => updateBilling('billingVatNumber', value)}
                             placeholder="ATU12345678"
+                            error={billingErrors.vat_nr}
                         />
                     </div>
 
