@@ -8,12 +8,11 @@ import AuthModal from '@/components/AuthModal';
 import {
     Search, MapPin, Calendar, Xmark, Heart, HeartSolid,
     FilterList, Position, LayoutRight, Map,
-    Printer, DatabaseMonitor, KeyCommand, PlugTypeC, PasteClipboard,
-    CoffeeCup, Home as HomeIcon, Bathroom, Lock, Building, Elevator,
-    Parking, EvPlugCharging, Bicycle, Flash,
-    Gamepad, Tree, VideoProjector
+    DatabaseMonitor, Wifi, VideoProjector, Printer, PasteClipboard,
+    CoffeeCup, Home as HomeIcon, SnowFlake, Healthcare,
+    Parking, EvPlugCharging, Tree, Building
 } from 'iconoir-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
 
 const PLACEHOLDER_IMAGES: Record<string, string> = {
     default: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
@@ -86,14 +85,29 @@ type Deskrl = {
     utilities?: DeskrlUtility[];
 };
 
+type UtilityCategoryRelation = {
+    id: number;
+    category_name: LocalizedText;
+};
+
+type Utility = {
+    id: number;
+    name: LocalizedText;
+    utility_category_id?: number;
+    utility_category?: UtilityCategoryRelation;
+    utilityCategory?: UtilityCategoryRelation;
+};
+
 type HomeProps = {
     deskrls: Deskrl[];
+    utilities?: Utility[];
     filters?: {
         search?: string;
         type?: string;
         date?: string;
         start_time?: string;
         end_time?: string;
+        amenities?: string | string[];
     };
 };
 
@@ -117,6 +131,30 @@ function getLocalizedText(value: LocalizedText | undefined | null, fallback = ''
     }
 
     return value.de ?? value.en ?? fallback;
+}
+
+// Ordnet jedem Utility (nach deutschem Namen) ein passendes Icon zu.
+// Basiert auf den 16 Utilities aus dem UtilitySeeder.
+function getUtilityIcon(name: string) {
+    const key = name.toLowerCase();
+
+    if (key.includes('wlan')) return <Wifi className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('beamer')) return <VideoProjector className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('bildschirm')) return <DatabaseMonitor className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('drucker')) return <Printer className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('flipchart')) return <PasteClipboard className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('küche') || key.includes('kueche')) return <CoffeeCup className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('wc')) return <HomeIcon className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('klima')) return <SnowFlake className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('kaffee')) return <CoffeeCup className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('barrierefrei')) return <Healthcare className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('parkplatz')) return <Parking className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('ladestation')) return <EvPlugCharging className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('catering')) return <CoffeeCup className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('garten')) return <Tree className="h-4 w-4 text-[#5555ff]" />;
+    if (key.includes('terrasse')) return <Tree className="h-4 w-4 text-[#5555ff]" />;
+
+    return <Building className="h-4 w-4 text-[#5555ff]" />;
 }
 
 function getCategoryName(deskrl: Deskrl): string {
@@ -199,7 +237,30 @@ function DeskrlCard({ deskrl, onLoginRequired }: { deskrl: Deskrl; onLoginRequir
     const fallbackImage = getPlaceholderByCategory(category);
     const utilities = deskrl.utilities ?? [];
 
-    const handleFavorite = () => {
+    /**
+     * Opens the detail page for the selected Deskrl.
+     */
+    const openDetailPage = () => {
+        router.visit(`/deskrls/${deskrl.id}`);
+    };
+
+    /**
+     * Allows keyboard users to open the detail page with Enter or Space.
+     */
+    const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openDetailPage();
+        }
+    };
+
+    /**
+     * Handles the favorite button without opening the detail page.
+     */
+    const handleFavorite = (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        event.preventDefault();
+
         if (!isLoggedIn) {
             onLoginRequired();
             return;
@@ -209,7 +270,14 @@ function DeskrlCard({ deskrl, onLoginRequired }: { deskrl: Deskrl; onLoginRequir
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow hover:shadow-xl transition-all overflow-hidden flex flex-col border border-gray-100 group">
+        <div
+            role="link"
+            tabIndex={0}
+            onClick={openDetailPage}
+            onKeyDown={handleCardKeyDown}
+            aria-label={`Details zu ${title} öffnen`}
+            className="bg-white rounded-2xl shadow hover:shadow-xl transition-all overflow-hidden flex flex-col border border-gray-100 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#5555ff] focus:ring-offset-2"
+        >
             <div className="relative h-56 overflow-hidden">
                 <img
                     src={imageFromDb}
@@ -287,7 +355,7 @@ function DeskrlCard({ deskrl, onLoginRequired }: { deskrl: Deskrl; onLoginRequir
     );
 }
 
-const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
+const Home: InertiaPage<HomeProps> = ({ deskrls = [], utilities = [], filters = {} }) => {
     const [search, setSearch] = useState(filters.search ?? '');
     const [type, setType] = useState(filters.type ?? '');
     const [filterOpen, setFilterOpen] = useState(false);
@@ -298,21 +366,36 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
     const [selectedDate, setSelectedDate] = useState(filters.date ?? '');
     const [visibleCount, setVisibleCount] = useState(6);
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
-    const [amenities, setAmenities] = useState<string[]>([]);
-    const [showLoginPopup, setShowLoginPopup] = useState(false);
+    // amenities = Liste gewählter Utility-IDs (Zahlen, passend zur DB)
+    const [amenities, setAmenities] = useState<number[]>(() => {
+        const raw = filters.amenities;
+        if (!raw) return [];
+        const arr = Array.isArray(raw) ? raw : String(raw).split(',');
+        return arr.map(v => Number(v)).filter(v => !Number.isNaN(v));
+    });
+    /*const [showLoginPopup, setShowLoginPopup] = useState(false);*/
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
-    const [loginEmail, setLoginEmail] = useState('');
-    const [loginPassword, setLoginPassword] = useState('');
 
     const locationRef = useRef<HTMLDivElement>(null);
     const dateRef = useRef<HTMLDivElement>(null);
 
-    const toggleAmenity = (label: string) => {
+    const toggleAmenity = (utilityId: number) => {
         setAmenities(prev =>
-            prev.includes(label) ? prev.filter(a => a !== label) : [...prev, label]
+            prev.includes(utilityId)
+                ? prev.filter(a => a !== utilityId)
+                : [...prev, utilityId]
         );
     };
+
+    // Utilities nach Kategorie gruppieren (für die Filter-Anzeige)
+    const utilitiesByCategory = utilities.reduce<Record<string, Utility[]>>((acc, util) => {
+        const cat = util.utility_category ?? util.utilityCategory;
+        const catName = getLocalizedText(cat?.category_name, 'Sonstige');
+        if (!acc[catName]) acc[catName] = [];
+        acc[catName].push(util);
+        return acc;
+    }, {});
 
     useEffect(() => {
         const handleClick = (e: MouseEvent) => {
@@ -341,20 +424,24 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
             date: selectedDate,
             start_time: startTime,
             end_time: endTime,
+            amenities: amenities.join(','),
         }, { preserveState: true, replace: true });
 
         setShowSuggestions(false);
     };
 
     const handleReset = () => {
-        setSearch('');
+        // Nur Raumart + Ausstattung zurücksetzen.
+        // Wo (search) und Wann (Datum/Zeit) bleiben erhalten.
         setType('');
-        setSelectedDate('');
-        setStartTime('09:00');
-        setEndTime('17:00');
         setAmenities([]);
 
-        router.get('/', {}, { preserveState: true, replace: true });
+        router.get('/', {
+            search,
+            date: selectedDate,
+            start_time: startTime,
+            end_time: endTime,
+        }, { preserveState: true, replace: true });
     };
 
     const formatDateDisplay = () => {
@@ -446,8 +533,24 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
                                         onClick={() => setShowDatePicker(!showDatePicker)}
                                         readOnly
                                         placeholder="Datum & Zeit wählen..."
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5555ff] text-gray-900 cursor-pointer"
+                                        className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5555ff] text-gray-900 cursor-pointer"
                                     />
+
+                                    {selectedDate && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedDate('');
+                                                setStartTime('09:00');
+                                                setEndTime('17:00');
+                                                setShowDatePicker(false);
+                                            }}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            aria-label="Datum zurücksetzen"
+                                        >
+                                            <Xmark className="h-5 w-5" />
+                                        </button>
+                                    )}
                                 </div>
 
                                 {showDatePicker && (
@@ -567,7 +670,10 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
                                     <DeskrlCard
                                         key={deskrl.id}
                                         deskrl={deskrl}
-                                        onLoginRequired={() => setShowLoginPopup(true)}
+                                        onLoginRequired={() => {
+                                            setAuthModalMode('login');
+                                            setShowAuthModal(true);
+                                        }}
                                     />
                                 ))}
                             </div>
@@ -606,7 +712,7 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
                 )}
             </div>
 
-            {showLoginPopup && (
+{/*            {showLoginPopup && (
                 <>
                     <div
                         className="fixed inset-0 bg-black/40 z-40"
@@ -680,7 +786,7 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
                         </div>
                     </div>
                 </>
-            )}
+            )}*/}
 
             {filterOpen && (
                 <>
@@ -735,185 +841,59 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], filters = {} }) => {
                             <div className="mb-6">
                                 <h3 className="text-lg font-bold mb-4">Ausstattung</h3>
 
-                                <div className="flex items-center gap-2 mb-3">
-                                    <DatabaseMonitor className="h-4 w-4 text-[#5555ff]" />
-                                    <h4 className="text-base font-bold text-[#5555ff]">
-                                        Technik & Arbeitsausstattung
-                                    </h4>
-                                </div>
+                                {Object.keys(utilitiesByCategory).length === 0 && (
+                                    <p className="text-sm text-gray-400">
+                                        Keine Ausstattungsfilter verfügbar.
+                                    </p>
+                                )}
 
-                                <div className="space-y-3 mb-6">
-                                    {[
-                                        { label: 'Drucker / Kopierer', icon: <Printer className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Beamer', icon: <VideoProjector className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Bildschirm', icon: <DatabaseMonitor className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Tastatur & Maus', icon: <KeyCommand className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'USB-C Docking-Station', icon: <PlugTypeC className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Flipchart & Whiteboard', icon: <PasteClipboard className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Stromanschlüsse', icon: <Flash className="h-4 w-4 text-[#5555ff]" /> },
-                                    ].map(item => (
-                                        <label
-                                            key={item.label}
-                                            className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:border-[#5555ff] cursor-pointer transition-colors"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="sr-only"
-                                                checked={amenities.includes(item.label)}
-                                                onChange={() => toggleAmenity(item.label)}
-                                            />
+                                {Object.entries(utilitiesByCategory).map(([catName, items]) => (
+                                    <div key={catName}>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <DatabaseMonitor className="h-4 w-4 text-[#5555ff]" />
+                                            <h4 className="text-base font-bold text-[#5555ff]">
+                                                {catName}
+                                            </h4>
+                                        </div>
 
-                                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${amenities.includes(item.label) ? 'bg-[#5555ff] border-[#5555ff]' : 'border-gray-300'}`}>
-                                                {amenities.includes(item.label) && (
-                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
-                                            </div>
+                                        <div className="space-y-3 mb-6">
+                                            {items.map(util => {
+                                                const label = getLocalizedText(util.name, 'Ausstattung');
+                                                const checked = amenities.includes(util.id);
 
-                                            <div className="w-6 h-6 flex items-center justify-center">
-                                                {item.icon}
-                                            </div>
+                                                return (
+                                                    <label
+                                                        key={util.id}
+                                                        className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:border-[#5555ff] cursor-pointer transition-colors"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="sr-only"
+                                                            checked={checked}
+                                                            onChange={() => toggleAmenity(util.id)}
+                                                        />
 
-                                            <span className="font-semibold text-sm">
-                                                {item.label}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
+                                                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${checked ? 'bg-[#5555ff] border-[#5555ff]' : 'border-gray-300'}`}>
+                                                            {checked && (
+                                                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            )}
+                                                        </div>
 
-                                <div className="flex items-center gap-2 mb-3">
-                                    <CoffeeCup className="h-4 w-4 text-[#5555ff]" />
-                                    <h4 className="text-base font-bold text-[#5555ff]">
-                                        Komfort & Infrastruktur
-                                    </h4>
-                                </div>
+                                                        <div className="w-6 h-6 flex items-center justify-center">
+                                                            {getUtilityIcon(label)}
+                                                        </div>
 
-                                <div className="space-y-3 mb-6">
-                                    {[
-                                        { label: 'WC', icon: <HomeIcon className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Dusche', icon: <Bathroom className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Schließfächer', icon: <Lock className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Aufzug', icon: <Elevator className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Kaffee inkludiert', icon: <CoffeeCup className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Küche', icon: <CoffeeCup className="h-4 w-4 text-[#5555ff]" /> },
-                                    ].map(item => (
-                                        <label
-                                            key={item.label}
-                                            className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:border-[#5555ff] cursor-pointer transition-colors"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="sr-only"
-                                                checked={amenities.includes(item.label)}
-                                                onChange={() => toggleAmenity(item.label)}
-                                            />
-
-                                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${amenities.includes(item.label) ? 'bg-[#5555ff] border-[#5555ff]' : 'border-gray-300'}`}>
-                                                {amenities.includes(item.label) && (
-                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
-                                            </div>
-
-                                            <div className="w-6 h-6 flex items-center justify-center">
-                                                {item.icon}
-                                            </div>
-
-                                            <span className="font-semibold text-sm">
-                                                {item.label}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Bicycle className="h-4 w-4 text-[#5555ff]" />
-                                    <h4 className="text-base font-bold text-[#5555ff]">
-                                        Mobilität & Lage
-                                    </h4>
-                                </div>
-
-                                <div className="space-y-3 mb-6">
-                                    {[
-                                        { label: 'Fahrradabstellplatz', icon: <Bicycle className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'E-Bike Ladestation', icon: <EvPlugCharging className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Zentrale Lage', icon: <MapPin className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Parkplätze', icon: <Parking className="h-4 w-4 text-[#5555ff]" /> },
-                                    ].map(item => (
-                                        <label
-                                            key={item.label}
-                                            className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:border-[#5555ff] cursor-pointer transition-colors"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="sr-only"
-                                                checked={amenities.includes(item.label)}
-                                                onChange={() => toggleAmenity(item.label)}
-                                            />
-
-                                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${amenities.includes(item.label) ? 'bg-[#5555ff] border-[#5555ff]' : 'border-gray-300'}`}>
-                                                {amenities.includes(item.label) && (
-                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
-                                            </div>
-
-                                            <div className="w-6 h-6 flex items-center justify-center">
-                                                {item.icon}
-                                            </div>
-
-                                            <span className="font-semibold text-sm">
-                                                {item.label}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Gamepad className="h-4 w-4 text-[#5555ff]" />
-                                    <h4 className="text-base font-bold text-[#5555ff]">
-                                        Extras & Freizeit
-                                    </h4>
-                                </div>
-
-                                <div className="space-y-3">
-                                    {[
-                                        { label: 'Tischfußball', icon: <Gamepad className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Terrasse', icon: <Tree className="h-4 w-4 text-[#5555ff]" /> },
-                                        { label: 'Garten', icon: <Tree className="h-4 w-4 text-[#5555ff]" /> },
-                                    ].map(item => (
-                                        <label
-                                            key={item.label}
-                                            className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:border-[#5555ff] cursor-pointer transition-colors"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="sr-only"
-                                                checked={amenities.includes(item.label)}
-                                                onChange={() => toggleAmenity(item.label)}
-                                            />
-
-                                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${amenities.includes(item.label) ? 'bg-[#5555ff] border-[#5555ff]' : 'border-gray-300'}`}>
-                                                {amenities.includes(item.label) && (
-                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
-                                            </div>
-
-                                            <div className="w-6 h-6 flex items-center justify-center">
-                                                {item.icon}
-                                            </div>
-
-                                            <span className="font-semibold text-sm">
-                                                {item.label}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
+                                                        <span className="font-semibold text-sm">
+                                                            {label}
+                                                        </span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
