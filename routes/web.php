@@ -76,6 +76,23 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])
         ->name('addresses.destroy');
 
+    Route::post('/become-provider', [AccountController::class, 'becomeProvider'])
+        ->name('account.become-provider');
+
+
+    // =========================================================
+    // Provider placeholder pages
+    // =========================================================
+    Route::get('/provider', function () {
+        return Inertia::render('Provider/ProviderDashboard');
+    })->name('provider.dashboard');
+
+    Route::get('/provider/bookings', function () {
+        return Inertia::render('Provider/ProviderBookings');
+    })->name('provider.bookings');
+
+
+
     // =========================================================
     // Commercial account
     // =========================================================
@@ -134,7 +151,7 @@ Route::get('/favorites', [FavoriteController::class, 'index'])
 Route::get('/faq-user', fn () => Inertia::render('FaqUser'));
 Route::get('/cancellation', fn () => Inertia::render('Cancellation'));
 Route::get('/support-user', fn () => Inertia::render('SupportUser'));
-Route::get('/become-provider', fn () => Inertia::render('BecomeProvider'));
+
 Route::get('/faq-provider', fn () => Inertia::render('FaqProvider'));
 Route::get('/support-provider', fn () => Inertia::render('SupportProvider'));
 Route::get('/about', fn () => Inertia::render('About'));

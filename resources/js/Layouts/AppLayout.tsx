@@ -1,29 +1,39 @@
-import React from "react";
+import React from 'react';
 import { usePage } from '@inertiajs/react';
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
-import { Toaster } from 'sonner'; // ← neu
+import { Toaster } from 'sonner';
 
-type Props = {
+type AppLayoutProps = {
     children: React.ReactNode;
-}
+};
 
-export default function Welcome({ children }: Props) {
+export default function AppLayout({ children }: AppLayoutProps): React.ReactElement {
     const { props } = usePage();
     const { auth } = props as any;
-    const isLoggedIn = !!auth?.user;
+
+    // Check whether a user is currently logged in.
+    const isLoggedIn = Boolean(auth?.user);
 
     return (
         <FavoritesProvider isLoggedIn={isLoggedIn}>
-            <div className="min-h-screen flex flex-col">
+            {/* Main page structure with shared header and footer */}
+            <div className="flex min-h-screen flex-col">
+                {/* Global page header */}
                 <Header />
-                <main className="flex-grow w-full">
+
+                {/* Page-specific content rendered by Inertia */}
+                <main className="w-full flex-grow">
                     {children}
                 </main>
+
+                {/* Global page footer */}
                 <Footer />
             </div>
-            <Toaster position="bottom-right" richColors /> {/* ← neu */}
+
+            {/* Global toast notifications */}
+            <Toaster position="bottom-right" richColors />
         </FavoritesProvider>
     );
 }
