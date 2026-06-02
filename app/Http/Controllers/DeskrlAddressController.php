@@ -102,6 +102,9 @@ class DeskrlAddressController extends Controller
             'postal_code' => ['required', 'string', 'max:20'],
             'stair' => ['nullable', 'string', 'max:50'],
             'door' => ['nullable', 'string', 'max:50'],
+            // Coordinates are optional until address-to-coordinate conversion is implemented.
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
     }
 }
