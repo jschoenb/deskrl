@@ -59,6 +59,8 @@ type DeskrlAddressRelation = {
         street?: string;
         house_nr?: string;
         postal_code?: string;
+        latitude?: number | string | null;
+        longitude?: number | string | null;
     };
 };
 

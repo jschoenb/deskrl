@@ -18,6 +18,16 @@ class Address extends Model
         'postal_code',
         'stair',
         'door',
+        'latitude',
+        'longitude'
+    ];
+
+    /**
+     * Cast coordinate values to a consistent decimal format.
+     */
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     public function country()

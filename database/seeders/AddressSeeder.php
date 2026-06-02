@@ -28,6 +28,9 @@ class AddressSeeder extends Seeder
                 'postal_code' => '4020',
                 'stair' => null,
                 'door' => '5',
+                // Test coordinates for displaying this seeded address on the map.
+                'latitude' => 48.3069000,
+                'longitude' => 14.2858000,
             ],
             [
                 'country_id' => $austria->id,
@@ -38,6 +41,9 @@ class AddressSeeder extends Seeder
                 'postal_code' => '1020',
                 'stair' => '2',
                 'door' => '14',
+                // Test coordinates for displaying this seeded address on the map.
+                'latitude' => 48.2160000,
+                'longitude' => 16.3910000,
             ],
             [
                 'country_id' => $austria->id,
@@ -48,6 +54,9 @@ class AddressSeeder extends Seeder
                 'postal_code' => '4232',
                 'stair' => null,
                 'door' => null,
+                // Test coordinates for displaying this seeded address on the map.
+                'latitude' => 48.3688000,
+                'longitude' => 14.5128000,
             ],
         ];
 
@@ -61,6 +70,9 @@ class AddressSeeder extends Seeder
                 'postal_code' => '80802',
                 'stair' => null,
                 'door' => null,
+                // Test coordinates for displaying this seeded address on the map.
+                'latitude' => 48.1583000,
+                'longitude' => 11.5845000,
             ];
         }
 
@@ -77,6 +89,8 @@ class AddressSeeder extends Seeder
                     'state' => $address['state'],
                     'stair' => $address['stair'],
                     'door' => $address['door'],
+                    'latitude' => $address['latitude'],
+                    'longitude' => $address['longitude'],
                 ]
             );
         }
