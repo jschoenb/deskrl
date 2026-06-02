@@ -21,17 +21,14 @@ import {
     Users,
     X,
 } from 'lucide-react';
-import {toast} from 'sonner';
-import {DatePicker} from '@/components/DatePicker';
+import { toast } from 'sonner';
+import { DatePicker } from '@/components/DatePicker';
 import AuthModal from '@/components/AuthModal';
 import AppLayout from "@/Layouts/AppLayout";
 import DeskrlLocationMap from '@/components/maps/DeskrlLocationMap';
-import {useFavorites} from '@/contexts/FavoritesContext';
 
 import About from "@/pages/About";
 import { BookingConfirmationModal } from '@/components/BookingModal';
-import AppLayout from '@/Layouts/AppLayout';
-import About from "@/Pages/About";
 
 /**
  * Localized fields can either be plain strings or translation objects.
@@ -199,7 +196,7 @@ type BookingDuration = 'hour' | 'half_day' | 'day' | 'week' | 'month';
  *
  * These values must match the Laravel validation and database enum.
  */
-type BackendPriceRate = 'hourly' | 'half_day' | 'daily' | 'weekly' | 'monthly';
+type BackendPriceRate = 'hour' | 'half_day' | 'day' | 'week' | 'month';
 
 type BookingDurationOption = {
     key: BookingDuration;
@@ -357,11 +354,11 @@ function getUtilityIcon(utilityName: string) {
  */
 function mapDurationToBackendPriceRate(duration: BookingDuration): BackendPriceRate {
     const mapping: Record<BookingDuration, BackendPriceRate> = {
-        hour: 'hourly',
+        hour: 'hour',
         half_day: 'half_day',
-        day: 'daily',
-        week: 'weekly',
-        month: 'monthly',
+        day: 'day',
+        week: 'week',
+        month: 'month',
     };
 
     return mapping[duration];
@@ -370,23 +367,6 @@ function mapDurationToBackendPriceRate(duration: BookingDuration): BackendPriceR
 export default function Show({ deskrl }: Props) {
     const { props } = usePage<PageProps>();
     const authUser = props.auth?.user ?? null;
-
-export default function Show({deskrl}: Props) {
-    const {props} = usePage();
-    const {auth} = props as any;
-
-    // Read the current login state from the shared Inertia props.
-    const isLoggedIn = Boolean(auth?.user);
-
-    // Only regular users should save Deskrls as favorites in the MVP.
-    const accountType = auth?.user?.account_type ?? auth?.user?.role ?? 'guest';
-    const isRegularUser = accountType === 'user';
-
-    // Access the global favorites state from FavoritesContext.
-    const {toggleFavorite, isFavorited} = useFavorites();
-
-    // Check whether this Deskrl is already saved as a favorite.
-    const isCurrentDeskrlFavorited = isFavorited(deskrl.id);
 
     /**
      * Stores the currently selected image index for gallery and lightbox.
@@ -749,31 +729,11 @@ export default function Show({deskrl}: Props) {
     };
 
     /**
-     * Handles favorite actions for the Deskrl detail page.
-     * Guests are asked to log in, regular users save the Deskrl through FavoritesContext.
+     * Placeholder handler for favorites.
+     * Later this can call the FavoriteController through Inertia.
      */
-    const handleFavoriteClick = async () => {
-        if (!isLoggedIn) {
-            setShowAuthModal(true);
-            return;
-        }
-
-        if (!isRegularUser) {
-            toast.info('Favoriten können aktuell nur von Nutzer:innen gespeichert werden.');
-            return;
-        }
-
-        try {
-            await toggleFavorite(deskrl.id);
-
-            toast.success(
-                isCurrentDeskrlFavorited
-                    ? 'Deskrl wurde aus deinen Gemerkten entfernt.'
-                    : 'Deskrl wurde zu deinen Gemerkten hinzugefügt.',
-            );
-        } catch {
-            toast.error('Favorit konnte nicht gespeichert werden.');
-        }
+    const handleFavoriteClick = () => {
+        toast.info('Favoriten-Funktion wird später angebunden.');
     };
 
     /**
@@ -853,22 +813,9 @@ export default function Show({deskrl}: Props) {
 
                         <div className="flex flex-wrap items-center gap-4 text-gray-600">
                             <p className="flex items-center gap-2 text-base text-gray-600 md:text-lg">
-                                <MapPin className="h-5 w-5 text-[#5555ff]"/>
+                                <MapPin className="h-5 w-5 text-[#5555ff]" />
                                 {address?.city || 'Ort noch nicht verfügbar'}
                             </p>
-
-                            {/*
-                              Rating placeholder:
-                              Reviews are not part of the current MVP yet.
-                              Keep this block commented until ratings are implemented in the backend.
-                            */}
-                            {/*
-                            <p className="flex items-center gap-2 text-2xl">
-                                <Star className="h-7 w-7 fill-yellow-400 text-yellow-400" />
-                                <span className="font-bold text-gray-800">4.9</span>
-                                <span>(127 Bewertungen)</span>
-                            </p>
-                            */}
                         </div>
                     </div>
 
@@ -880,20 +827,19 @@ export default function Show({deskrl}: Props) {
                                 onClick={() => setShowShareMenu(!showShareMenu)}
                                 className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-semibold hover:border-[#5555ff]"
                             >
-                                <Share2 className="h-5 w-5"/>
+                                <Share2 className="h-5 w-5" />
                                 Teilen
                             </button>
 
                             {/* Share dropdown menu */}
                             {showShareMenu && (
-                                <div
-                                    className="absolute right-0 top-full z-10 mt-2 min-w-[200px] rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
+                                <div className="absolute right-0 top-full z-10 mt-2 min-w-[200px] rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
                                     <button
                                         type="button"
                                         onClick={() => handleShare('whatsapp')}
                                         className="flex w-full items-center gap-3 px-4 py-2 hover:bg-gray-50"
                                     >
-                                        <MessageCircle className="h-5 w-5"/>
+                                        <MessageCircle className="h-5 w-5" />
                                         WhatsApp
                                     </button>
 
@@ -921,16 +867,10 @@ export default function Show({deskrl}: Props) {
                         <button
                             type="button"
                             onClick={handleFavoriteClick}
-                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold transition-colors ${
-                                isCurrentDeskrlFavorited
-                                    ? 'border-[#e63cff] bg-[#fff1fb] text-[#e63cff]'
-                                    : 'border-gray-200 bg-white hover:border-[#e63cff] hover:text-[#e63cff]'
-                            }`}
+                            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-semibold hover:border-[#e63cff] hover:text-[#e63cff]"
                         >
-                            <Heart
-                                className={`h-5 w-5 ${isCurrentDeskrlFavorited ? 'fill-[#e63cff] text-[#e63cff]' : ''}`}
-                            />
-                            {isCurrentDeskrlFavorited ? 'Gemerkt' : 'Merken'}
+                            <Heart className="h-5 w-5" />
+                            Merken
                         </button>
                     </div>
                 </div>
@@ -998,7 +938,7 @@ export default function Show({deskrl}: Props) {
                                         <div>
                                             <p className="text-sm text-gray-500 md:text-base">Maximale Personenzahl</p>
                                             <p className="text-xl font-bold text-gray-800">
-                                            Bis zu {deskrl.capacity} Personen
+                                                Bis zu {deskrl.capacity} Personen
                                             </p>
                                         </div>
                                     </div>
@@ -1048,8 +988,7 @@ export default function Show({deskrl}: Props) {
                                                                         <UtilityIcon className="h-5 w-5" />
                                                                     </div>
 
-                                                                    <span
-                                                                        className="text-base font-semibold text-gray-950 md:text-lg">
+                                                                    <span className="text-base font-semibold text-gray-950 md:text-lg">
                                                                         {utilityName}
                                                                         {utility.pivot?.quantity ? ` (${utility.pivot.quantity})` : ''}
                                                                     </span>
@@ -1070,9 +1009,13 @@ export default function Show({deskrl}: Props) {
                                                     className="inline-flex items-center gap-3 rounded-3xl border-2 border-[#5555ff] px-10 py-4 text-xl font-bold text-[#5555ff] transition hover:bg-[#f4f3ff]"
                                                 >
                                                     <ChevronDown
-                                                        className={`h-6 w-6 transition-transform ${showAllUtilities ? 'rotate-180' : ''}`}
+                                                        className={`h-6 w-6 transition-transform ${
+                                                            showAllUtilities ? 'rotate-180' : ''
+                                                        }`}
                                                     />
-                                                    {showAllUtilities ? 'Weniger Ausstattungsmerkmale' : 'Mehr Ausstattungsmerkmale'}
+                                                    {showAllUtilities
+                                                        ? 'Weniger Ausstattungsmerkmale'
+                                                        : 'Mehr Ausstattungsmerkmale'}
                                                 </button>
                                             </div>
                                         )}
@@ -1088,7 +1031,7 @@ export default function Show({deskrl}: Props) {
                             <h2 className="mb-6 text-2xl font-bold text-gray-950">Standort</h2>
 
                             <p className="mb-6 flex items-center gap-3 text-base text-gray-700 md:text-lg">
-                                <MapPin className="h-5 w-5 text-[#5555ff]"/>
+                                <MapPin className="h-5 w-5 text-[#5555ff]" />
                                 {formatAddress(address)}
                             </p>
 
@@ -1146,9 +1089,8 @@ export default function Show({deskrl}: Props) {
 
                                     {/* Show the verification badge only when the host is actually verified. */}
                                     {isHostVerified && (
-                                        <span
-                                            className="mt-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-base font-semibold text-green-700">
-                                            <Check className="h-5 w-5"/>
+                                        <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-base font-semibold text-green-700">
+                                            <Check className="h-5 w-5" />
                                             Verifizierter Gastgeber
                                         </span>
                                     )}
@@ -1202,8 +1144,6 @@ export default function Show({deskrl}: Props) {
                                         ))}
                                     </div>
                                 </div>
-                            ) : (
-                                <p className="mb-6 text-gray-500">Noch keine Preise hinterlegt.</p>
                             )}
 
                             {/* Date selection */}
@@ -1403,7 +1343,7 @@ export default function Show({deskrl}: Props) {
                 </div>
             </div>
 
-            {/* Auth modal is used as temporary placeholder for booking login flow */}
+            {/* Auth modal is opened when guests try to book. */}
             <AuthModal
                 isOpen={showAuthModal}
                 onClose={() => setShowAuthModal(false)}
