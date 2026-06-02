@@ -20,11 +20,11 @@ return new class extends Migration
         if (!Schema::hasColumn('bookings', 'price_rate')) {
             Schema::table('bookings', function (Blueprint $table) {
                 $table->enum('price_rate', [
-                    'hourly',
+                    'hour',
                     'half_day',
-                    'daily',
-                    'weekly',
-                    'monthly',
+                    'day',
+                    'week',
+                    'month',
                 ])->after('booking_date');
             });
         }
