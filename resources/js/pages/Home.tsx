@@ -735,7 +735,7 @@ const Home: InertiaPage<HomeProps> = ({ deskrls = [], utilities = [], filters = 
                                 Willkommen zurück!
                             </h2>
                             <p className="text-gray-500 text-sm">
-                                Melden Sie sich an, um fortzufahren
+                                Melde dich an, um fortzufahren
                             </p>
                             <p className="text-[#5555ff] font-semibold text-sm mt-1">
                                 Willkommen bei Deskrl
