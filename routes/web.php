@@ -1,110 +1,25 @@
 <?php
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AddressController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AvailabilityController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CommercialAccountController;
 use App\Http\Controllers\DeskrlAddressController;
 use App\Http\Controllers\DeskrlController;
 use App\Http\Controllers\DeskrlImageController;
 use App\Http\Controllers\DeskrlUtilityController;
-use App\Models\Utility;
-// use App\Http\Controllers\FavoriteController;
- use App\Http\Controllers\FavoriteController;
-// use App\Http\Controllers\SpecialDayPriceController;
-// use App\Http\Controllers\SpecialAvailabilityController;
- use App\Http\Controllers\BookingController;
-// use App\Http\Controllers\HostBookingController;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 // =========================================================
 // Home
 // =========================================================
-/*Route::get('/', function (Request $request) {
-    $deskrls = Deskrl::query()
-        ->where('status', 'active')
-        ->get();
-
-    return Inertia::render('Home', [
-        'deskrls' => $deskrls,
-    ]);
-});*/// =========================================================
-// Home
-// =========================================================
-Route::get('/', function (Request $request) {
-    $query = Deskrl::query()
-        ->where('status', 'active');
-
-    // ---- Search: location (address) OR title (German) ----
-    if ($request->filled('search')) {
-        $search = $request->input('search');
-
-        $query->where(function ($q) use ($search) {
-            $q->where('title->de', 'like', '%'.$search.'%')
-                ->orWhereHas('deskrlAddress.address', function ($aq) use ($search) {
-                    $aq->where('city', 'like', '%'.$search.'%')
-                        ->orWhere('street', 'like', '%'.$search.'%')
-                        ->orWhere('postal_code', 'like', '%'.$search.'%');
-                });
-        });
-    }
-
-    // ---- Type filter (room category) ----
-    if ($request->filled('type')) {
-        $query->whereHas('deskrlCategory', function ($cq) use ($request) {
-            $cq->where('name', $request->input('type'));
-        });
-    }
-
-    // ---- Date + time (weekday derived from date) ----
-    if ($request->filled('date') && $request->filled('start_time') && $request->filled('end_time')) {
-        $weekday = strtolower(date('l', strtotime($request->input('date'))));
-
-        $query->whereHas('availabilities', function ($q) use ($request, $weekday) {
-            $q->where('weekday', $weekday)
-                ->where('start_time', '<=', $request->input('start_time'))
-                ->where('end_time', '>=', $request->input('end_time'));
-        });
-    }
-
-    // ---- Utilities filter (deskrl must have ALL selected) ----
-    if ($request->filled('amenities')) {
-        $amenityIds = is_array($request->input('amenities'))
-            ? $request->input('amenities')
-            : explode(',', $request->input('amenities'));
-
-        foreach ($amenityIds as $utilityId) {
-            $query->whereHas('utilities', function ($uq) use ($utilityId) {
-                $uq->where('utilities.id', $utilityId);
-            });
-        }
-    }
-
-    $deskrls = $query
-        ->with([
-            'deskrlCategory',
-            'deskrlAddress.address',
-            'images',
-            'utilities',
-        ])
-        ->get();
-
-    $utilities = \App\Models\Utility::query()
-        ->with('utilityCategory')
-        ->get();
-
-    return Inertia::render('Home', [
-        'deskrls' => $deskrls,
-        'utilities' => $utilities,
-        'filters' => [
-            'search' => $request->input('search'),
-            'type' => $request->input('type'),
-            'date' => $request->input('date'),
-            'start_time' => $request->input('start_time'),
-            'end_time' => $request->input('end_time'),
-            'amenities' => $request->input('amenities'),
-        ],
-    ]);
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])
+    ->name('home');
 
 // =========================================================
 // Auth
@@ -179,47 +94,43 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/commercial-account', [CommercialAccountController::class, 'update'])
         ->name('commercial-account.update');
 
-
     // =========================================================
     // Favorites
     // =========================================================
-
-    // Returns only the favorite Deskrl IDs of the logged-in account.
     Route::get('/favorites/ids', [FavoriteController::class, 'ids'])
         ->name('favorites.ids');
 
-    // Saves one Deskrl as favorite for the logged-in account.
     Route::post('/deskrls/{deskrl}/favorite', [FavoriteController::class, 'store'])
         ->name('deskrls.favorite.store');
 
-    // Removes one Deskrl from the favorites of the logged-in account.
     Route::delete('/deskrls/{deskrl}/favorite', [FavoriteController::class, 'destroy'])
         ->name('deskrls.favorite.destroy');
 
     // =========================================================
     // Bookings
     // =========================================================
+    Route::get('/bookings', [BookingController::class, 'index'])
+        ->name('bookings.index');
 
-    Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
-    Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
-    Route::post('/deskrls/{deskrl}/bookings', [BookingController::class, 'store'])->name('bookings.store');
-    Route::patch('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+    Route::get('/bookings/{booking}', [BookingController::class, 'show'])
+        ->name('bookings.show');
+
+    Route::post('/deskrls/{deskrl}/bookings', [BookingController::class, 'store'])
+        ->name('bookings.store');
+
+    Route::patch('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])
+        ->name('bookings.cancel');
 });
 
 // =========================================================
-// Favorites
+// Favorites (public)
 // =========================================================
-
-// Shows the favorites page.
 Route::get('/favorites', [FavoriteController::class, 'index'])
     ->name('favorites.index');
 
 // =========================================================
 // Static pages
 // =========================================================
-Route::get('/bookings', fn () => Inertia::render('Bookings'));
-Route::get('/favorites', fn () => Inertia::render('Favorites'));
-
 Route::get('/faq-user', fn () => Inertia::render('FaqUser'));
 Route::get('/cancellation', fn () => Inertia::render('Cancellation'));
 Route::get('/support-user', fn () => Inertia::render('SupportUser'));
