@@ -22,18 +22,14 @@ import {
     X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
 import { DatePicker } from '@/components/DatePicker';
 import AuthModal from '@/components/AuthModal';
-import AppLayout from "@/Layouts/AppLayout";
+import AppLayout from '@/Layouts/AppLayout';
 import DeskrlLocationMap from '@/components/maps/DeskrlLocationMap';
-
-import About from "@/pages/About";
 import { BookingConfirmationModal } from '@/components/BookingModal';
+import { useFavorites } from '@/contexts/FavoritesContext';
 
-/**
- * Localized fields can either be plain strings or translation objects.
- * Example: { de: "Meetingraum", en: "Meeting room" }
- */
 type LocalizedText =
     | string
     | {
@@ -42,9 +38,6 @@ type LocalizedText =
     [key: string]: string | undefined;
 };
 
-/**
- * Image object as returned by the Laravel backend.
- */
 type DeskrlImage = {
     id: number;
     path: string;
@@ -52,44 +45,27 @@ type DeskrlImage = {
     sort_order?: number;
 };
 
-/**
- * Category object of a Deskrl, e.g. workplace, meeting room or seminar room.
- */
 type DeskrlCategory = {
     id: number;
     name: string;
     mask_type?: string;
 };
 
-/**
- * Utility category object, e.g. technology, comfort or mobility.
- */
 type UtilityCategory = {
     id: number;
     category_name: LocalizedText;
 };
 
-/**
- * Utility object, e.g. WiFi, projector or parking.
- */
 type Utility = {
     id: number;
     name: LocalizedText;
-
-    // Laravel usually serializes nested relations as snake_case.
     utility_category?: UtilityCategory;
-
-    // This fallback is kept in case the data is transformed later.
     utilityCategory?: UtilityCategory;
-
     pivot?: {
         quantity?: number | null;
     };
 };
 
-/**
- * Address object connected through deskrl_address.address.
- */
 type Address = {
     id: number;
     city?: string;
@@ -101,42 +77,25 @@ type Address = {
     longitude?: number | string | null;
 };
 
-/**
- * Wrapper relation between Deskrl and Address.
- */
 type DeskrlAddress = {
     address?: Address;
 };
 
-/**
- * Commercial account data connected to a host account.
- * The verification status is used to display the verified host badge.
- */
 type CommercialAccount = {
     id: number;
     company_name?: string;
     is_verified?: boolean;
 };
 
-/**
- * Host account object.
- */
 type HostAccount = {
     id: number;
     first_name?: string;
     last_name?: string;
     profile_image?: string | null;
-
-    // Laravel usually serializes the commercialAccount relation as snake_case.
     commercial_account?: CommercialAccount;
-
-    // Fallback in case the relation is transformed to camelCase later.
     commercialAccount?: CommercialAccount;
 };
 
-/**
- * Main Deskrl type expected from the Inertia backend prop.
- */
 type Deskrl = {
     id: number;
     title?: LocalizedText;
@@ -151,12 +110,10 @@ type Deskrl = {
 
     instant_bookable?: boolean;
 
-    // Laravel JSON serialization usually returns snake_case relation names.
     deskrl_category?: DeskrlCategory;
     deskrl_address?: DeskrlAddress;
     host_account?: HostAccount;
 
-    // CamelCase fallbacks are kept for possible frontend transformations.
     deskrlCategory?: DeskrlCategory;
     deskrlAddress?: DeskrlAddress;
     hostAccount?: HostAccount;
@@ -169,10 +126,6 @@ type Props = {
     deskrl: Deskrl;
 };
 
-/**
- * Expected shared Inertia props.
- * The auth.user object must be provided from HandleInertiaRequests.php.
- */
 type PageProps = {
     auth?: {
         user?: {
@@ -180,22 +133,14 @@ type PageProps = {
             first_name?: string;
             last_name?: string;
             email?: string;
+            account_type?: string;
+            role?: string;
         } | null;
     };
 };
 
-/**
- * Frontend/UI duration values.
- *
- * These values are used inside the React component and by the BookingConfirmationModal.
- */
 type BookingDuration = 'hour' | 'half_day' | 'day' | 'week' | 'month';
 
-/**
- * Backend enum values for bookings.price_rate.
- *
- * These values must match the Laravel validation and database enum.
- */
 type BackendPriceRate = 'hour' | 'half_day' | 'day' | 'week' | 'month';
 
 type BookingDurationOption = {
@@ -204,9 +149,6 @@ type BookingDurationOption = {
     price: number | null;
 };
 
-/**
- * Payload sent to the Laravel BookingController.
- */
 type BookingRequestPayload = {
     deskrl_id: number;
     price_rate: BackendPriceRate;
@@ -215,10 +157,6 @@ type BookingRequestPayload = {
     price: number;
 };
 
-/**
- * Returns the best available text from a localized field.
- * It first tries German, then English, then any other existing value.
- */
 function getLocalizedText(value?: LocalizedText): string {
     if (!value) return '';
 
@@ -229,10 +167,6 @@ function getLocalizedText(value?: LocalizedText): string {
     return value.de || value.en || Object.values(value).find(Boolean) || '';
 }
 
-/**
- * Converts backend image paths into browser-safe URLs.
- * External URLs are returned unchanged.
- */
 function getImageUrl(path: string): string {
     if (path.startsWith('http') || path.startsWith('/')) {
         return path;
@@ -241,9 +175,6 @@ function getImageUrl(path: string): string {
     return `/${path}`;
 }
 
-/**
- * Converts backend price values into numbers for the booking widget.
- */
 function parsePrice(value?: number | string | null): number | null {
     if (value === null || value === undefined || value === '') {
         return null;
@@ -254,9 +185,6 @@ function parsePrice(value?: number | string | null): number | null {
     return Number.isFinite(numericValue) ? numericValue : null;
 }
 
-/**
- * Builds a readable address string from the nested Deskrl address relation.
- */
 function formatAddress(address?: Address): string {
     if (!address) return 'Adresse noch nicht verfügbar';
 
@@ -268,10 +196,6 @@ function formatAddress(address?: Address): string {
         .join(', ');
 }
 
-/**
- * Returns an icon for a utility category based on its localized category name.
- * This is a temporary UI mapping until category icons are stored in the database.
- */
 function getUtilityCategoryIcon(categoryName: string) {
     const normalizedName = categoryName.toLowerCase();
 
@@ -290,10 +214,6 @@ function getUtilityCategoryIcon(categoryName: string) {
     return Building2;
 }
 
-/**
- * Returns an icon for a single utility based on its name.
- * This is a temporary UI mapping until utility icons are stored in the database.
- */
 function getUtilityIcon(utilityName: string) {
     const normalizedName = utilityName.toLowerCase();
 
@@ -335,80 +255,34 @@ function getUtilityIcon(utilityName: string) {
     return Check;
 }
 
-/**
- * Maps the frontend duration value to the backend enum value stored in bookings.price_rate.
- *
- * Frontend/UI:
- * - hour
- * - half_day
- * - day
- * - week
- * - month
- *
- * Backend/database:
- * - hourly
- * - half_day
- * - daily
- * - weekly
- * - monthly
- */
-function mapDurationToBackendPriceRate(duration: BookingDuration): BackendPriceRate {
-    const mapping: Record<BookingDuration, BackendPriceRate> = {
-        hour: 'hour',
-        half_day: 'half_day',
-        day: 'day',
-        week: 'week',
-        month: 'month',
-    };
-
-    return mapping[duration];
-}
-
 export default function Show({ deskrl }: Props) {
     const { props } = usePage<PageProps>();
-    const authUser = props.auth?.user ?? null;
+    const { auth } = props;
 
-    /**
-     * Stores the currently selected image index for gallery and lightbox.
-     */
+    const isLoggedIn = Boolean(auth?.user);
+
+    const accountType = auth?.user?.account_type ?? auth?.user?.role ?? 'guest';
+    const isRegularUser = accountType === 'user';
+
+    const { toggleFavorite, isFavorited } = useFavorites();
+    const isCurrentDeskrlFavorited = isFavorited(deskrl.id);
+
     const [selectedImage, setSelectedImage] = useState(0);
-
-    /**
-     * Controls whether the fullscreen image lightbox is open.
-     */
     const [lightboxOpen, setLightboxOpen] = useState(false);
-
-    /**
-     * Controls whether the share dropdown menu is visible.
-     */
     const [showShareMenu, setShowShareMenu] = useState(false);
-
-    /**
-     * Controls whether the authentication modal is visible.
-     * This is opened when a guest tries to start the booking flow.
-     */
     const [showAuthModal, setShowAuthModal] = useState(false);
-
-    /**
-     * Controls whether the booking confirmation modal is visible.
-     * This is opened when an authenticated user starts the booking flow.
-     */
     const [showBookingModal, setShowBookingModal] = useState(false);
-
-    /**
-     * Tracks whether the booking request POST is currently running.
-     * This prevents duplicate submissions.
-     */
     const [isSubmittingBookingRequest, setIsSubmittingBookingRequest] = useState(false);
 
-    /**
-     * Stores the selected date from the booking widget.
-     */
     const [selectedDate, setSelectedDate] = useState('');
+    const [showBookingDatePicker, setShowBookingDatePicker] = useState(false);
+    const [halfdayPeriod, setHalfdayPeriod] = useState<'morning' | 'afternoon'>('morning');
+    const [selectedStartTime, setSelectedStartTime] = useState('09:00');
+    const [selectedEndTime, setSelectedEndTime] = useState('10:00');
+    const [selectedMonth, setSelectedMonth] = useState('');
+    const [showAllUtilities, setShowAllUtilities] = useState(false);
+    const [hostImageFailed, setHostImageFailed] = useState(false);
 
-    /**
-     * Stores the currently selected booking duration in the sidebar.
-     */
     const [selectedDuration, setSelectedDuration] = useState<BookingDuration>(() => {
         if (deskrl.price_per_half_day) return 'half_day';
         if (deskrl.price_per_day) return 'day';
@@ -417,81 +291,24 @@ export default function Show({ deskrl }: Props) {
         return 'month';
     });
 
-    /**
-     * Controls the date picker dropdown inside the booking widget.
-     */
-    const [showBookingDatePicker, setShowBookingDatePicker] = useState(false);
-
-    /**
-     * Stores the selected half-day period.
-     *
-     * This value is not sent directly to the backend.
-     * It is only used to build from/until:
-     * - morning   => 08:00 to 12:00
-     * - afternoon => 13:00 to 17:00
-     */
-    const [halfdayPeriod, setHalfdayPeriod] = useState<'morning' | 'afternoon'>('morning');
-
-    /**
-     * Stores optional start and end times for hourly bookings.
-     */
-    const [selectedStartTime, setSelectedStartTime] = useState('09:00');
-    const [selectedEndTime, setSelectedEndTime] = useState('10:00');
-
-    /**
-     * Stores the selected month for monthly bookings.
-     */
-    const [selectedMonth, setSelectedMonth] = useState('');
-
-    /**
-     * Controls whether all utility groups are shown.
-     * By default, only the first groups are displayed to keep the page compact.
-     */
-    const [showAllUtilities, setShowAllUtilities] = useState(false);
-
-    /**
-     * Tracks whether the host profile image failed to load.
-     * If it fails, the UI falls back to initials.
-     */
-    const [hostImageFailed, setHostImageFailed] = useState(false);
-
-    /**
-     * Support both snake_case and camelCase relation names.
-     * Snake_case is expected from Laravel JSON serialization.
-     */
     const category = deskrl.deskrl_category || deskrl.deskrlCategory;
     const address = deskrl.deskrl_address?.address || deskrl.deskrlAddress?.address;
     const host = deskrl.host_account || deskrl.hostAccount;
 
-    /**
-     * Reads the real verification status from the host's commercial account.
-     * If no commercial account exists, the host is treated as not verified.
-     */
     const commercialAccount = host?.commercial_account || host?.commercialAccount;
     const isHostVerified = commercialAccount?.is_verified === true;
 
-    /**
-     * Convert localized JSON fields into simple display strings.
-     */
     const title = getLocalizedText(deskrl.title) || 'Deskrl ohne Titel';
     const description = getLocalizedText(deskrl.description) || 'Für diesen Deskrl gibt es noch keine Beschreibung.';
 
-    /**
-     * Sort images so that the main image appears first.
-     * No placeholder images are used on purpose, so missing backend images become visible during development.
-     */
     const images = useMemo(() => {
         return (
-            deskrl.images
-                ?.sort((a, b) => Number(b.is_main) - Number(a.is_main) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                .map(image => getImageUrl(image.path)) ?? []
+            [...(deskrl.images ?? [])]
+                .sort((a, b) => Number(b.is_main) - Number(a.is_main) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                .map((image) => getImageUrl(image.path))
         );
     }, [deskrl.images]);
 
-    /**
-     * Build a list of available booking durations.
-     * Empty prices are filtered out so only bookable durations are displayed.
-     */
     const bookingDurationOptions: BookingDurationOption[] = [
         {
             key: 'hour',
@@ -521,19 +338,15 @@ export default function Show({ deskrl }: Props) {
     ].filter((option): option is BookingDurationOption => option.price !== null);
 
     const selectedDurationOption =
-        bookingDurationOptions.find(option => option.key === selectedDuration) ?? bookingDurationOptions[0];
+        bookingDurationOptions.find((option) => option.key === selectedDuration) ?? bookingDurationOptions[0];
 
     const selectedBookingPrice = selectedDurationOption?.price ?? null;
     const selectedBookingLabel = selectedDurationOption?.label ?? 'Zeitraum';
 
-    /**
-     * Group utilities by their utility category.
-     * This allows the detail page to display equipment like in the Figma prototype.
-     */
     const groupedUtilities = useMemo(() => {
         const groups: Record<string, Utility[]> = {};
 
-        deskrl.utilities?.forEach(utility => {
+        deskrl.utilities?.forEach((utility) => {
             const utilityCategory = utility.utility_category || utility.utilityCategory;
             const categoryName = getLocalizedText(utilityCategory?.category_name) || 'Weitere Ausstattung';
 
@@ -551,20 +364,23 @@ export default function Show({ deskrl }: Props) {
         }));
     }, [deskrl.utilities]);
 
-    /**
-     * Only show the first utility groups by default.
-     * The button below expands the full list.
-     */
     const visibleUtilityGroups = showAllUtilities ? groupedUtilities : groupedUtilities.slice(0, 3);
 
-    /**
-     * Build the actual database period from the frontend selection.
-     *
-     * Important:
-     * The database does not store "morning" or "afternoon".
-     * For half-day bookings, the exact slot is encoded through from/until.
-     */
     const buildBookingPeriod = (): { from: string; until: string } | null => {
+        if (selectedDuration === 'month') {
+            if (!selectedMonth) {
+                return null;
+            }
+
+            const [year, month] = selectedMonth.split('-').map(Number);
+            const lastDay = new Date(year, month, 0).getDate();
+
+            return {
+                from: `${selectedMonth}-01 00:00:00`,
+                until: `${selectedMonth}-${String(lastDay).padStart(2, '0')} 23:59:59`,
+            };
+        }
+
         if (!selectedDate) {
             return null;
         }
@@ -601,8 +417,6 @@ export default function Show({ deskrl }: Props) {
             const startDate = new Date(selectedDate);
             const endDate = new Date(startDate);
 
-            // Current simplified MVP logic:
-            // A week booking covers 7 calendar days starting from selectedDate.
             endDate.setDate(startDate.getDate() + 6);
 
             return {
@@ -611,26 +425,9 @@ export default function Show({ deskrl }: Props) {
             };
         }
 
-        if (selectedDuration === 'month') {
-            if (!selectedMonth) {
-                return null;
-            }
-
-            const [year, month] = selectedMonth.split('-').map(Number);
-            const lastDay = new Date(year, month, 0).getDate();
-
-            return {
-                from: `${selectedMonth}-01 00:00:00`,
-                until: `${selectedMonth}-${String(lastDay).padStart(2, '0')} 23:59:59`,
-            };
-        }
-
         return null;
     };
 
-    /**
-     * Handles share actions without requiring backend logic.
-     */
     const handleShare = (type: 'copy' | 'email' | 'whatsapp') => {
         const url = window.location.href;
 
@@ -651,45 +448,35 @@ export default function Show({ deskrl }: Props) {
         }
     };
 
-    /**
-     * Opens the authentication modal for guests.
-     * Opens the booking modal for authenticated users.
-     */
     const handleBookingClick = () => {
-        if (!authUser) {
+        if (!isLoggedIn) {
             setShowAuthModal(true);
-            return;
-        }
-
-        if (!selectedDate) {
-            toast.error('Bitte wähle zuerst ein Datum aus.');
             return;
         }
 
         if (selectedBookingPrice === null) {
             toast.error('Für diesen Zeitraum ist kein Preis hinterlegt.');
+            return;
+        }
+
+        if (selectedDuration === 'month') {
+            if (!selectedMonth) {
+                toast.error('Bitte wähle zuerst einen Monat aus.');
+                return;
+            }
+        } else if (!selectedDate) {
+            toast.error('Bitte wähle zuerst ein Datum aus.');
             return;
         }
 
         setShowBookingModal(true);
     };
 
-    /**
-     * Sends the booking request to Laravel.
-     *
-     * This does not handle payment.
-     * The expected backend behavior is:
-     * - user_id is taken from Auth::id()
-     * - deskrl_id is taken from route-model binding
-     * - host assignment is indirect through deskrls.host_account_id
-     * - status should be saved as pending or confirmed depending on instant_bookable
-     * - payment_status should be saved as unpaid
-     */
     const handleBookingConfirm = () => {
-        const bookingPeriod = buildBookingPeriod();
+        const period = buildBookingPeriod();
 
-        if (!bookingPeriod) {
-            toast.error('Bitte wähle zuerst einen gültigen Zeitraum aus.');
+        if (!period) {
+            toast.error('Bitte wähle einen gültigen Zeitraum aus.');
             return;
         }
 
@@ -698,58 +485,64 @@ export default function Show({ deskrl }: Props) {
             return;
         }
 
+        setIsSubmittingBookingRequest(true);
+
         const payload: BookingRequestPayload = {
             deskrl_id: deskrl.id,
-            price_rate: mapDurationToBackendPriceRate(selectedDuration),
-            from: bookingPeriod.from,
-            until: bookingPeriod.until,
+            price_rate: selectedDuration as BackendPriceRate,
+            from: period.from,
+            until: period.until,
             price: selectedBookingPrice,
         };
 
-        router.post(`/deskrls/${deskrl.id}/bookings`, payload, {
+        router.post('/bookings', payload, {
             preserveScroll: true,
-
-            onStart: () => {
-                setIsSubmittingBookingRequest(true);
-            },
-
             onSuccess: () => {
                 toast.success('Buchungsanfrage wurde gesendet.');
                 setShowBookingModal(false);
             },
-
             onError: () => {
-                toast.error('Die Buchungsanfrage konnte nicht gesendet werden.');
+                toast.error('Buchungsanfrage konnte nicht gesendet werden.');
             },
-
             onFinish: () => {
                 setIsSubmittingBookingRequest(false);
             },
         });
     };
 
-    /**
-     * Placeholder handler for favorites.
-     * Later this can call the FavoriteController through Inertia.
-     */
-    const handleFavoriteClick = () => {
-        toast.info('Favoriten-Funktion wird später angebunden.');
+    const handleFavoriteClick = async () => {
+        if (!isLoggedIn) {
+            setShowAuthModal(true);
+            return;
+        }
+
+        if (!isRegularUser) {
+            toast.info('Favoriten können aktuell nur von Nutzer:innen gespeichert werden.');
+            return;
+        }
+
+        try {
+            await toggleFavorite(deskrl.id);
+
+            toast.success(
+                isCurrentDeskrlFavorited
+                    ? 'Deskrl wurde aus deinen Gemerkten entfernt.'
+                    : 'Deskrl wurde zu deinen Gemerkten hinzugefügt.',
+            );
+        } catch {
+            toast.error('Favorit konnte nicht gespeichert werden.');
+        }
     };
 
-    /**
-     * Opens Google Maps route planning for the current Deskrl address.
-     * This link works independently of the embedded map API key.
-     */
     const handleRoutePlanning = () => {
         window.open(
-            `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(formatAddress(address))}`,
+            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formatAddress(address))}`,
             '_blank',
         );
     };
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Fullscreen image lightbox */}
             {lightboxOpen && images.length > 0 && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
                     <button
@@ -770,11 +563,7 @@ export default function Show({ deskrl }: Props) {
                         <ChevronLeft className="h-12 w-12" />
                     </button>
 
-                    <img
-                        src={images[selectedImage]}
-                        alt={title}
-                        className="max-h-[90vh] max-w-[90vw] object-contain"
-                    />
+                    <img src={images[selectedImage]} alt={title} className="max-h-[90vh] max-w-[90vw] object-contain" />
 
                     <button
                         type="button"
@@ -792,13 +581,11 @@ export default function Show({ deskrl }: Props) {
             )}
 
             <div className="mx-auto max-w-7xl px-4 py-8">
-                {/* Back link to overview/search page */}
                 <Link href="/" className="mb-6 inline-flex items-center gap-2 text-gray-600 hover:text-[#5555ff]">
                     <ArrowLeft className="h-5 w-5" />
                     Zurück zur Suche
                 </Link>
 
-                {/* Header area with title, location and action buttons */}
                 <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
                     <div>
                         {category?.name && (
@@ -807,9 +594,7 @@ export default function Show({ deskrl }: Props) {
                             </span>
                         )}
 
-                        <h1 className="mb-3 text-2xl font-bold leading-tight text-gray-950 md:text-4xl">
-                            {title}
-                        </h1>
+                        <h1 className="mb-3 text-2xl font-bold leading-tight text-gray-950 md:text-4xl">{title}</h1>
 
                         <div className="flex flex-wrap items-center gap-4 text-gray-600">
                             <p className="flex items-center gap-2 text-base text-gray-600 md:text-lg">
@@ -819,7 +604,6 @@ export default function Show({ deskrl }: Props) {
                         </div>
                     </div>
 
-                    {/* Share and favorite buttons */}
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <button
@@ -831,7 +615,6 @@ export default function Show({ deskrl }: Props) {
                                 Teilen
                             </button>
 
-                            {/* Share dropdown menu */}
                             {showShareMenu && (
                                 <div className="absolute right-0 top-full z-10 mt-2 min-w-[200px] rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
                                     <button
@@ -867,15 +650,22 @@ export default function Show({ deskrl }: Props) {
                         <button
                             type="button"
                             onClick={handleFavoriteClick}
-                            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-semibold hover:border-[#e63cff] hover:text-[#e63cff]"
+                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold transition-colors ${
+                                isCurrentDeskrlFavorited
+                                    ? 'border-[#e63cff] bg-[#fff1fb] text-[#e63cff]'
+                                    : 'border-gray-200 bg-white hover:border-[#e63cff] hover:text-[#e63cff]'
+                            }`}
                         >
-                            <Heart className="h-5 w-5" />
-                            Merken
+                            <Heart
+                                className={`h-5 w-5 ${
+                                    isCurrentDeskrlFavorited ? 'fill-[#e63cff] text-[#e63cff]' : ''
+                                }`}
+                            />
+                            {isCurrentDeskrlFavorited ? 'Gemerkt' : 'Merken'}
                         </button>
                     </div>
                 </div>
 
-                {/* Image gallery */}
                 {images.length > 0 ? (
                     <div className="mb-10 grid h-[500px] grid-cols-4 gap-4">
                         <button
@@ -923,11 +713,8 @@ export default function Show({ deskrl }: Props) {
                 )}
 
                 <div className="grid gap-10 lg:grid-cols-3">
-                    {/* Main content column */}
                     <div className="space-y-8 lg:col-span-2">
-                        {/* Main information card: capacity, description and utilities */}
                         <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-                            {/* Capacity section like in the Figma prototype */}
                             {deskrl.capacity && (
                                 <div className="border-b border-gray-200 pb-8">
                                     <div className="flex items-center gap-5">
@@ -945,27 +732,22 @@ export default function Show({ deskrl }: Props) {
                                 </div>
                             )}
 
-                            {/* Description section */}
                             <div className="border-b border-gray-200 py-8">
                                 <h2 className="mb-6 text-2xl font-bold text-gray-950">Über diesen Raum</h2>
 
-                                <p className="text-base leading-7 text-gray-700 md:text-lg">
-                                    {description}
-                                </p>
+                                <p className="text-base leading-7 text-gray-700 md:text-lg">{description}</p>
                             </div>
 
-                            {/* Utility section grouped by category */}
                             <div className="pt-8">
                                 <h2 className="mb-8 text-2xl font-bold text-gray-950">Ausstattung & Services</h2>
 
                                 {groupedUtilities.length > 0 ? (
                                     <div className="space-y-10">
-                                        {visibleUtilityGroups.map(group => {
+                                        {visibleUtilityGroups.map((group) => {
                                             const CategoryIcon = group.Icon;
 
                                             return (
                                                 <div key={group.categoryName}>
-                                                    {/* Utility category headline */}
                                                     <div className="mb-5 flex items-center gap-3">
                                                         <CategoryIcon className="h-6 w-6 text-[#5555ff]" />
                                                         <h3 className="text-lg font-bold text-gray-950 md:text-xl">
@@ -973,9 +755,8 @@ export default function Show({ deskrl }: Props) {
                                                         </h3>
                                                     </div>
 
-                                                    {/* Utility cards */}
                                                     <div className="grid gap-4 md:grid-cols-2">
-                                                        {group.utilities.map(utility => {
+                                                        {group.utilities.map((utility) => {
                                                             const utilityName = getLocalizedText(utility.name);
                                                             const UtilityIcon = getUtilityIcon(utilityName);
 
@@ -990,7 +771,9 @@ export default function Show({ deskrl }: Props) {
 
                                                                     <span className="text-base font-semibold text-gray-950 md:text-lg">
                                                                         {utilityName}
-                                                                        {utility.pivot?.quantity ? ` (${utility.pivot.quantity})` : ''}
+                                                                        {utility.pivot?.quantity
+                                                                            ? ` (${utility.pivot.quantity})`
+                                                                            : ''}
                                                                     </span>
                                                                 </div>
                                                             );
@@ -1000,7 +783,6 @@ export default function Show({ deskrl }: Props) {
                                             );
                                         })}
 
-                                        {/* Expand button for additional utility groups */}
                                         {groupedUtilities.length > 3 && (
                                             <div className="flex justify-center">
                                                 <button
@@ -1026,7 +808,6 @@ export default function Show({ deskrl }: Props) {
                             </div>
                         </section>
 
-                        {/* Location card */}
                         <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
                             <h2 className="mb-6 text-2xl font-bold text-gray-950">Standort</h2>
 
@@ -1035,15 +816,10 @@ export default function Show({ deskrl }: Props) {
                                 {formatAddress(address)}
                             </p>
 
-                            {/* Interactive Google Map; it becomes active once an API key is configured. */}
                             <div className="mb-6">
-                                <DeskrlLocationMap
-                                    latitude={address?.latitude}
-                                    longitude={address?.longitude}
-                                />
+                                <DeskrlLocationMap latitude={address?.latitude} longitude={address?.longitude} />
                             </div>
 
-                            {/* Opens Google Maps route planning in a new browser tab */}
                             <button
                                 type="button"
                                 onClick={handleRoutePlanning}
@@ -1054,20 +830,15 @@ export default function Show({ deskrl }: Props) {
                             </button>
                         </section>
 
-                        {/* Host card */}
                         <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
                             <h2 className="mb-6 text-2xl font-bold text-gray-950">Gastgeber</h2>
 
                             <div className="flex items-center gap-5">
-                                {/* Show host profile image if available, otherwise show initials */}
                                 {host?.profile_image && !hostImageFailed ? (
                                     <img
                                         src={getImageUrl(host.profile_image)}
                                         alt="Host profile"
-                                        onError={() => {
-                                            // Fall back to initials if the profile image path is invalid or missing.
-                                            setHostImageFailed(true);
-                                        }}
+                                        onError={() => setHostImageFailed(true)}
                                         className="h-20 w-20 rounded-2xl object-cover"
                                     />
                                 ) : (
@@ -1087,7 +858,6 @@ export default function Show({ deskrl }: Props) {
                                         {commercialAccount?.company_name || 'Private:r Gastgeber:in'}
                                     </p>
 
-                                    {/* Show the verification badge only when the host is actually verified. */}
                                     {isHostVerified && (
                                         <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-base font-semibold text-green-700">
                                             <Check className="h-5 w-5" />
@@ -1099,14 +869,14 @@ export default function Show({ deskrl }: Props) {
                         </section>
                     </div>
 
-                    {/* Booking sidebar */}
                     <aside className="lg:col-span-1">
                         <div className="sticky top-8 rounded-3xl border-2 border-[#5555ff] bg-white p-6 shadow-lg">
-                            {/* Price headline */}
                             <div className="mb-8">
                                 {selectedBookingPrice !== null ? (
                                     <div className="text-3xl font-bold text-gray-950">
-                                        {!selectedDate && <span className="text-lg font-normal text-gray-600">ab </span>}
+                                        {!selectedDate && selectedDuration !== 'month' && (
+                                            <span className="text-lg font-normal text-gray-600">ab </span>
+                                        )}
                                         €{selectedBookingPrice.toFixed(0)}
                                         <span className="text-lg font-normal text-gray-600">
                                             {selectedDuration === 'week' ? ' gesamt' : ` / ${selectedBookingLabel}`}
@@ -1117,7 +887,6 @@ export default function Show({ deskrl }: Props) {
                                 )}
                             </div>
 
-                            {/* Duration selector */}
                             {bookingDurationOptions.length > 0 && (
                                 <div className="mb-8">
                                     <label className="mb-4 block text-base font-bold text-gray-700">
@@ -1125,7 +894,7 @@ export default function Show({ deskrl }: Props) {
                                     </label>
 
                                     <div className="grid grid-cols-3 gap-3">
-                                        {bookingDurationOptions.map(option => (
+                                        {bookingDurationOptions.map((option) => (
                                             <button
                                                 key={option.key}
                                                 type="button"
@@ -1146,7 +915,6 @@ export default function Show({ deskrl }: Props) {
                                 </div>
                             )}
 
-                            {/* Date selection */}
                             {selectedDuration !== 'month' ? (
                                 <div className="relative mb-8">
                                     <label className="mb-4 block text-base font-bold text-gray-700">
@@ -1175,7 +943,7 @@ export default function Show({ deskrl }: Props) {
                                         <div className="absolute left-0 right-0 z-20 mt-2 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
                                             <DatePicker
                                                 selectedDate={selectedDate}
-                                                onDateSelect={date => {
+                                                onDateSelect={(date) => {
                                                     setSelectedDate(date);
                                                     setShowBookingDatePicker(false);
                                                 }}
@@ -1186,18 +954,18 @@ export default function Show({ deskrl }: Props) {
                                 </div>
                             ) : (
                                 <div className="mb-8">
-                                    <label className="mb-4 block text-base font-bold text-gray-700">
-                                        Monat
-                                    </label>
+                                    <label className="mb-4 block text-base font-bold text-gray-700">Monat</label>
 
                                     <select
                                         value={selectedMonth}
-                                        onChange={event => {
+                                        onChange={(event) => {
                                             const value = event.target.value;
                                             setSelectedMonth(value);
 
                                             if (value) {
                                                 setSelectedDate(`${value}-01`);
+                                            } else {
+                                                setSelectedDate('');
                                             }
                                         }}
                                         className="w-full rounded-3xl border border-gray-200 bg-white px-4 py-4 text-gray-700 focus:border-[#5555ff] focus:outline-none focus:ring-2 focus:ring-[#5555ff]/20"
@@ -1210,6 +978,7 @@ export default function Show({ deskrl }: Props) {
                                             const year = date.getFullYear();
                                             const month = String(date.getMonth() + 1).padStart(2, '0');
                                             const value = `${year}-${month}`;
+
                                             const monthNames = [
                                                 'Januar',
                                                 'Februar',
@@ -1235,12 +1004,9 @@ export default function Show({ deskrl }: Props) {
                                 </div>
                             )}
 
-                            {/* Hourly time selection */}
                             {selectedDuration === 'hour' && (
                                 <div className="mb-8">
-                                    <label className="mb-4 block text-base font-bold text-gray-700">
-                                        Uhrzeit
-                                    </label>
+                                    <label className="mb-4 block text-base font-bold text-gray-700">Uhrzeit</label>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <label className="rounded-3xl bg-gray-100 px-4 py-3">
@@ -1251,7 +1017,7 @@ export default function Show({ deskrl }: Props) {
                                             <input
                                                 type="time"
                                                 value={selectedStartTime}
-                                                onChange={event => setSelectedStartTime(event.target.value)}
+                                                onChange={(event) => setSelectedStartTime(event.target.value)}
                                                 className="w-full bg-transparent text-base font-bold text-gray-900 outline-none"
                                             />
                                         </label>
@@ -1264,7 +1030,7 @@ export default function Show({ deskrl }: Props) {
                                             <input
                                                 type="time"
                                                 value={selectedEndTime}
-                                                onChange={event => setSelectedEndTime(event.target.value)}
+                                                onChange={(event) => setSelectedEndTime(event.target.value)}
                                                 className="w-full bg-transparent text-base font-bold text-gray-900 outline-none"
                                             />
                                         </label>
@@ -1272,12 +1038,9 @@ export default function Show({ deskrl }: Props) {
                                 </div>
                             )}
 
-                            {/* Half-day period selection */}
                             {selectedDuration === 'half_day' && (
                                 <div className="mb-8">
-                                    <label className="mb-4 block text-base font-bold text-gray-700">
-                                        Zeitraum
-                                    </label>
+                                    <label className="mb-4 block text-base font-bold text-gray-700">Zeitraum</label>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <button
@@ -1321,7 +1084,6 @@ export default function Show({ deskrl }: Props) {
                                 </div>
                             )}
 
-                            {/* Booking button */}
                             <button
                                 type="button"
                                 onClick={handleBookingClick}
@@ -1332,7 +1094,11 @@ export default function Show({ deskrl }: Props) {
                                         : 'bg-[#e63cff] hover:bg-[#d12ee6]'
                                 }`}
                             >
-                                {deskrl.instant_bookable ? 'Reservieren' : 'Anfragen'}
+                                {isSubmittingBookingRequest
+                                    ? 'Wird gesendet...'
+                                    : deskrl.instant_bookable
+                                        ? 'Reservieren'
+                                        : 'Anfragen'}
                             </button>
 
                             <p className="text-center text-sm leading-5 text-gray-500">
@@ -1343,14 +1109,8 @@ export default function Show({ deskrl }: Props) {
                 </div>
             </div>
 
-            {/* Auth modal is opened when guests try to book. */}
-            <AuthModal
-                isOpen={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
-                initialMode="login"
-            />
+            <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialMode="login" />
 
-            {/* Booking modal is opened when authenticated users try to book. */}
             <BookingConfirmationModal
                 isOpen={showBookingModal}
                 onClose={() => setShowBookingModal(false)}
@@ -1358,14 +1118,10 @@ export default function Show({ deskrl }: Props) {
                 spaceName={title}
                 duration={selectedDuration}
                 price={selectedBookingPrice ?? 0}
-                date={selectedDate}
+                date={selectedDuration === 'month' ? selectedMonth : selectedDate}
             />
         </div>
     );
 }
 
-/**
- * Wraps the Deskrl detail page with the global app layout.
- * The layout is responsible for rendering shared elements like header and footer.
- */
 Show.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
