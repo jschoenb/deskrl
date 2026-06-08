@@ -7,7 +7,7 @@ import { BookingConfirmationModal } from '@/components/BookingModal';
 
 type BookingDuration = 'hour' | 'half_day' | 'day' | 'week' | 'month';
 
-type BackendPriceRate = 'hour' | 'half_day' | 'day' | 'week' | 'month';
+type BackendPriceRate = 'hourly' | 'half_day' | 'daily' | 'weekly' | 'monthly';
 
 type BookingDurationOption = {
     key: BookingDuration;
@@ -41,6 +41,8 @@ type BookingComponentProps = {
     onGuestBooking: () => void;
 };
 
+type InertiaErrors = Record<string, string | string[] | undefined>;
+
 function parsePrice(value?: number | string | null): number | null {
     if (value === null || value === undefined || value === '') {
         return null;
@@ -52,7 +54,51 @@ function parsePrice(value?: number | string | null): number | null {
 }
 
 function mapDurationToBackendPriceRate(duration: BookingDuration): BackendPriceRate {
-    return duration;
+    const mapping: Record<BookingDuration, BackendPriceRate> = {
+        hour: 'hourly',
+        half_day: 'half_day',
+        day: 'daily',
+        week: 'weekly',
+        month: 'monthly',
+    };
+
+    return mapping[duration];
+}
+
+function getFirstErrorMessage(errors: InertiaErrors): string {
+    const preferredErrorKeys = [
+        'booking',
+        'from',
+        'until',
+        'price_rate',
+        'billing_address_id',
+        'deskrl',
+        'status',
+    ];
+
+    for (const key of preferredErrorKeys) {
+        const error = errors[key];
+
+        if (Array.isArray(error) && error.length > 0) {
+            return error[0];
+        }
+
+        if (typeof error === 'string' && error.trim() !== '') {
+            return error;
+        }
+    }
+
+    const firstError = Object.values(errors).find(Boolean);
+
+    if (Array.isArray(firstError) && firstError.length > 0) {
+        return firstError[0];
+    }
+
+    if (typeof firstError === 'string' && firstError.trim() !== '') {
+        return firstError;
+    }
+
+    return 'Die Buchungsanfrage konnte nicht gesendet werden. Bitte prüfe deine Eingaben.';
 }
 
 export default function BookingComponent({
@@ -230,8 +276,8 @@ export default function BookingComponent({
                 setShowBookingModal(false);
             },
 
-            onError: () => {
-                toast.error('Die Buchungsanfrage konnte nicht gesendet werden.');
+            onError: errors => {
+                toast.error(getFirstErrorMessage(errors as InertiaErrors));
             },
 
             onFinish: () => {
