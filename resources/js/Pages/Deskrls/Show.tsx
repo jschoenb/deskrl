@@ -1,12 +1,10 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import React, { ReactNode, useMemo, useState } from 'react';
 import {
     ArrowLeft,
     Bike,
     Building2,
-    Calendar,
     Check,
-    Clock,
     ChevronDown,
     ChevronLeft,
     ChevronRight,
@@ -21,17 +19,12 @@ import {
     Users,
     X,
 } from 'lucide-react';
-import {toast} from 'sonner';
-import {DatePicker} from '@/components/DatePicker';
+import { toast } from 'sonner';
 import AuthModal from '@/components/AuthModal';
-import AppLayout from "@/Layouts/AppLayout";
-import DeskrlLocationMap from '@/components/maps/DeskrlLocationMap';
-import {useFavorites} from '@/contexts/FavoritesContext';
-
-import About from "@/pages/About";
-import { BookingConfirmationModal } from '@/components/BookingModal';
 import AppLayout from '@/Layouts/AppLayout';
-import About from "@/Pages/About";
+import DeskrlLocationMap from '@/components/maps/DeskrlLocationMap';
+import { useFavorites } from '@/contexts/FavoritesContext';
+import BookingComponent from '@/components/BookingComponent';
 
 /**
  * Localized fields can either be plain strings or translation objects.
@@ -183,39 +176,10 @@ type PageProps = {
             first_name?: string;
             last_name?: string;
             email?: string;
+            account_type?: string;
+            role?: string;
         } | null;
     };
-};
-
-/**
- * Frontend/UI duration values.
- *
- * These values are used inside the React component and by the BookingConfirmationModal.
- */
-type BookingDuration = 'hour' | 'half_day' | 'day' | 'week' | 'month';
-
-/**
- * Backend enum values for bookings.price_rate.
- *
- * These values must match the Laravel validation and database enum.
- */
-type BackendPriceRate = 'hourly' | 'half_day' | 'daily' | 'weekly' | 'monthly';
-
-type BookingDurationOption = {
-    key: BookingDuration;
-    label: string;
-    price: number | null;
-};
-
-/**
- * Payload sent to the Laravel BookingController.
- */
-type BookingRequestPayload = {
-    deskrl_id: number;
-    price_rate: BackendPriceRate;
-    from: string;
-    until: string;
-    price: number;
 };
 
 /**
@@ -242,19 +206,6 @@ function getImageUrl(path: string): string {
     }
 
     return `/${path}`;
-}
-
-/**
- * Converts backend price values into numbers for the booking widget.
- */
-function parsePrice(value?: number | string | null): number | null {
-    if (value === null || value === undefined || value === '') {
-        return null;
-    }
-
-    const numericValue = Number(value);
-
-    return Number.isFinite(numericValue) ? numericValue : null;
 }
 
 /**
@@ -338,52 +289,19 @@ function getUtilityIcon(utilityName: string) {
     return Check;
 }
 
-/**
- * Maps the frontend duration value to the backend enum value stored in bookings.price_rate.
- *
- * Frontend/UI:
- * - hour
- * - half_day
- * - day
- * - week
- * - month
- *
- * Backend/database:
- * - hourly
- * - half_day
- * - daily
- * - weekly
- * - monthly
- */
-function mapDurationToBackendPriceRate(duration: BookingDuration): BackendPriceRate {
-    const mapping: Record<BookingDuration, BackendPriceRate> = {
-        hour: 'hourly',
-        half_day: 'half_day',
-        day: 'daily',
-        week: 'weekly',
-        month: 'monthly',
-    };
-
-    return mapping[duration];
-}
-
 export default function Show({ deskrl }: Props) {
     const { props } = usePage<PageProps>();
     const authUser = props.auth?.user ?? null;
 
-export default function Show({deskrl}: Props) {
-    const {props} = usePage();
-    const {auth} = props as any;
-
     // Read the current login state from the shared Inertia props.
-    const isLoggedIn = Boolean(auth?.user);
+    const isLoggedIn = Boolean(authUser);
 
     // Only regular users should save Deskrls as favorites in the MVP.
-    const accountType = auth?.user?.account_type ?? auth?.user?.role ?? 'guest';
+    const accountType = authUser?.account_type ?? authUser?.role ?? 'guest';
     const isRegularUser = accountType === 'user';
 
     // Access the global favorites state from FavoritesContext.
-    const {toggleFavorite, isFavorited} = useFavorites();
+    const { toggleFavorite, isFavorited } = useFavorites();
 
     // Check whether this Deskrl is already saved as a favorite.
     const isCurrentDeskrlFavorited = isFavorited(deskrl.id);
@@ -405,63 +323,9 @@ export default function Show({deskrl}: Props) {
 
     /**
      * Controls whether the authentication modal is visible.
-     * This is opened when a guest tries to start the booking flow.
+     * This is opened when a guest tries to book or save a favorite.
      */
     const [showAuthModal, setShowAuthModal] = useState(false);
-
-    /**
-     * Controls whether the booking confirmation modal is visible.
-     * This is opened when an authenticated user starts the booking flow.
-     */
-    const [showBookingModal, setShowBookingModal] = useState(false);
-
-    /**
-     * Tracks whether the booking request POST is currently running.
-     * This prevents duplicate submissions.
-     */
-    const [isSubmittingBookingRequest, setIsSubmittingBookingRequest] = useState(false);
-
-    /**
-     * Stores the selected date from the booking widget.
-     */
-    const [selectedDate, setSelectedDate] = useState('');
-
-    /**
-     * Stores the currently selected booking duration in the sidebar.
-     */
-    const [selectedDuration, setSelectedDuration] = useState<BookingDuration>(() => {
-        if (deskrl.price_per_half_day) return 'half_day';
-        if (deskrl.price_per_day) return 'day';
-        if (deskrl.price_per_hour) return 'hour';
-        if (deskrl.price_per_week) return 'week';
-        return 'month';
-    });
-
-    /**
-     * Controls the date picker dropdown inside the booking widget.
-     */
-    const [showBookingDatePicker, setShowBookingDatePicker] = useState(false);
-
-    /**
-     * Stores the selected half-day period.
-     *
-     * This value is not sent directly to the backend.
-     * It is only used to build from/until:
-     * - morning   => 08:00 to 12:00
-     * - afternoon => 13:00 to 17:00
-     */
-    const [halfdayPeriod, setHalfdayPeriod] = useState<'morning' | 'afternoon'>('morning');
-
-    /**
-     * Stores optional start and end times for hourly bookings.
-     */
-    const [selectedStartTime, setSelectedStartTime] = useState('09:00');
-    const [selectedEndTime, setSelectedEndTime] = useState('10:00');
-
-    /**
-     * Stores the selected month for monthly bookings.
-     */
-    const [selectedMonth, setSelectedMonth] = useState('');
 
     /**
      * Controls whether all utility groups are shown.
@@ -502,49 +366,11 @@ export default function Show({deskrl}: Props) {
      */
     const images = useMemo(() => {
         return (
-            deskrl.images
-                ?.sort((a, b) => Number(b.is_main) - Number(a.is_main) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                .map(image => getImageUrl(image.path)) ?? []
+            [...(deskrl.images ?? [])]
+                .sort((a, b) => Number(b.is_main) - Number(a.is_main) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                .map(image => getImageUrl(image.path))
         );
     }, [deskrl.images]);
-
-    /**
-     * Build a list of available booking durations.
-     * Empty prices are filtered out so only bookable durations are displayed.
-     */
-    const bookingDurationOptions: BookingDurationOption[] = [
-        {
-            key: 'hour',
-            label: 'Stunde',
-            price: parsePrice(deskrl.price_per_hour),
-        },
-        {
-            key: 'half_day',
-            label: 'Halbtag',
-            price: parsePrice(deskrl.price_per_half_day),
-        },
-        {
-            key: 'day',
-            label: 'Tag',
-            price: parsePrice(deskrl.price_per_day),
-        },
-        {
-            key: 'week',
-            label: 'Woche',
-            price: parsePrice(deskrl.price_per_week),
-        },
-        {
-            key: 'month',
-            label: 'Monat',
-            price: parsePrice(deskrl.price_per_month),
-        },
-    ].filter((option): option is BookingDurationOption => option.price !== null);
-
-    const selectedDurationOption =
-        bookingDurationOptions.find(option => option.key === selectedDuration) ?? bookingDurationOptions[0];
-
-    const selectedBookingPrice = selectedDurationOption?.price ?? null;
-    const selectedBookingLabel = selectedDurationOption?.label ?? 'Zeitraum';
 
     /**
      * Group utilities by their utility category.
@@ -578,77 +404,6 @@ export default function Show({deskrl}: Props) {
     const visibleUtilityGroups = showAllUtilities ? groupedUtilities : groupedUtilities.slice(0, 3);
 
     /**
-     * Build the actual database period from the frontend selection.
-     *
-     * Important:
-     * The database does not store "morning" or "afternoon".
-     * For half-day bookings, the exact slot is encoded through from/until.
-     */
-    const buildBookingPeriod = (): { from: string; until: string } | null => {
-        if (!selectedDate) {
-            return null;
-        }
-
-        if (selectedDuration === 'hour') {
-            return {
-                from: `${selectedDate} ${selectedStartTime}:00`,
-                until: `${selectedDate} ${selectedEndTime}:00`,
-            };
-        }
-
-        if (selectedDuration === 'half_day') {
-            if (halfdayPeriod === 'morning') {
-                return {
-                    from: `${selectedDate} 08:00:00`,
-                    until: `${selectedDate} 12:00:00`,
-                };
-            }
-
-            return {
-                from: `${selectedDate} 13:00:00`,
-                until: `${selectedDate} 17:00:00`,
-            };
-        }
-
-        if (selectedDuration === 'day') {
-            return {
-                from: `${selectedDate} 00:00:00`,
-                until: `${selectedDate} 23:59:59`,
-            };
-        }
-
-        if (selectedDuration === 'week') {
-            const startDate = new Date(selectedDate);
-            const endDate = new Date(startDate);
-
-            // Current simplified MVP logic:
-            // A week booking covers 7 calendar days starting from selectedDate.
-            endDate.setDate(startDate.getDate() + 6);
-
-            return {
-                from: `${selectedDate} 00:00:00`,
-                until: `${endDate.toISOString().split('T')[0]} 23:59:59`,
-            };
-        }
-
-        if (selectedDuration === 'month') {
-            if (!selectedMonth) {
-                return null;
-            }
-
-            const [year, month] = selectedMonth.split('-').map(Number);
-            const lastDay = new Date(year, month, 0).getDate();
-
-            return {
-                from: `${selectedMonth}-01 00:00:00`,
-                until: `${selectedMonth}-${String(lastDay).padStart(2, '0')} 23:59:59`,
-            };
-        }
-
-        return null;
-    };
-
-    /**
      * Handles share actions without requiring backend logic.
      */
     const handleShare = (type: 'copy' | 'email' | 'whatsapp') => {
@@ -669,83 +424,6 @@ export default function Show({deskrl}: Props) {
         if (type === 'whatsapp') {
             window.open(`https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`, '_blank');
         }
-    };
-
-    /**
-     * Opens the authentication modal for guests.
-     * Opens the booking modal for authenticated users.
-     */
-    const handleBookingClick = () => {
-        if (!authUser) {
-            setShowAuthModal(true);
-            return;
-        }
-
-        if (!selectedDate) {
-            toast.error('Bitte wähle zuerst ein Datum aus.');
-            return;
-        }
-
-        if (selectedBookingPrice === null) {
-            toast.error('Für diesen Zeitraum ist kein Preis hinterlegt.');
-            return;
-        }
-
-        setShowBookingModal(true);
-    };
-
-    /**
-     * Sends the booking request to Laravel.
-     *
-     * This does not handle payment.
-     * The expected backend behavior is:
-     * - user_id is taken from Auth::id()
-     * - deskrl_id is taken from route-model binding
-     * - host assignment is indirect through deskrls.host_account_id
-     * - status should be saved as pending or confirmed depending on instant_bookable
-     * - payment_status should be saved as unpaid
-     */
-    const handleBookingConfirm = () => {
-        const bookingPeriod = buildBookingPeriod();
-
-        if (!bookingPeriod) {
-            toast.error('Bitte wähle zuerst einen gültigen Zeitraum aus.');
-            return;
-        }
-
-        if (selectedBookingPrice === null) {
-            toast.error('Für diesen Zeitraum ist kein Preis hinterlegt.');
-            return;
-        }
-
-        const payload: BookingRequestPayload = {
-            deskrl_id: deskrl.id,
-            price_rate: mapDurationToBackendPriceRate(selectedDuration),
-            from: bookingPeriod.from,
-            until: bookingPeriod.until,
-            price: selectedBookingPrice,
-        };
-
-        router.post(`/deskrls/${deskrl.id}/bookings`, payload, {
-            preserveScroll: true,
-
-            onStart: () => {
-                setIsSubmittingBookingRequest(true);
-            },
-
-            onSuccess: () => {
-                toast.success('Buchungsanfrage wurde gesendet.');
-                setShowBookingModal(false);
-            },
-
-            onError: () => {
-                toast.error('Die Buchungsanfrage konnte nicht gesendet werden.');
-            },
-
-            onFinish: () => {
-                setIsSubmittingBookingRequest(false);
-            },
-        });
     };
 
     /**
@@ -853,7 +531,7 @@ export default function Show({deskrl}: Props) {
 
                         <div className="flex flex-wrap items-center gap-4 text-gray-600">
                             <p className="flex items-center gap-2 text-base text-gray-600 md:text-lg">
-                                <MapPin className="h-5 w-5 text-[#5555ff]"/>
+                                <MapPin className="h-5 w-5 text-[#5555ff]" />
                                 {address?.city || 'Ort noch nicht verfügbar'}
                             </p>
 
@@ -880,20 +558,19 @@ export default function Show({deskrl}: Props) {
                                 onClick={() => setShowShareMenu(!showShareMenu)}
                                 className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-semibold hover:border-[#5555ff]"
                             >
-                                <Share2 className="h-5 w-5"/>
+                                <Share2 className="h-5 w-5" />
                                 Teilen
                             </button>
 
                             {/* Share dropdown menu */}
                             {showShareMenu && (
-                                <div
-                                    className="absolute right-0 top-full z-10 mt-2 min-w-[200px] rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
+                                <div className="absolute right-0 top-full z-10 mt-2 min-w-[200px] rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
                                     <button
                                         type="button"
                                         onClick={() => handleShare('whatsapp')}
                                         className="flex w-full items-center gap-3 px-4 py-2 hover:bg-gray-50"
                                     >
-                                        <MessageCircle className="h-5 w-5"/>
+                                        <MessageCircle className="h-5 w-5" />
                                         WhatsApp
                                     </button>
 
@@ -928,7 +605,9 @@ export default function Show({deskrl}: Props) {
                             }`}
                         >
                             <Heart
-                                className={`h-5 w-5 ${isCurrentDeskrlFavorited ? 'fill-[#e63cff] text-[#e63cff]' : ''}`}
+                                className={`h-5 w-5 ${
+                                    isCurrentDeskrlFavorited ? 'fill-[#e63cff] text-[#e63cff]' : ''
+                                }`}
                             />
                             {isCurrentDeskrlFavorited ? 'Gemerkt' : 'Merken'}
                         </button>
@@ -998,7 +677,7 @@ export default function Show({deskrl}: Props) {
                                         <div>
                                             <p className="text-sm text-gray-500 md:text-base">Maximale Personenzahl</p>
                                             <p className="text-xl font-bold text-gray-800">
-                                            Bis zu {deskrl.capacity} Personen
+                                                Bis zu {deskrl.capacity} Personen
                                             </p>
                                         </div>
                                     </div>
@@ -1048,10 +727,11 @@ export default function Show({deskrl}: Props) {
                                                                         <UtilityIcon className="h-5 w-5" />
                                                                     </div>
 
-                                                                    <span
-                                                                        className="text-base font-semibold text-gray-950 md:text-lg">
+                                                                    <span className="text-base font-semibold text-gray-950 md:text-lg">
                                                                         {utilityName}
-                                                                        {utility.pivot?.quantity ? ` (${utility.pivot.quantity})` : ''}
+                                                                        {utility.pivot?.quantity
+                                                                            ? ` (${utility.pivot.quantity})`
+                                                                            : ''}
                                                                     </span>
                                                                 </div>
                                                             );
@@ -1070,9 +750,13 @@ export default function Show({deskrl}: Props) {
                                                     className="inline-flex items-center gap-3 rounded-3xl border-2 border-[#5555ff] px-10 py-4 text-xl font-bold text-[#5555ff] transition hover:bg-[#f4f3ff]"
                                                 >
                                                     <ChevronDown
-                                                        className={`h-6 w-6 transition-transform ${showAllUtilities ? 'rotate-180' : ''}`}
+                                                        className={`h-6 w-6 transition-transform ${
+                                                            showAllUtilities ? 'rotate-180' : ''
+                                                        }`}
                                                     />
-                                                    {showAllUtilities ? 'Weniger Ausstattungsmerkmale' : 'Mehr Ausstattungsmerkmale'}
+                                                    {showAllUtilities
+                                                        ? 'Weniger Ausstattungsmerkmale'
+                                                        : 'Mehr Ausstattungsmerkmale'}
                                                 </button>
                                             </div>
                                         )}
@@ -1088,7 +772,7 @@ export default function Show({deskrl}: Props) {
                             <h2 className="mb-6 text-2xl font-bold text-gray-950">Standort</h2>
 
                             <p className="mb-6 flex items-center gap-3 text-base text-gray-700 md:text-lg">
-                                <MapPin className="h-5 w-5 text-[#5555ff]"/>
+                                <MapPin className="h-5 w-5 text-[#5555ff]" />
                                 {formatAddress(address)}
                             </p>
 
@@ -1146,9 +830,8 @@ export default function Show({deskrl}: Props) {
 
                                     {/* Show the verification badge only when the host is actually verified. */}
                                     {isHostVerified && (
-                                        <span
-                                            className="mt-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-base font-semibold text-green-700">
-                                            <Check className="h-5 w-5"/>
+                                        <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-base font-semibold text-green-700">
+                                            <Check className="h-5 w-5" />
                                             Verifizierter Gastgeber
                                         </span>
                                     )}
@@ -1158,267 +841,20 @@ export default function Show({deskrl}: Props) {
                     </div>
 
                     {/* Booking sidebar */}
-                    <aside className="lg:col-span-1">
-                        <div className="sticky top-8 rounded-3xl border-2 border-[#5555ff] bg-white p-6 shadow-lg">
-                            {/* Price headline */}
-                            <div className="mb-8">
-                                {selectedBookingPrice !== null ? (
-                                    <div className="text-3xl font-bold text-gray-950">
-                                        {!selectedDate && <span className="text-lg font-normal text-gray-600">ab </span>}
-                                        €{selectedBookingPrice.toFixed(0)}
-                                        <span className="text-lg font-normal text-gray-600">
-                                            {selectedDuration === 'week' ? ' gesamt' : ` / ${selectedBookingLabel}`}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <p className="text-gray-500">Noch keine Preise hinterlegt.</p>
-                                )}
-                            </div>
-
-                            {/* Duration selector */}
-                            {bookingDurationOptions.length > 0 && (
-                                <div className="mb-8">
-                                    <label className="mb-4 block text-base font-bold text-gray-700">
-                                        Zeitraum wählen
-                                    </label>
-
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {bookingDurationOptions.map(option => (
-                                            <button
-                                                key={option.key}
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedDuration(option.key);
-                                                    setShowBookingDatePicker(false);
-                                                }}
-                                                className={`rounded-full px-4 py-3 text-sm font-bold transition ${
-                                                    selectedDuration === option.key
-                                                        ? 'bg-[#5555ff] text-white'
-                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                }`}
-                                            >
-                                                {option.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : (
-                                <p className="mb-6 text-gray-500">Noch keine Preise hinterlegt.</p>
-                            )}
-
-                            {/* Date selection */}
-                            {selectedDuration !== 'month' ? (
-                                <div className="relative mb-8">
-                                    <label className="mb-4 block text-base font-bold text-gray-700">
-                                        {selectedDuration === 'week' ? 'Startdatum' : 'Datum'}
-                                    </label>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowBookingDatePicker(!showBookingDatePicker)}
-                                        className="flex w-full items-center gap-3 rounded-3xl border border-gray-200 bg-white px-4 py-4 text-left text-gray-700 transition hover:border-[#5555ff]"
-                                    >
-                                        <Calendar className="h-5 w-5 text-gray-400" />
-                                        <span className={selectedDate ? 'font-semibold text-gray-900' : 'text-gray-400'}>
-                                            {selectedDate
-                                                ? new Date(selectedDate).toLocaleDateString('de-DE', {
-                                                    weekday: 'short',
-                                                    day: '2-digit',
-                                                    month: 'short',
-                                                    year: 'numeric',
-                                                })
-                                                : 'Datum wählen'}
-                                        </span>
-                                    </button>
-
-                                    {showBookingDatePicker && (
-                                        <div className="absolute left-0 right-0 z-20 mt-2 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
-                                            <DatePicker
-                                                selectedDate={selectedDate}
-                                                onDateSelect={date => {
-                                                    setSelectedDate(date);
-                                                    setShowBookingDatePicker(false);
-                                                }}
-                                                minDate={new Date().toISOString().split('T')[0]}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="mb-8">
-                                    <label className="mb-4 block text-base font-bold text-gray-700">
-                                        Monat
-                                    </label>
-
-                                    <select
-                                        value={selectedMonth}
-                                        onChange={event => {
-                                            const value = event.target.value;
-                                            setSelectedMonth(value);
-
-                                            if (value) {
-                                                setSelectedDate(`${value}-01`);
-                                            }
-                                        }}
-                                        className="w-full rounded-3xl border border-gray-200 bg-white px-4 py-4 text-gray-700 focus:border-[#5555ff] focus:outline-none focus:ring-2 focus:ring-[#5555ff]/20"
-                                    >
-                                        <option value="">Monat wählen</option>
-                                        {Array.from({ length: 12 }, (_, index) => {
-                                            const date = new Date();
-                                            date.setMonth(date.getMonth() + index);
-
-                                            const year = date.getFullYear();
-                                            const month = String(date.getMonth() + 1).padStart(2, '0');
-                                            const value = `${year}-${month}`;
-                                            const monthNames = [
-                                                'Januar',
-                                                'Februar',
-                                                'März',
-                                                'April',
-                                                'Mai',
-                                                'Juni',
-                                                'Juli',
-                                                'August',
-                                                'September',
-                                                'Oktober',
-                                                'November',
-                                                'Dezember',
-                                            ];
-
-                                            return (
-                                                <option key={value} value={value}>
-                                                    {monthNames[date.getMonth()]} {year}
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                </div>
-                            )}
-
-                            {/* Hourly time selection */}
-                            {selectedDuration === 'hour' && (
-                                <div className="mb-8">
-                                    <label className="mb-4 block text-base font-bold text-gray-700">
-                                        Uhrzeit
-                                    </label>
-
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <label className="rounded-3xl bg-gray-100 px-4 py-3">
-                                            <span className="mb-1 flex items-center gap-2 text-xs font-semibold text-gray-500">
-                                                <Clock className="h-4 w-4" />
-                                                Von
-                                            </span>
-                                            <input
-                                                type="time"
-                                                value={selectedStartTime}
-                                                onChange={event => setSelectedStartTime(event.target.value)}
-                                                className="w-full bg-transparent text-base font-bold text-gray-900 outline-none"
-                                            />
-                                        </label>
-
-                                        <label className="rounded-3xl bg-gray-100 px-4 py-3">
-                                            <span className="mb-1 flex items-center gap-2 text-xs font-semibold text-gray-500">
-                                                <Clock className="h-4 w-4" />
-                                                Bis
-                                            </span>
-                                            <input
-                                                type="time"
-                                                value={selectedEndTime}
-                                                onChange={event => setSelectedEndTime(event.target.value)}
-                                                className="w-full bg-transparent text-base font-bold text-gray-900 outline-none"
-                                            />
-                                        </label>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Half-day period selection */}
-                            {selectedDuration === 'half_day' && (
-                                <div className="mb-8">
-                                    <label className="mb-4 block text-base font-bold text-gray-700">
-                                        Zeitraum
-                                    </label>
-
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setHalfdayPeriod('morning');
-                                                setSelectedStartTime('08:00');
-                                                setSelectedEndTime('12:00');
-                                            }}
-                                            className={`rounded-3xl px-4 py-4 text-center transition ${
-                                                halfdayPeriod === 'morning'
-                                                    ? 'bg-[#5555ff] text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                            }`}
-                                        >
-                                            <span className="block text-lg font-bold">Vormittag</span>
-                                            <span className="mt-1 block text-sm font-semibold opacity-80">
-                                                08:00 – 12:00
-                                            </span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setHalfdayPeriod('afternoon');
-                                                setSelectedStartTime('13:00');
-                                                setSelectedEndTime('17:00');
-                                            }}
-                                            className={`rounded-3xl px-4 py-4 text-center transition ${
-                                                halfdayPeriod === 'afternoon'
-                                                    ? 'bg-[#5555ff] text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                            }`}
-                                        >
-                                            <span className="block text-lg font-bold">Nachmittag</span>
-                                            <span className="mt-1 block text-sm font-semibold opacity-80">
-                                                13:00 – 17:00
-                                            </span>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Booking button */}
-                            <button
-                                type="button"
-                                onClick={handleBookingClick}
-                                disabled={selectedBookingPrice === null || isSubmittingBookingRequest}
-                                className={`mb-6 w-full rounded-3xl py-4 text-lg font-bold text-white transition ${
-                                    selectedBookingPrice === null || isSubmittingBookingRequest
-                                        ? 'cursor-not-allowed bg-gray-300'
-                                        : 'bg-[#e63cff] hover:bg-[#d12ee6]'
-                                }`}
-                            >
-                                {deskrl.instant_bookable ? 'Reservieren' : 'Anfragen'}
-                            </button>
-
-                            <p className="text-center text-sm leading-5 text-gray-500">
-                                Keine Buchungsgebühren • Kostenlose Stornierung bis 24h vorher
-                            </p>
-                        </div>
-                    </aside>
+                    <BookingComponent
+                        deskrl={deskrl}
+                        spaceName={title}
+                        authUser={authUser}
+                        onGuestBooking={() => setShowAuthModal(true)}
+                    />
                 </div>
             </div>
 
-            {/* Auth modal is used as temporary placeholder for booking login flow */}
+            {/* Auth modal is used as temporary placeholder for booking login flow and guest favorites. */}
             <AuthModal
                 isOpen={showAuthModal}
                 onClose={() => setShowAuthModal(false)}
                 initialMode="login"
-            />
-
-            {/* Booking modal is opened when authenticated users try to book. */}
-            <BookingConfirmationModal
-                isOpen={showBookingModal}
-                onClose={() => setShowBookingModal(false)}
-                onConfirm={handleBookingConfirm}
-                spaceName={title}
-                duration={selectedDuration}
-                price={selectedBookingPrice ?? 0}
-                date={selectedDate}
             />
         </div>
     );
