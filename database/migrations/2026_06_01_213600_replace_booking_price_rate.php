@@ -39,7 +39,10 @@ return new class extends Migration
         }
 
         Schema::table('bookings', function (Blueprint $table) {
-            $table->decimal('price_rate', 10, 2)->after('booking_date');
+            $table
+                ->decimal('price_rate', 10, 2)
+                ->default(0)
+                ->after('booking_date');
         });
     }
 };
