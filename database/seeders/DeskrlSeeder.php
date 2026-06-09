@@ -50,7 +50,7 @@ class DeskrlSeeder extends Seeder
                 'price_per_month' => 2500.00,
                 'instant_bookable' => true,
                 'min_hours' => 1,
-                'max_hours' => 8,
+                'max_hours' => 760,
                 'bookable_before_hours' => 24,
                 'bookable_until_months' => 6,
             ]
@@ -78,7 +78,7 @@ class DeskrlSeeder extends Seeder
                 'price_per_month' => 950.00,
                 'instant_bookable' => false,
                 'min_hours' => 2,
-                'max_hours' => 8,
+                'max_hours' => 800,
                 'bookable_before_hours' => 12,
                 'bookable_until_months' => 3,
             ]
@@ -106,7 +106,7 @@ class DeskrlSeeder extends Seeder
                 'price_per_month' => 4200.00,
                 'instant_bookable' => false,
                 'min_hours' => 4,
-                'max_hours' => 10,
+                'max_hours' => 1000,
                 'bookable_before_hours' => 48,
                 'bookable_until_months' => 12,
             ]
@@ -133,7 +133,7 @@ class DeskrlSeeder extends Seeder
                 'price_per_month' => 2100.00,
                 'instant_bookable' => true,
                 'min_hours' => 2,
-                'max_hours' => 8,
+                'max_hours' => 812,
                 'bookable_before_hours' => 24,
                 'bookable_until_months' => 6,
             ]
@@ -161,7 +161,7 @@ class DeskrlSeeder extends Seeder
                 'price_per_month' => 1500.00,
                 'instant_bookable' => true,
                 'min_hours' => 1,
-                'max_hours' => 8,
+                'max_hours' => 833,
                 'bookable_before_hours' => 12,
                 'bookable_until_months' => 4,
             ]
@@ -189,7 +189,7 @@ class DeskrlSeeder extends Seeder
                 'price_per_month' => 3600.00,
                 'instant_bookable' => false,
                 'min_hours' => 3,
-                'max_hours' => 12,
+                'max_hours' => 1244,
                 'bookable_before_hours' => 48,
                 'bookable_until_months' => 9,
             ]

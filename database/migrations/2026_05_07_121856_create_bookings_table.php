@@ -17,8 +17,8 @@ return new class extends Migration
             $table->date('booking_date');
             $table->decimal('price_rate', 10, 2);
             $table->decimal('price', 10, 2);
-            $table->enum('status', ['pending','confirmed','cancelled'])->default('pending');
-            $table->enum('payment_status', ['unpaid','paid','refunded'])->default('unpaid');
+            $table->enum('status', ['pending', 'confirmed', 'cancelled'])->default('pending');
+            $table->enum('payment_status', ['unpaid', 'paid', 'refunded'])->default('unpaid');
             $table->foreignId('billing_address_id')->nullable()->constrained('addresses')->onDelete('set null');
             $table->timestamps();
         });

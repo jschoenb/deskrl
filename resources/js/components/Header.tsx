@@ -1,67 +1,88 @@
 import React, { useState, useEffect } from "react";
+import { Link, router, usePage } from '@inertiajs/react';
 import { Home, Calendar, LayoutGrid, User, LogOut, Heart, Menu, X, Building2, Globe } from 'lucide-react';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import AuthModal from './AuthModal';
-import { Link, router, usePage } from '@inertiajs/react';
+import { CommercialVerificationModal } from '@/Pages/Profile/CommercialVerificationModal';
 
 export default function Header() {
     const { url, props } = usePage();
     const { auth } = props as any;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isCommercialVerificationModalOpen, setIsCommercialVerificationModalOpen] = useState(false);
+
     const { favorites, clearFavorites } = useFavorites();
 
-    const isHost: boolean = auth?.user?.role === 'host';
+    // Read the account type from the shared Inertia auth props.
+    const accountType = auth?.user?.account_type ?? auth?.user?.role;
 
+    // Check whether the logged-in account already has a provider role.
+    const isHost =
+        accountType === 'private_host' ||
+        accountType === 'commercial_host' ||
+        accountType === 'host';
+
+    // Build a readable display name for the profile link.
     const displayName = auth?.user
         ? `${auth.user.first_name ?? ''} ${auth.user.last_name ?? ''}`.trim() || auth.user.email
         : '';
 
+    // Log out the current user and clear local favorite state.
     const handleLogout = () => {
         clearFavorites();
         setIsMobileMenuOpen(false);
 
-        router.post('/logout', {}, {
-            replace: true,
-            preserveState: false,
-            preserveScroll: false,
-        });
+        router.post(
+            '/logout',
+            {},
+            {
+                replace: true,
+                preserveState: false,
+                preserveScroll: false,
+            },
+        );
     };
 
     // Returns true if the given path matches the current URL.
-    // Root path "/" requires an exact match to avoid false positives on "/bookings" etc.
-    const isActive = (path: string) =>
-        path === '/' ? url === '/' : url === path || url.startsWith(path + '/');
+    // Exact matching prevents parent routes like "/provider" from staying active on "/provider/bookings".
+    const isActive = (path: string, exact = false) => {
+        if (path === '/' || exact) {
+            return url === path;
+        }
 
-    // Close mobile menu whenever the route changes
+        return url === path || url.startsWith(path + '/');
+    };
+
+    // Returns Tailwind classes for desktop navigation links.
+    const navLinkClass = (path: string, exact = false) =>
+        `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+            isActive(path, exact)
+                ? 'bg-[#5555ff] text-white'
+                : 'hover:bg-gray-100 text-gray-700'
+        }`;
+
+    // Returns Tailwind classes for mobile navigation links.
+    const mobileNavLinkClass = (path: string, exact = false) =>
+        `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+            isActive(path, exact)
+                ? 'bg-[#5555ff] text-white'
+                : 'hover:bg-gray-100 text-gray-900'
+        }`;
+
+    // Close the mobile menu whenever the current route changes.
     useEffect(() => {
         setIsMobileMenuOpen(false);
     }, [url]);
 
-    // Lock body scroll while the mobile drawer is open
+    // Lock body scroll while the mobile drawer is open.
     useEffect(() => {
         document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
         return () => { document.body.style.overflow = ''; };
     }, [isMobileMenuOpen]);
 
-    // Returns Tailwind classes for desktop nav links – blue background when active
-    const navLinkClass = (path: string) =>
-        `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-            isActive(path)
-                ? 'bg-[#5555ff] text-white'
-                : 'hover:bg-gray-100 text-gray-700'
-        }`;
-
-    // Returns Tailwind classes for mobile drawer nav links – same logic, slightly larger padding
-    const mobileNavLinkClass = (path: string) =>
-        `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-            isActive(path)
-                ? 'bg-[#5555ff] text-white'
-                : 'hover:bg-gray-100 text-gray-900'
-        }`;
-
-// Language dropdown for the header.
-// Currently only German is available. More languages can be added later.
+    // Language dropdown for the header.
+    // Currently only German is available. More languages can be added later.
     const LanguageDropdown = () => {
         const [isOpen, setIsOpen] = useState(false);
         const currentLanguage = 'DE';
@@ -104,9 +125,17 @@ export default function Header() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
 
-                        {/* ── Logo ───────────────────────────────────────── */}
-                        <Link href="/">
-                            <span className="text-2xl font-bold tracking-tighter text-blue-900">deskrl</span>
+                        {/* Brand logo */}
+                        <Link
+                            href="/"
+                            className="inline-flex items-center"
+                            aria-label="Zur Startseite"
+                        >
+                            <img
+                                src="/images/deskrl-logo.svg"
+                                alt="deskrl"
+                                className="h-20 w-auto"
+                            />
                         </Link>
 
                         {/* ── Desktop nav links (right-aligned) ──────────── */}
@@ -115,7 +144,7 @@ export default function Header() {
                             {/* Nav links */}
                             {isHost ? (
                                 <>
-                                    <Link href="/provider" className={navLinkClass('/provider')}>
+                                    <Link href="/provider" className={navLinkClass('/provider',true)}>
                                         <LayoutGrid className="w-5 h-5" />
                                         <span className="font-medium">Meine Räume</span>
                                     </Link>
@@ -149,48 +178,48 @@ export default function Header() {
                             {/* Language selector */}
                             <LanguageDropdown />
 
-                            {/* Divider between nav links and auth area */}
-                            <div className="w-px h-6 bg-gray-200 mx-2" />
+                            {/* Divider between navigation links and auth area */}
+                            <div className="mx-2 h-6 w-px bg-gray-200" />
 
                             {/* Auth area */}
                             {auth?.user ? (
                                 <>
+                                    {/* Provider upgrade button is hidden for existing providers. */}
                                     {!isHost && (
-                                        <Link
-                                            href="/become-provider"
-                                            className="flex items-center gap-2 px-4 py-2 bg-[#e63cff] hover:bg-[#d12ee6] text-white rounded-lg transition-colors font-semibold"
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsMobileMenuOpen(false);
+                                                setIsCommercialVerificationModalOpen(true);
+                                            }}
+                                            className="flex items-center gap-3 rounded-lg bg-[#e63cff] px-4 py-3 font-semibold text-white transition-colors hover:bg-[#d12ee6]"
                                         >
-                                            <Building2 className="w-5 h-5" />
+                                            <Building2 className="h-5 w-5" />
                                             <span>Werde Anbieter</span>
-                                        </Link>
+                                        </button>
                                     )}
                                     <Link href="/profile" className={navLinkClass('/profile')}>
-                                        <User className="w-5 h-5" />
+                                        <User className="h-5 w-5" />
                                         <span className="font-medium">{displayName}</span>
                                     </Link>
                                     <button
-                                        // href="/logout"
-                                        // // method="post"
-                                        // as="button"
-                                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
-                                        // onClick={() => clearFavorites()}
+                                        type="button"
+                                        className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100"
                                         onClick={handleLogout}
                                     >
-                                        <LogOut className="w-5 h-5" />
+                                        <LogOut className="h-5 w-5" />
                                     </button>
                                 </>
                             ) : (
                                 <button
                                     onClick={() => setIsAuthModalOpen(true)}
-                                    className="bg-[#e63cff] hover:bg-[#d12ee6] text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2 font-semibold"
+                                    className="flex items-center gap-2 rounded-lg bg-[#e63cff] px-6 py-2 font-semibold text-white transition-colors hover:bg-[#d12ee6]"
                                 >
-                                    <User className="w-5 h-5" />
+                                    <User className="h-5 w-5" />
                                     Anmelden
                                 </button>
                             )}
                         </div>
-
-
 
                         {/* ── Mobile burger button ────────────────────────── */}
                         <button
@@ -221,7 +250,7 @@ export default function Header() {
                     {isHost ? (
                         // Provider links in mobile drawer
                         <>
-                            <Link href="/provider" className={mobileNavLinkClass('/provider')}>
+                            <Link href="/provider" className={mobileNavLinkClass('/provider', true)}>
                                 <LayoutGrid className="w-5 h-5" />
                                 <span className="font-semibold">Meine Räume</span>
                             </Link>
@@ -265,25 +294,27 @@ export default function Header() {
 
                     {auth?.user ? (
                         <>
-                            {/* "Become a provider" CTA in mobile drawer – hidden for existing hosts */}
+                            {/* Provider upgrade button is hidden for existing providers. */}
                             {!isHost && (
-                                <Link
-                                    href="/become-provider"
-                                    className="flex items-center gap-3 px-4 py-3 bg-[#e63cff] hover:bg-[#d12ee6] text-white rounded-lg transition-colors font-semibold"
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsMobileMenuOpen(false);
+                                        setIsCommercialVerificationModalOpen(true);
+                                    }}
+                                    className="flex items-center gap-2 rounded-lg bg-[#e63cff] px-4 py-2 font-semibold text-white transition-colors hover:bg-[#d12ee6]"
                                 >
-                                    <Building2 className="w-5 h-5" />
+                                    <Building2 className="h-5 w-5" />
                                     <span>Werde Anbieter</span>
-                                </Link>
+                                </button>
                             )}
                             <Link href="/profile" className={mobileNavLinkClass('/profile')}>
-                                <User className="w-5 h-5" />
+                                <User className="h-5 w-5" />
                                 <span className="font-semibold">{displayName}</span>
                             </Link>
                             <button
-                                // href="/logout"
-                                // // method="post"
-                                // as="button"
-                                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg text-gray-900 w-full text-left"
+                                type="button"
+                                className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-gray-900 hover:bg-gray-100"
                                 onClick={handleLogout}
                             >
                                 <LogOut className="w-5 h-5" />
@@ -293,8 +324,12 @@ export default function Header() {
                     ) : (
                         // Not logged in – login button also closes the drawer first
                         <button
-                            onClick={() => { setIsMobileMenuOpen(false); setIsAuthModalOpen(true); }}
-                            className="bg-[#e63cff] hover:bg-[#d12ee6] text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-3 font-semibold"
+                            type="button"
+                            onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setIsAuthModalOpen(true);
+                            }}
+                            className="flex items-center justify-center gap-3 rounded-lg bg-[#e63cff] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#d12ee6]"
                         >
                             <User className="w-5 h-5" />
                             Anmelden
@@ -303,7 +338,13 @@ export default function Header() {
                 </div>
             </div>
 
-            {/* ── Auth modal (login / register) ───────────────────────────── */}
+            {/* Provider upgrade modal */}
+            <CommercialVerificationModal
+                isOpen={isCommercialVerificationModalOpen}
+                onClose={() => setIsCommercialVerificationModalOpen(false)}
+            />
+
+            {/* Auth modal for login and registration */}
             <AuthModal
                 isOpen={isAuthModalOpen}
                 onClose={() => setIsAuthModalOpen(false)}

@@ -13,14 +13,9 @@ class AccountController extends Controller
 {
     /**
      * Shows the profile page of the currently logged-in account.
-     *
-     * The account is loaded from the authenticated session.
-     * Related data such as addresses, languages and commercial account
-     * can also be loaded here if needed for the profile page.
      */
     public function show(Request $request)
     {
-        // Load the authenticated account with all relations needed by the profile page.
         $account = $request->user()->load([
             'languages',
             'accountAddresses.address.country',
@@ -39,13 +34,9 @@ class AccountController extends Controller
 
     /**
      * Shows the edit form for the currently logged-in account.
-     *
-     * This method does not update any data yet.
-     * It only returns the React component containing the edit form.
      */
     public function edit(Request $request)
     {
-        // The edit page uses the same data as the show page.
         $account = $request->user()->load([
             'languages',
             'accountAddresses.address.country',
@@ -64,79 +55,93 @@ class AccountController extends Controller
 
     /**
      * Updates the currently logged-in account.
-     *
-     * The method validates the submitted profile data and updates
-     * the account record in the database.
-     * If a new password is submitted, it is hashed before saving.
      */
     public function update(Request $request)
     {
-        // Gets the currently authenticated account.
         $account = $request->user();
 
-        // Validates the submitted account data.
-        // The email must be unique, but the current account's email is ignored.
-        $validated = $request->validate([
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
+        $validated = $request->validate(
+            [
+                'first_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\-]+$/u'],
+                'last_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\-]+$/u'],
 
-            'email' => [
-                'required',
-                'email',
-                'max:255',
-                Rule::unique('accounts', 'email')->ignore($account->id),
+                'email' => [
+                    'required',
+                    'email',
+                    'max:255',
+                    Rule::unique('accounts', 'email')->ignore($account->id),
+                ],
+
+                'phone' => ['nullable', 'string', 'max:50', 'regex:/^[0-9+\s\/().-]*$/'],
+                'birthdate' => ['nullable', 'date', 'before:today'],
+
+                'gender' => [
+                    'required',
+                    Rule::in(['male', 'female', 'diverse', 'undefined']),
+                ],
+
+                'about_me' => ['nullable', 'array'],
+                'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             ],
+            [
+                'first_name.required' => 'Bitte gib einen Vornamen ein.',
+                'first_name.regex' => 'Der Vorname darf nur Buchstaben, Leerzeichen und Bindestriche enthalten.',
+                'first_name.max' => 'Der Vorname darf maximal 255 Zeichen lang sein.',
 
-            'phone' => ['nullable', 'string', 'max:255'],
-            'birthdate' => ['nullable', 'date'],
+                'last_name.required' => 'Bitte gib einen Nachnamen ein.',
+                'last_name.regex' => 'Der Nachname darf nur Buchstaben, Leerzeichen und Bindestriche enthalten.',
+                'last_name.max' => 'Der Nachname darf maximal 255 Zeichen lang sein.',
 
-            'gender' => [
-                'required',
-                Rule::in(['male', 'female', 'diverse', 'undefined']),
-            ],
+                'email.required' => 'Bitte gib eine E-Mail-Adresse ein.',
+                'email.email' => 'Bitte gib eine gültige E-Mail-Adresse ein.',
+                'email.unique' => 'Diese E-Mail-Adresse wird bereits verwendet.',
+                'email.max' => 'Die E-Mail-Adresse darf maximal 255 Zeichen lang sein.',
 
-            'about_me' => ['nullable', 'array'],
+                'phone.regex' => 'Die Telefonnummer darf nur Zahlen, Leerzeichen und die Zeichen + / ( ) . - enthalten.',
+                'phone.max' => 'Die Telefonnummer darf maximal 50 Zeichen lang sein.',
 
-            // Password is optional during profile update.
-            // If it is provided, it must be confirmed with password_confirmation.
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-        ]);
+                'birthdate.date' => 'Bitte gib ein gültiges Geburtsdatum ein.',
+                'birthdate.before' => 'Das Geburtsdatum muss in der Vergangenheit liegen.',
 
-        // If a new password was entered, it is hashed before being saved.
-        // If no password was entered, the password field is removed
-        // so the existing password stays unchanged.
+                'gender.required' => 'Bitte wähle ein Geschlecht aus.',
+                'gender.in' => 'Das ausgewählte Geschlecht ist ungültig.',
+
+                'password.min' => 'Das Passwort muss mindestens 8 Zeichen lang sein.',
+                'password.confirmed' => 'Die Passwortbestätigung stimmt nicht überein.',
+            ]
+        );
+
         if (! empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
         }
 
-        // Updates the account with the validated data.
         $account->update($validated);
 
-        // Redirects back to the account profile page after successful update.
         return redirect()
-            ->route('account.show')
+            ->back()
             ->with('success', 'Account wurde aktualisiert.');
     }
 
     /**
      * Updates the profile image of the currently logged-in account.
-     *
-     * The uploaded image is stored in the public storage disk.
-     * Only the image path is saved in the accounts table.
      */
     public function updateImage(Request $request)
     {
-        // Gets the currently authenticated account.
         $account = $request->user();
 
-        // Validates the uploaded profile image.
-        $request->validate([
-            'profile_image' => ['required', 'image', 'max:4096'],
-        ]);
+        $request->validate(
+            [
+                'profile_image' => ['required', 'image', 'max:4096'],
+            ],
+            [
+                'profile_image.required' => 'Bitte wähle ein Profilbild aus.',
+                'profile_image.image' => 'Die Datei muss ein Bild sein.',
+                'profile_image.max' => 'Das Profilbild darf maximal 4 MB groß sein.',
+            ]
+        );
 
-        // Deletes the old profile image from storage if it exists.
         if (
             $account->profile_image &&
             Storage::disk('public')->exists($account->profile_image)
@@ -144,47 +149,59 @@ class AccountController extends Controller
             Storage::disk('public')->delete($account->profile_image);
         }
 
-        // Stores the new image in storage/app/public/profile_images.
         $path = $request->file('profile_image')->store('profile_images', 'public');
 
-        // Saves only the image path in the database.
         $account->update([
             'profile_image' => $path,
         ]);
 
         return redirect()
-            ->route('account.show')
+            ->back()
             ->with('success', 'Profilbild wurde aktualisiert.');
     }
 
+    /**
+     * Upgrades the currently logged-in account to a host account.
+     */
+    public function becomeProvider(Request $request)
+    {
+        $account = $request->user();
+
+        $validated = $request->validate(
+            [
+                'provider_type' => ['required', 'string', 'in:private_host,commercial_host'],
+            ],
+            [
+                'provider_type.required' => 'Bitte wähle einen Anbieter-Typ aus.',
+                'provider_type.in' => 'Der ausgewählte Anbieter-Typ ist ungültig.',
+            ]
+        );
+
+        $account->update([
+            'account_type' => $validated['provider_type'],
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Dein Anbieterprofil wurde aktiviert.');
+    }
 
     /**
      * Deletes or deactivates the currently logged-in account.
-     *
-     * For the MVP, the account is not physically deleted from the database.
-     * Instead, its status is set to "deleted". This keeps related data stable,
-     * for example bookings, addresses or deskrls connected to the account.
      */
     public function destroy(Request $request)
     {
-        // Gets the currently authenticated account.
         $account = $request->user();
 
-        // Logs the account out before marking it as deleted.
         Auth::logout();
 
-        // Soft-deactivates the account by changing its status.
         $account->update([
             'status' => 'deleted',
         ]);
 
-        // Invalidates the current session.
         $request->session()->invalidate();
-
-        // Regenerates the CSRF token for security.
         $request->session()->regenerateToken();
 
-        // Redirects the user to the login page after account deletion.
         return redirect()->route('login');
     }
 }

@@ -31,10 +31,8 @@ class AddressController extends Controller
     {
         $account = $request->user();
 
-        // Validates the submitted address and pivot data.
         $validated = $this->validateAddressData($request);
 
-        // Creates the address itself in the addresses table.
         $address = Address::create([
             'country_id' => $validated['country_id'],
             'state' => $validated['state'] ?? null,
@@ -46,19 +44,14 @@ class AddressController extends Controller
             'door' => $validated['door'] ?? null,
         ]);
 
-        // If the new address should be the default address,
-        // all other addresses of this account are set to non-default first.
         if ($request->boolean('is_default')) {
             $this->unsetOtherDefaultAddresses($account);
         }
 
-        // If the new address should be the billing address,
-        // all other billing addresses of this account are unset first.
         if ($request->boolean('is_billing_address')) {
             $this->unsetOtherBillingAddresses($account);
         }
 
-        // Connects the new address to the logged-in account through the pivot table.
         $account->addresses()->attach($address->id, [
             'is_default' => $request->boolean('is_default'),
             'company_name' => $validated['company_name'] ?? null,
@@ -78,16 +71,13 @@ class AddressController extends Controller
     {
         $account = $request->user();
 
-        // Checks whether the given address belongs to the current account.
         abort_unless(
             $account->addresses()->where('addresses.id', $address->id)->exists(),
             403
         );
 
-        // Validates the submitted address and pivot data.
         $validated = $this->validateAddressData($request);
 
-        // Updates the actual address record in the addresses table.
         $address->update([
             'country_id' => $validated['country_id'],
             'state' => $validated['state'] ?? null,
@@ -99,19 +89,14 @@ class AddressController extends Controller
             'door' => $validated['door'] ?? null,
         ]);
 
-        // If this address should become the default address,
-        // all other addresses of this account are unset first.
         if ($request->boolean('is_default')) {
             $this->unsetOtherDefaultAddresses($account);
         }
 
-        // If this address should become the billing address,
-        // all other billing addresses of this account are unset first.
         if ($request->boolean('is_billing_address')) {
             $this->unsetOtherBillingAddresses($account);
         }
 
-        // Updates the pivot data in account_addresses.
         $account->addresses()->updateExistingPivot($address->id, [
             'is_default' => $request->boolean('is_default'),
             'company_name' => $validated['company_name'] ?? null,
@@ -131,16 +116,13 @@ class AddressController extends Controller
     {
         $account = $request->user();
 
-        // Checks whether the given address belongs to the current account.
         abort_unless(
             $account->addresses()->where('addresses.id', $address->id)->exists(),
             403
         );
 
-        // Removes the connection between account and address from the pivot table.
         $account->addresses()->detach($address->id);
 
-        // Deletes the address itself only if no account uses it anymore.
         if ($address->accounts()->doesntExist()) {
             $address->delete();
         }
@@ -152,20 +134,27 @@ class AddressController extends Controller
 
     /**
      * Validates address data and related pivot data.
-     *
-     * This method is used by both store() and update(), because both methods
-     * need the same validation rules.
      */
     private function validateAddressData(Request $request): array
     {
         return $request->validate(
             [
                 'country_id' => ['required', 'exists:countries,id'],
-                'state' => ['nullable', 'string', 'max:255'],
-                'city' => ['required', 'string', 'max:255'],
-                'street' => ['required', 'string', 'max:255'],
-                'house_nr' => ['required', 'string', 'max:50'],
-                'postal_code' => ['required', 'string', 'max:50'],
+
+                'state' => ['nullable', 'string', 'max:255', 'regex:/^[\pL\s\-]*$/u'],
+                'city' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\-]+$/u'],
+
+                // Street names can contain letters, numbers, spaces, dots and hyphens.
+                // This allows names like "Straße des 17. Juni".
+                'street' => ['required', 'string', 'max:255', 'regex:/^[\pL0-9\s\.\-]+$/u'],
+
+                // Current MVP rule: house number should contain digits only.
+                // If you later want to allow "12A" or "12/3", this regex must be relaxed.
+                'house_nr' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/'],
+
+                // Current MVP rule for Austria/Germany: postal code contains digits only.
+                'postal_code' => ['required', 'string', 'max:10', 'regex:/^[0-9]+$/'],
+
                 'stair' => ['nullable', 'string', 'max:50'],
                 'door' => ['nullable', 'string', 'max:50'],
 
@@ -178,19 +167,25 @@ class AddressController extends Controller
                 'country_id.required' => 'Bitte wähle ein Land aus.',
                 'country_id.exists' => 'Das ausgewählte Land ist ungültig.',
 
+                'state.max' => 'Das Bundesland darf maximal 255 Zeichen lang sein.',
+                'state.regex' => 'Das Bundesland darf nur Buchstaben, Leerzeichen und Bindestriche enthalten.',
+
                 'city.required' => 'Bitte gib eine Stadt ein.',
                 'city.max' => 'Die Stadt darf maximal 255 Zeichen lang sein.',
+                'city.regex' => 'Die Stadt darf nur Buchstaben, Leerzeichen und Bindestriche enthalten.',
 
                 'street.required' => 'Bitte gib eine Straße ein.',
                 'street.max' => 'Die Straße darf maximal 255 Zeichen lang sein.',
+                'street.regex' => 'Die Straße darf nur Buchstaben, Zahlen, Leerzeichen, Punkte und Bindestriche enthalten.',
 
                 'house_nr.required' => 'Bitte gib eine Hausnummer ein.',
-                'house_nr.max' => 'Die Hausnummer darf maximal 50 Zeichen lang sein.',
+                'house_nr.max' => 'Die Hausnummer darf maximal 20 Zeichen lang sein.',
+                'house_nr.regex' => 'Die Hausnummer darf nur Zahlen enthalten.',
 
                 'postal_code.required' => 'Bitte gib eine Postleitzahl ein.',
-                'postal_code.max' => 'Die Postleitzahl darf maximal 50 Zeichen lang sein.',
+                'postal_code.max' => 'Die Postleitzahl darf maximal 10 Zeichen lang sein.',
+                'postal_code.regex' => 'Die Postleitzahl darf nur Zahlen enthalten.',
 
-                'state.max' => 'Das Bundesland darf maximal 255 Zeichen lang sein.',
                 'stair.max' => 'Die Stiege darf maximal 50 Zeichen lang sein.',
                 'door.max' => 'Die Türnummer darf maximal 50 Zeichen lang sein.',
 
@@ -205,10 +200,13 @@ class AddressController extends Controller
      */
     private function unsetOtherDefaultAddresses($account): void
     {
-        $account->addresses()->updateExistingPivot(
-            $account->addresses()->pluck('addresses.id')->toArray(),
-            ['is_default' => false]
-        );
+        $addressIds = $account->addresses()->pluck('addresses.id')->toArray();
+
+        foreach ($addressIds as $addressId) {
+            $account->addresses()->updateExistingPivot($addressId, [
+                'is_default' => false,
+            ]);
+        }
     }
 
     /**
@@ -216,9 +214,12 @@ class AddressController extends Controller
      */
     private function unsetOtherBillingAddresses($account): void
     {
-        $account->addresses()->updateExistingPivot(
-            $account->addresses()->pluck('addresses.id')->toArray(),
-            ['is_billing_address' => false]
-        );
+        $addressIds = $account->addresses()->pluck('addresses.id')->toArray();
+
+        foreach ($addressIds as $addressId) {
+            $account->addresses()->updateExistingPivot($addressId, [
+                'is_billing_address' => false,
+            ]);
+        }
     }
 }

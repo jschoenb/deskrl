@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import React, {ReactNode, useMemo, useState} from 'react';
+import { Link, usePage } from '@inertiajs/react';
+import React, { ReactNode, useMemo, useState } from 'react';
 import {
     ArrowLeft,
     Bike,
@@ -20,11 +20,11 @@ import {
     X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { DatePicker } from '@/components/DatePicker';
 import AuthModal from '@/components/AuthModal';
-import AppLayout from "@/Layouts/AppLayout";
-
-import About from "@/pages/About";
+import AppLayout from '@/Layouts/AppLayout';
+import DeskrlLocationMap from '@/components/maps/DeskrlLocationMap';
+import { useFavorites } from '@/contexts/FavoritesContext';
+import BookingComponent from '@/components/BookingComponent';
 
 /**
  * Localized fields can either be plain strings or translation objects.
@@ -93,6 +93,8 @@ type Address = {
     house_nr?: string;
     postal_code?: string;
     state?: string | null;
+    latitude?: number | string | null;
+    longitude?: number | string | null;
 };
 
 /**
@@ -164,6 +166,23 @@ type Props = {
 };
 
 /**
+ * Expected shared Inertia props.
+ * The auth.user object must be provided from HandleInertiaRequests.php.
+ */
+type PageProps = {
+    auth?: {
+        user?: {
+            id: number;
+            first_name?: string;
+            last_name?: string;
+            email?: string;
+            account_type?: string;
+            role?: string;
+        } | null;
+    };
+};
+
+/**
  * Returns the best available text from a localized field.
  * It first tries German, then English, then any other existing value.
  */
@@ -187,18 +206,6 @@ function getImageUrl(path: string): string {
     }
 
     return `/${path}`;
-}
-
-/**
- * Converts numeric values from Laravel into readable euro prices.
- * Laravel decimal values may arrive as strings, so Number() is used here.
- */
-function formatPrice(value?: number | string | null): string | null {
-    if (value === null || value === undefined || value === '') {
-        return null;
-    }
-
-    return `€${Number(value).toFixed(0)}`;
 }
 
 /**
@@ -283,6 +290,22 @@ function getUtilityIcon(utilityName: string) {
 }
 
 export default function Show({ deskrl }: Props) {
+    const { props } = usePage<PageProps>();
+    const authUser = props.auth?.user ?? null;
+
+    // Read the current login state from the shared Inertia props.
+    const isLoggedIn = Boolean(authUser);
+
+    // Only regular users should save Deskrls as favorites in the MVP.
+    const accountType = authUser?.account_type ?? authUser?.role ?? 'guest';
+    const isRegularUser = accountType === 'user';
+
+    // Access the global favorites state from FavoritesContext.
+    const { toggleFavorite, isFavorited } = useFavorites();
+
+    // Check whether this Deskrl is already saved as a favorite.
+    const isCurrentDeskrlFavorited = isFavorited(deskrl.id);
+
     /**
      * Stores the currently selected image index for gallery and lightbox.
      */
@@ -300,15 +323,9 @@ export default function Show({ deskrl }: Props) {
 
     /**
      * Controls whether the authentication modal is visible.
-     * This is currently used as a placeholder for booking actions.
+     * This is opened when a guest tries to book or save a favorite.
      */
     const [showAuthModal, setShowAuthModal] = useState(false);
-
-    /**
-     * Stores the selected date from the DatePicker.
-     * Booking logic is not implemented yet.
-     */
-    const [selectedDate, setSelectedDate] = useState('');
 
     /**
      * Controls whether all utility groups are shown.
@@ -349,23 +366,11 @@ export default function Show({ deskrl }: Props) {
      */
     const images = useMemo(() => {
         return (
-            deskrl.images
-                ?.sort((a, b) => Number(b.is_main) - Number(a.is_main) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                .map(image => getImageUrl(image.path)) ?? []
+            [...(deskrl.images ?? [])]
+                .sort((a, b) => Number(b.is_main) - Number(a.is_main) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                .map(image => getImageUrl(image.path))
         );
     }, [deskrl.images]);
-
-    /**
-     * Build a list of available price options.
-     * Empty prices are filtered out so only existing prices are displayed.
-     */
-    const priceOptions = [
-        { label: 'Stunde', value: formatPrice(deskrl.price_per_hour) },
-        { label: 'Halbtag', value: formatPrice(deskrl.price_per_half_day) },
-        { label: 'Tag', value: formatPrice(deskrl.price_per_day) },
-        { label: 'Woche', value: formatPrice(deskrl.price_per_week) },
-        { label: 'Monat', value: formatPrice(deskrl.price_per_month) },
-    ].filter(price => price.value);
 
     /**
      * Group utilities by their utility category.
@@ -422,27 +427,40 @@ export default function Show({ deskrl }: Props) {
     };
 
     /**
-     * Placeholder handler for the booking button.
-     * Later this can open a booking wizard or send a booking request.
+     * Handles favorite actions for the Deskrl detail page.
+     * Guests are asked to log in, regular users save the Deskrl through FavoritesContext.
      */
-    const handleBookingClick = () => {
-        setShowAuthModal(true);
+    const handleFavoriteClick = async () => {
+        if (!isLoggedIn) {
+            setShowAuthModal(true);
+            return;
+        }
+
+        if (!isRegularUser) {
+            toast.info('Favoriten können aktuell nur von Nutzer:innen gespeichert werden.');
+            return;
+        }
+
+        try {
+            await toggleFavorite(deskrl.id);
+
+            toast.success(
+                isCurrentDeskrlFavorited
+                    ? 'Deskrl wurde aus deinen Gemerkten entfernt.'
+                    : 'Deskrl wurde zu deinen Gemerkten hinzugefügt.',
+            );
+        } catch {
+            toast.error('Favorit konnte nicht gespeichert werden.');
+        }
     };
 
     /**
-     * Placeholder handler for favorites.
-     * Later this can call the FavoriteController through Inertia.
-     */
-    const handleFavoriteClick = () => {
-        toast.info('Favoriten-Funktion wird später angebunden.');
-    };
-
-    /**
-     * Opens route planning in Google Maps.
+     * Opens Google Maps route planning for the current Deskrl address.
+     * This link works independently of the embedded map API key.
      */
     const handleRoutePlanning = () => {
         window.open(
-            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formatAddress(address))}`,
+            `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(formatAddress(address))}`,
             '_blank',
         );
     };
@@ -513,7 +531,7 @@ export default function Show({ deskrl }: Props) {
 
                         <div className="flex flex-wrap items-center gap-4 text-gray-600">
                             <p className="flex items-center gap-2 text-base text-gray-600 md:text-lg">
-                                <MapPin className="h-5 w-5 text-[#5555ff]"/>
+                                <MapPin className="h-5 w-5 text-[#5555ff]" />
                                 {address?.city || 'Ort noch nicht verfügbar'}
                             </p>
 
@@ -580,10 +598,18 @@ export default function Show({ deskrl }: Props) {
                         <button
                             type="button"
                             onClick={handleFavoriteClick}
-                            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-semibold hover:border-[#e63cff] hover:text-[#e63cff]"
+                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold transition-colors ${
+                                isCurrentDeskrlFavorited
+                                    ? 'border-[#e63cff] bg-[#fff1fb] text-[#e63cff]'
+                                    : 'border-gray-200 bg-white hover:border-[#e63cff] hover:text-[#e63cff]'
+                            }`}
                         >
-                            <Heart className="h-5 w-5" />
-                            Merken
+                            <Heart
+                                className={`h-5 w-5 ${
+                                    isCurrentDeskrlFavorited ? 'fill-[#e63cff] text-[#e63cff]' : ''
+                                }`}
+                            />
+                            {isCurrentDeskrlFavorited ? 'Gemerkt' : 'Merken'}
                         </button>
                     </div>
                 </div>
@@ -651,7 +677,7 @@ export default function Show({ deskrl }: Props) {
                                         <div>
                                             <p className="text-sm text-gray-500 md:text-base">Maximale Personenzahl</p>
                                             <p className="text-xl font-bold text-gray-800">
-                                            Bis zu {deskrl.capacity} Personen
+                                                Bis zu {deskrl.capacity} Personen
                                             </p>
                                         </div>
                                     </div>
@@ -701,10 +727,11 @@ export default function Show({ deskrl }: Props) {
                                                                         <UtilityIcon className="h-5 w-5" />
                                                                     </div>
 
-                                                                    <span
-                                                                        className="text-base font-semibold text-gray-950 md:text-lg">
+                                                                    <span className="text-base font-semibold text-gray-950 md:text-lg">
                                                                         {utilityName}
-                                                                        {utility.pivot?.quantity ? ` (${utility.pivot.quantity})` : ''}
+                                                                        {utility.pivot?.quantity
+                                                                            ? ` (${utility.pivot.quantity})`
+                                                                            : ''}
                                                                     </span>
                                                                 </div>
                                                             );
@@ -723,9 +750,13 @@ export default function Show({ deskrl }: Props) {
                                                     className="inline-flex items-center gap-3 rounded-3xl border-2 border-[#5555ff] px-10 py-4 text-xl font-bold text-[#5555ff] transition hover:bg-[#f4f3ff]"
                                                 >
                                                     <ChevronDown
-                                                        className={`h-6 w-6 transition-transform ${showAllUtilities ? 'rotate-180' : ''}`}
+                                                        className={`h-6 w-6 transition-transform ${
+                                                            showAllUtilities ? 'rotate-180' : ''
+                                                        }`}
                                                     />
-                                                    {showAllUtilities ? 'Weniger Ausstattungsmerkmale' : 'Mehr Ausstattungsmerkmale'}
+                                                    {showAllUtilities
+                                                        ? 'Weniger Ausstattungsmerkmale'
+                                                        : 'Mehr Ausstattungsmerkmale'}
                                                 </button>
                                             </div>
                                         )}
@@ -741,16 +772,16 @@ export default function Show({ deskrl }: Props) {
                             <h2 className="mb-6 text-2xl font-bold text-gray-950">Standort</h2>
 
                             <p className="mb-6 flex items-center gap-3 text-base text-gray-700 md:text-lg">
-                                <MapPin className="h-5 w-5 text-[#5555ff]"/>
+                                <MapPin className="h-5 w-5 text-[#5555ff]" />
                                 {formatAddress(address)}
                             </p>
 
-                            {/* Static map placeholder until a real map integration is added */}
-                            <div className="mb-6 flex h-80 items-center justify-center rounded-3xl bg-gradient-to-br from-[#f0edff] to-[#fff1fb]">
-                                <div className="text-center">
-                                    <MapPin className="mx-auto mb-4 h-20 w-20 text-[#5555ff]" />
-                                    <p className="text-xl text-gray-600">{formatAddress(address)}</p>
-                                </div>
+                            {/* Interactive Google Map; it becomes active once an API key is configured. */}
+                            <div className="mb-6">
+                                <DeskrlLocationMap
+                                    latitude={address?.latitude}
+                                    longitude={address?.longitude}
+                                ></DeskrlLocationMap>
                             </div>
 
                             {/* Opens Google Maps route planning in a new browser tab */}
@@ -799,9 +830,8 @@ export default function Show({ deskrl }: Props) {
 
                                     {/* Show the verification badge only when the host is actually verified. */}
                                     {isHostVerified && (
-                                        <span
-                                            className="mt-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-base font-semibold text-green-700">
-                                            <Check className="h-5 w-5"/>
+                                        <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-base font-semibold text-green-700">
+                                            <Check className="h-5 w-5" />
                                             Verifizierter Gastgeber
                                         </span>
                                     )}
@@ -811,58 +841,16 @@ export default function Show({ deskrl }: Props) {
                     </div>
 
                     {/* Booking sidebar */}
-                    <aside className="lg:col-span-1">
-                        <div className="sticky top-8 rounded-3xl border-2 border-[#5555ff] bg-white p-6 shadow-lg">
-                            <h2 className="mb-4 text-2xl font-bold text-gray-900">Buchung</h2>
-
-                            {/* Price overview */}
-                            {priceOptions.length > 0 ? (
-                                <div className="mb-6 space-y-3">
-                                    {priceOptions.map(price => (
-                                        <div
-                                            key={price.label}
-                                            className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
-                                        >
-                                            <span className="text-gray-600">{price.label}</span>
-                                            <span className="font-bold text-gray-900">{price.value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="mb-6 text-gray-500">Noch keine Preise hinterlegt.</p>
-                            )}
-
-                            {/* Date selection placeholder for future booking flow */}
-                            <div className="mb-6">
-                                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                                    Wunschdatum
-                                </label>
-
-                                <DatePicker
-                                    selectedDate={selectedDate}
-                                    onDateSelect={setSelectedDate}
-                                    minDate={new Date().toISOString().split('T')[0]}
-                                />
-                            </div>
-
-                            {/* Booking button without real booking logic yet */}
-                            <button
-                                type="button"
-                                onClick={handleBookingClick}
-                                className="mb-3 w-full rounded-2xl bg-[#e63cff] py-4 font-bold text-white transition hover:bg-[#d12ee6]"
-                            >
-                                Reservieren
-                            </button>
-
-                            <p className="text-center text-xs text-gray-500">
-                                Die Buchungslogik wird im nächsten Schritt angebunden.
-                            </p>
-                        </div>
-                    </aside>
+                    <BookingComponent
+                        deskrl={deskrl}
+                        spaceName={title}
+                        authUser={authUser}
+                        onGuestBooking={() => setShowAuthModal(true)}
+                    />
                 </div>
             </div>
 
-            {/* Auth modal is used as temporary placeholder for booking login flow */}
+            {/* Auth modal is used as temporary placeholder for booking login flow and guest favorites. */}
             <AuthModal
                 isOpen={showAuthModal}
                 onClose={() => setShowAuthModal(false)}
@@ -871,6 +859,7 @@ export default function Show({ deskrl }: Props) {
         </div>
     );
 }
+
 /**
  * Wraps the Deskrl detail page with the global app layout.
  * The layout is responsible for rendering shared elements like header and footer.

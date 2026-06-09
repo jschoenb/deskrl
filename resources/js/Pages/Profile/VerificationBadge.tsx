@@ -3,7 +3,7 @@
 // Nachher: Saubere Komponente, wiederverwendbar (z.B. auch in einer Buchungsübersicht).
 
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import type { VerificationStatus } from '../../types/profile';
+import type { VerificationStatus } from '@/types/profile';
 
 interface VerificationBadgeProps {
     status: VerificationStatus | null | undefined;

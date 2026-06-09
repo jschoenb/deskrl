@@ -49,7 +49,7 @@ function normalizeErrors(errors: Record<string, string | string[]>): Record<stri
         Object.entries(errors).map(([key, value]) => [
             key,
             Array.isArray(value) ? value[0] : value,
-        ])
+        ]),
     );
 }
 
@@ -64,15 +64,16 @@ export function useProfileForm(user: UserFromBackend) {
 
     // Find the default account address from the new account_addresses relation.
     const defaultAddressRelation = useMemo(() => {
-        return user.account_addresses?.find((item) => item.is_default)
-            ?? user.account_addresses?.[0]
-            ?? null;
+        return (
+            user.account_addresses?.find((item) => item.is_default) ??
+            user.account_addresses?.[0] ??
+            null
+        );
     }, [user.account_addresses]);
 
     // Find the billing address from the new account_addresses relation.
     const billingAddressRelation = useMemo(() => {
-        return user.account_addresses?.find((item) => item.is_billing_address)
-            ?? null;
+        return user.account_addresses?.find((item) => item.is_billing_address) ?? null;
     }, [user.account_addresses]);
 
     // Check whether the default address and billing address are the same database entry.
@@ -110,7 +111,7 @@ export function useProfileForm(user: UserFromBackend) {
             // about_me is stored as JSON, for example { de: "..." }.
             aboutMe: getLocalizedText(user.about_me),
         }),
-        [initialName, user]
+        [initialName, user],
     );
 
     // Prepare the initial main address form state.
@@ -127,7 +128,7 @@ export function useProfileForm(user: UserFromBackend) {
             city: defaultAddressRelation?.address?.city ?? '',
             state: defaultAddressRelation?.address?.state ?? '',
         }),
-        [defaultAddressRelation]
+        [defaultAddressRelation],
     );
 
     // Prepare the initial billing address form state.
@@ -146,7 +147,7 @@ export function useProfileForm(user: UserFromBackend) {
             city: billingAddressRelation?.address?.city ?? '',
             state: billingAddressRelation?.address?.state ?? '',
         }),
-        [billingAddressRelation]
+        [billingAddressRelation],
     );
 
     // Prepare the initial business form state from commercial_account.
@@ -156,7 +157,7 @@ export function useProfileForm(user: UserFromBackend) {
             companyRegistrationNumber: user.commercial_account?.company_nr ?? '',
             vatNumber: user.commercial_account?.vat_nr ?? '',
         }),
-        [user.commercial_account]
+        [user.commercial_account],
     );
 
     // Store all form states in one hook.
@@ -166,15 +167,52 @@ export function useProfileForm(user: UserFromBackend) {
     const [business, setBusiness] = useState<BusinessFormData>(initialBusiness);
     const [isBillingSameAsAddress, setIsBillingSameAsAddress] = useState(initialBillingSameAsAddress);
 
-    // Store validation errors for address forms.
+    // Store validation errors for all profile form sections.
+    const [personalErrors, setPersonalErrors] = useState<Record<string, string>>({});
     const [addressErrors, setAddressErrors] = useState<Record<string, string>>({});
     const [billingErrors, setBillingErrors] = useState<Record<string, string>>({});
+    const [businessErrors, setBusinessErrors] = useState<Record<string, string>>({});
 
-    // Update a single field in the personal form.
+    // Update a single field in the personal form and remove its error message.
     const updatePersonal = useCallback(
-        <K extends keyof PersonalFormData>(field: K, value: PersonalFormData[K]) =>
-            setPersonal((prev) => ({ ...prev, [field]: value })),
-        []
+        <K extends keyof PersonalFormData>(field: K, value: PersonalFormData[K]) => {
+            setPersonal((prev) => ({ ...prev, [field]: value }));
+
+            setPersonalErrors((prev) => {
+                const next = { ...prev };
+
+                if (field === 'firstName') {
+                    delete next.first_name;
+                }
+
+                if (field === 'lastName') {
+                    delete next.last_name;
+                }
+
+                if (field === 'email') {
+                    delete next.email;
+                }
+
+                if (field === 'dateOfBirth') {
+                    delete next.birthdate;
+                }
+
+                if (field === 'phone') {
+                    delete next.phone;
+                }
+
+                if (field === 'aboutMe') {
+                    delete next.about_me;
+                }
+
+                if (field === 'gender') {
+                    delete next.gender;
+                }
+
+                return next;
+            });
+        },
+        [],
     );
 
     // Update a single field in the main address form and remove its error message.
@@ -205,10 +243,22 @@ export function useProfileForm(user: UserFromBackend) {
                     delete next.street;
                 }
 
+                if (field === 'state') {
+                    delete next.state;
+                }
+
+                if (field === 'staircase') {
+                    delete next.stair;
+                }
+
+                if (field === 'door') {
+                    delete next.door;
+                }
+
                 return next;
             });
         },
-        []
+        [],
     );
 
     // Update a single field in the billing address form and remove its error message.
@@ -239,6 +289,18 @@ export function useProfileForm(user: UserFromBackend) {
                     delete next.street;
                 }
 
+                if (field === 'state') {
+                    delete next.state;
+                }
+
+                if (field === 'staircase') {
+                    delete next.stair;
+                }
+
+                if (field === 'door') {
+                    delete next.door;
+                }
+
                 if (field === 'billingCompany') {
                     delete next.company_name;
                 }
@@ -250,14 +312,33 @@ export function useProfileForm(user: UserFromBackend) {
                 return next;
             });
         },
-        []
+        [],
     );
 
-    // Update a single field in the business form.
+    // Update a single field in the business form and remove its error message.
     const updateBusiness = useCallback(
-        <K extends keyof BusinessFormData>(field: K, value: BusinessFormData[K]) =>
-            setBusiness((prev) => ({ ...prev, [field]: value })),
-        []
+        <K extends keyof BusinessFormData>(field: K, value: BusinessFormData[K]) => {
+            setBusiness((prev) => ({ ...prev, [field]: value }));
+
+            setBusinessErrors((prev) => {
+                const next = { ...prev };
+
+                if (field === 'companyName') {
+                    delete next.company_name;
+                }
+
+                if (field === 'companyRegistrationNumber') {
+                    delete next.company_nr;
+                }
+
+                if (field === 'vatNumber') {
+                    delete next.vat_nr;
+                }
+
+                return next;
+            });
+        },
+        [],
     );
 
     // Save personal account data to AccountController@update.
@@ -278,9 +359,15 @@ export function useProfileForm(user: UserFromBackend) {
             {
                 preserveScroll: true,
                 preserveState: true,
-                onSuccess: () => toast.success('Persönliche Informationen wurden gespeichert.'),
-                onError: () => toast.error('Persönliche Informationen konnten nicht gespeichert werden.'),
-            }
+                onSuccess: () => {
+                    setPersonalErrors({});
+                    toast.success('Persönliche Informationen wurden gespeichert.');
+                },
+                onError: (errors: Record<string, string | string[]>) => {
+                    setPersonalErrors(normalizeErrors(errors));
+                    toast.error('Bitte prüfe die markierten Felder.');
+                },
+            },
         );
     }, [personal]);
 
@@ -330,7 +417,7 @@ export function useProfileForm(user: UserFromBackend) {
             },
             onError: (errors: Record<string, string | string[]>) => {
                 setAddressErrors(normalizeErrors(errors));
-                toast.error('Adresse konnte nicht gespeichert werden. Bitte prüfe die markierten Felder.');
+                toast.error('Bitte prüfe die markierten Felder.');
             },
         };
 
@@ -376,7 +463,7 @@ export function useProfileForm(user: UserFromBackend) {
                 // Keep the billing address section open even if validation fails.
                 setIsBillingSameAsAddress(false);
 
-                toast.error('Rechnungsadresse konnte nicht gespeichert werden. Bitte prüfe die markierten Felder.');
+                toast.error('Bitte prüfe die markierten Felder.');
             },
         };
 
@@ -392,32 +479,37 @@ export function useProfileForm(user: UserFromBackend) {
     const handleSaveBusiness = useCallback(() => {
         const payload = {
             company_name: business.companyName,
-            company_nr: business.companyRegistrationNumber,
-            vat_nr: business.vatNumber,
+            company_nr: business.companyRegistrationNumber || null,
+            vat_nr: business.vatNumber || null,
+        };
+
+        const options = {
+            preserveScroll: true,
+            preserveState: true,
+
+            onSuccess: () => {
+                setBusinessErrors({});
+                toast.success('Unternehmensdaten wurden gespeichert.');
+            },
+
+            onError: (errors: Record<string, string | string[]>) => {
+                setBusinessErrors(normalizeErrors(errors));
+                toast.error('Bitte prüfe die markierten Felder.');
+            },
         };
 
         if (user.commercial_account) {
-            router.put('/commercial-account', payload, {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => toast.success('Unternehmensdaten wurden gespeichert.'),
-                onError: () => toast.error('Unternehmensdaten konnten nicht gespeichert werden.'),
-            });
-
+            router.put('/commercial-account', payload, options);
             return;
         }
 
-        router.post('/commercial-account', payload, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => toast.success('Unternehmensdaten wurden gespeichert.'),
-            onError: () => toast.error('Unternehmensdaten konnten nicht gespeichert werden.'),
-        });
+        router.post('/commercial-account', payload, options);
     }, [business, user.commercial_account]);
 
     // Reset personal form changes.
     const handleCancelPersonal = useCallback(() => {
         setPersonal(initialPersonal);
+        setPersonalErrors({});
         toast.info('Änderungen wurden verworfen.');
     }, [initialPersonal]);
 
@@ -438,6 +530,7 @@ export function useProfileForm(user: UserFromBackend) {
     // Reset business form changes.
     const handleCancelBusiness = useCallback(() => {
         setBusiness(initialBusiness);
+        setBusinessErrors({});
         toast.info('Änderungen wurden verworfen.');
     }, [initialBusiness]);
 
@@ -450,8 +543,10 @@ export function useProfileForm(user: UserFromBackend) {
         isBillingSameAsAddress,
 
         // Validation errors
+        personalErrors,
         addressErrors,
         billingErrors,
+        businessErrors,
 
         // Field update functions
         updatePersonal,

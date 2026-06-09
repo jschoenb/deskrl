@@ -12,3 +12,5 @@ use Illuminate\Support\Facades\Route;
 // public deskrl routes
 Route::get('/deskrls', [DeskrlController::class, 'index']);
 Route::get('/deskrls/{deskrl}', [DeskrlController::class, 'show']);
+
+use App\Http\Controllers\BookingController;
