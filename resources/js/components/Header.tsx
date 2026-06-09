@@ -202,7 +202,6 @@ export default function Header() {
                                         <User className="h-5 w-5" />
                                         <span className="font-medium">{displayName}</span>
                                     </Link>
-                                    <div>Banana</div>
                                     <button
                                         type="button"
                                         className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100"

@@ -34,13 +34,18 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
         billing,
         business,
         isBillingSameAsAddress,
+
+        personalErrors,
         addressErrors,
         billingErrors,
+        businessErrors,
+
         updatePersonal,
         updateAddress,
         updateBilling,
         updateBusiness,
         setIsBillingSameAsAddress,
+
         handleSavePersonal,
         handleCancelPersonal,
         handleSaveAddress,
@@ -51,16 +56,12 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
         handleCancelBusiness,
     } = useProfileForm(account);
 
-    // Read the current account type from the backend.
     const role = account.account_type ?? 'user';
 
-    // Detect whether the logged-in account is a provider account.
     const isHost = role === 'private_host' || role === 'commercial_host';
 
-    // Detect whether the logged-in account is a commercial provider account.
     const isCommercialHost = role === 'commercial_host';
 
-    // Use email verification for now until a dedicated provider verification status exists.
     const verificationStatus: VerificationStatus = account.email_verified ? 'verified' : 'unverified';
 
     return (
@@ -69,7 +70,6 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
 
             <div className="min-h-screen bg-gray-50">
                 <div className="mx-auto max-w-4xl px-4 py-12">
-                    {/* Profile header is handled inside ProfileHeader.tsx. */}
                     <ProfileHeader
                         user={{
                             first_name: account.first_name ?? '',
@@ -81,12 +81,10 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
                         }}
                     />
 
-                    {/* User statistics are handled inside StatsGrid.tsx. */}
                     {!isHost && (
                         <StatsGrid role={role} stats={stats}/>
                     )}
 
-                    {/* Provider upgrade card is handled inside ProviderUpgrade.tsx. */}
                     {!isHost && (
                         <ProviderUpgrade
                             role={role}
@@ -94,7 +92,6 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
                         />
                     )}
 
-                    {/* MVP provider verification notice is handled inside VerificationSection.tsx. */}
                     {isHost && (
                         <VerificationSection
                             user={{
@@ -104,26 +101,25 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
                         />
                     )}
 
-                    {/* Personal profile data is handled inside PersonalInformationSection.tsx. */}
                     <PersonalInformationSection
                         personal={personal}
+                        personalErrors={personalErrors}
                         isCommercialHost={isCommercialHost}
                         updatePersonal={updatePersonal}
                         onSave={handleSavePersonal}
                         onCancel={handleCancelPersonal}
                     />
 
-                    {/* Business profile data is handled inside BusinessInformationSection.tsx. */}
                     {isCommercialHost && (
                         <BusinessInformationSection
                             business={business}
+                            businessErrors={businessErrors}
                             updateBusiness={updateBusiness}
                             onSave={handleSaveBusiness}
                             onCancel={handleCancelBusiness}
                         />
                     )}
 
-                    {/* Main address and billing address data are handled inside AddressSection.tsx. */}
                     <AddressSection
                         address={address}
                         billing={billing}
@@ -142,7 +138,6 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
                 </div>
             </div>
 
-            {/* Provider upgrade modal is handled inside CommercialVerificationModal.tsx. */}
             <CommercialVerificationModal
                 isOpen={showCommercialVerificationModal}
                 onClose={() => setShowCommercialVerificationModal(false)}

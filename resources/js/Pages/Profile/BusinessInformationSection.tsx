@@ -4,6 +4,7 @@ import type { BusinessFormData } from '@/types/profile';
 
 interface BusinessInformationSectionProps {
     business: BusinessFormData;
+    businessErrors: Record<string, string>;
     updateBusiness: <K extends keyof BusinessFormData>(
         field: K,
         value: BusinessFormData[K],
@@ -14,6 +15,7 @@ interface BusinessInformationSectionProps {
 
 export function BusinessInformationSection({
                                                business,
+                                               businessErrors,
                                                updateBusiness,
                                                onSave,
                                                onCancel,
@@ -24,12 +26,12 @@ export function BusinessInformationSection({
             onSave={onSave}
             onCancel={onCancel}
         >
-            {/* Company fields for commercial provider accounts */}
             <div className="grid gap-4 md:grid-cols-2">
                 <InputField
                     label="Firmenname"
                     value={business.companyName}
                     onChange={(value) => updateBusiness('companyName', value)}
+                    error={businessErrors.company_name}
                     required
                 />
 
@@ -38,6 +40,8 @@ export function BusinessInformationSection({
                     value={business.companyRegistrationNumber}
                     onChange={(value) => updateBusiness('companyRegistrationNumber', value)}
                     placeholder="z. B. FN 123456a"
+                    error={businessErrors.company_nr}
+                    required
                 />
 
                 <InputField
@@ -45,6 +49,8 @@ export function BusinessInformationSection({
                     value={business.vatNumber}
                     onChange={(value) => updateBusiness('vatNumber', value)}
                     placeholder="z. B. ATU12345678"
+                    error={businessErrors.vat_nr}
+                    required
                 />
             </div>
         </Section>
