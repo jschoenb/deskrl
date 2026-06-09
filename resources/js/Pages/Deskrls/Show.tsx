@@ -781,7 +781,7 @@ export default function Show({ deskrl }: Props) {
                                 <DeskrlLocationMap
                                     latitude={address?.latitude}
                                     longitude={address?.longitude}
-                                />
+                                ></DeskrlLocationMap>
                             </div>
 
                             {/* Opens Google Maps route planning in a new browser tab */}
