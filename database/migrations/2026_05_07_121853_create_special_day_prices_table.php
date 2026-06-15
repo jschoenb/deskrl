@@ -6,16 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Create the special day prices table with custom daily prices for Deskrls.
+     */
     public function up(): void
     {
         Schema::create('special_day_prices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('deskrl_id')->constrained('deskrls')->onDelete('cascade');
-            $table->date('date');                              // ← DIESE ZEILE HINZUFÜGEN
+
+            $table->foreignId('deskrl_id')
+                ->constrained('deskrls')
+                ->onDelete('cascade');
+
+            $table->date('date');
             $table->decimal('special_price_per_day', 10, 2);
+
             $table->timestamps();
         });
     }
+
+    /**
+     * Drop the special day prices table.
+     */
     public function down(): void
     {
         Schema::dropIfExists('special_day_prices');

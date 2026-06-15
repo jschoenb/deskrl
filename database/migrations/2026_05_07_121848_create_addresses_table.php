@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Create the addresses table with country, location and optional address detail fields.
      */
     public function up(): void
     {
@@ -21,13 +21,12 @@ return new class extends Migration
             $table->string('postal_code');
             $table->string('stair')->nullable();
             $table->string('door')->nullable();
-
             $table->timestamps();
         });
     }
 
     /**
-     * Reverse the migrations.
+     * Drop the addresses table.
      */
     public function down(): void
     {

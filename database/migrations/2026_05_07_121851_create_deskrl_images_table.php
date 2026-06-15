@@ -7,26 +7,19 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Create the Deskrl images table with image paths, cover image flags and sort order.
      */
     public function up(): void
     {
         Schema::create('deskrl_images', function (Blueprint $table) {
             $table->id();
 
-            // Links this image to one Deskrl.
-            // If the Deskrl is deleted, its images should be deleted as well.
             $table->foreignId('deskrl_id')
                 ->constrained('deskrls')
                 ->cascadeOnDelete();
 
-            // Stores the relative or absolute image path.
             $table->string('path');
-
-            // Marks the main image used as the cover image.
             $table->boolean('is_main')->default(false);
-
-            // Defines the display order of the images.
             $table->unsignedInteger('sort_order')->default(0);
 
             $table->timestamps();
@@ -34,7 +27,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Drop the Deskrl images table.
      */
     public function down(): void
     {
