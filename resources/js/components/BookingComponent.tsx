@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { Calendar, Clock } from 'lucide-react';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 import { toast } from 'sonner';
 import { DatePicker } from '@/components/DatePicker';
 import { BookingConfirmationModal } from '@/components/BookingModal';
@@ -11,7 +12,7 @@ type BackendPriceRate = 'hourly' | 'half_day' | 'daily' | 'weekly' | 'monthly';
 
 type BookingDurationOption = {
     key: BookingDuration;
-    label: string;
+    labelKey: string;
     price: number | null;
 };
 
@@ -65,7 +66,7 @@ function mapDurationToBackendPriceRate(duration: BookingDuration): BackendPriceR
     return mapping[duration];
 }
 
-function getFirstErrorMessage(errors: InertiaErrors): string {
+function getFirstErrorMessage(errors: InertiaErrors, fallback: string): string {
     const preferredErrorKeys = [
         'booking',
         'from',
@@ -98,7 +99,7 @@ function getFirstErrorMessage(errors: InertiaErrors): string {
         return firstError;
     }
 
-    return 'Die Buchungsanfrage konnte nicht gesendet werden. Bitte prüfe deine Eingaben.';
+    return fallback;
 }
 
 export default function BookingComponent({
@@ -107,6 +108,8 @@ export default function BookingComponent({
                                              authUser,
                                              onGuestBooking,
                                          }: BookingComponentProps) {
+    const intl = useIntl();
+
     const [showBookingModal, setShowBookingModal] = useState(false);
     const [isSubmittingBookingRequest, setIsSubmittingBookingRequest] = useState(false);
 
@@ -118,6 +121,7 @@ export default function BookingComponent({
         if (deskrl.price_per_day) return 'day';
         if (deskrl.price_per_hour) return 'hour';
         if (deskrl.price_per_week) return 'week';
+
         return 'month';
     });
 
@@ -128,39 +132,47 @@ export default function BookingComponent({
 
     const [selectedMonth, setSelectedMonth] = useState('');
 
+    // Returns the translated text for the given translation key.
+    const t = (id: string, values?: Record<string, string | number>) =>
+        intl.formatMessage({ id }, values);
+
+    const locale = intl.locale || 'de-DE';
+
     const bookingDurationOptions: BookingDurationOption[] = [
         {
             key: 'hour',
-            label: 'Stunde',
+            labelKey: 'booking.duration.hour',
             price: parsePrice(deskrl.price_per_hour),
         },
         {
             key: 'half_day',
-            label: 'Halbtag',
+            labelKey: 'booking.duration.halfDay',
             price: parsePrice(deskrl.price_per_half_day),
         },
         {
             key: 'day',
-            label: 'Tag',
+            labelKey: 'booking.duration.day',
             price: parsePrice(deskrl.price_per_day),
         },
         {
             key: 'week',
-            label: 'Woche',
+            labelKey: 'booking.duration.week',
             price: parsePrice(deskrl.price_per_week),
         },
         {
             key: 'month',
-            label: 'Monat',
+            labelKey: 'booking.duration.month',
             price: parsePrice(deskrl.price_per_month),
         },
     ].filter((option): option is BookingDurationOption => option.price !== null);
 
     const selectedDurationOption =
-        bookingDurationOptions.find(option => option.key === selectedDuration) ?? bookingDurationOptions[0];
+        bookingDurationOptions.find((option) => option.key === selectedDuration) ?? bookingDurationOptions[0];
 
     const selectedBookingPrice = selectedDurationOption?.price ?? null;
-    const selectedBookingLabel = selectedDurationOption?.label ?? 'Zeitraum';
+    const selectedBookingLabel = selectedDurationOption
+        ? t(selectedDurationOption.labelKey)
+        : t('booking.duration.period');
 
     const buildBookingPeriod = (): { from: string; until: string } | null => {
         if (!selectedDate) {
@@ -231,12 +243,12 @@ export default function BookingComponent({
         }
 
         if (!selectedDate) {
-            toast.error('Bitte wähle zuerst ein Datum aus.');
+            toast.error(t('booking.toast.selectDate'));
             return;
         }
 
         if (selectedBookingPrice === null) {
-            toast.error('Für diesen Zeitraum ist kein Preis hinterlegt.');
+            toast.error(t('booking.toast.noPrice'));
             return;
         }
 
@@ -247,12 +259,12 @@ export default function BookingComponent({
         const bookingPeriod = buildBookingPeriod();
 
         if (!bookingPeriod) {
-            toast.error('Bitte wähle zuerst einen gültigen Zeitraum aus.');
+            toast.error(t('booking.toast.invalidPeriod'));
             return;
         }
 
         if (selectedBookingPrice === null) {
-            toast.error('Für diesen Zeitraum ist kein Preis hinterlegt.');
+            toast.error(t('booking.toast.noPrice'));
             return;
         }
 
@@ -272,12 +284,15 @@ export default function BookingComponent({
             },
 
             onSuccess: () => {
-                toast.success('Buchungsanfrage wurde gesendet.');
+                toast.success(t('booking.toast.requestSent'));
                 setShowBookingModal(false);
             },
 
-            onError: errors => {
-                toast.error(getFirstErrorMessage(errors as InertiaErrors));
+            onError: (errors) => {
+                toast.error(getFirstErrorMessage(
+                    errors as InertiaErrors,
+                    t('booking.toast.requestError'),
+                ));
             },
 
             onFinish: () => {
@@ -293,25 +308,35 @@ export default function BookingComponent({
                     <div className="mb-8">
                         {selectedBookingPrice !== null ? (
                             <div className="text-3xl font-bold text-gray-950">
-                                {!selectedDate && <span className="text-lg font-normal text-gray-600">ab </span>}
+                                {!selectedDate && (
+                                    <span className="text-lg font-normal text-gray-600">
+                                        {t('booking.price.from')}{' '}
+                                    </span>
+                                )}
+
                                 €{selectedBookingPrice.toFixed(0)}
+
                                 <span className="text-lg font-normal text-gray-600">
-                                    {selectedDuration === 'week' ? ' gesamt' : ` / ${selectedBookingLabel}`}
+                                    {selectedDuration === 'week'
+                                        ? ` ${t('booking.price.total')}`
+                                        : ` / ${selectedBookingLabel}`}
                                 </span>
                             </div>
                         ) : (
-                            <p className="text-gray-500">Noch keine Preise hinterlegt.</p>
+                            <p className="text-gray-500">
+                                {t('booking.price.empty')}
+                            </p>
                         )}
                     </div>
 
                     {bookingDurationOptions.length > 0 ? (
                         <div className="mb-8">
                             <label className="mb-4 block text-base font-bold text-gray-700">
-                                Zeitraum wählen
+                                {t('booking.duration.choose')}
                             </label>
 
                             <div className="grid grid-cols-3 gap-3">
-                                {bookingDurationOptions.map(option => (
+                                {bookingDurationOptions.map((option) => (
                                     <button
                                         key={option.key}
                                         type="button"
@@ -325,19 +350,23 @@ export default function BookingComponent({
                                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                         }`}
                                     >
-                                        {option.label}
+                                        {t(option.labelKey)}
                                     </button>
                                 ))}
                             </div>
                         </div>
                     ) : (
-                        <p className="mb-6 text-gray-500">Noch keine Preise hinterlegt.</p>
+                        <p className="mb-6 text-gray-500">
+                            {t('booking.price.empty')}
+                        </p>
                     )}
 
                     {selectedDuration !== 'month' ? (
                         <div className="relative mb-8">
                             <label className="mb-4 block text-base font-bold text-gray-700">
-                                {selectedDuration === 'week' ? 'Startdatum' : 'Datum'}
+                                {selectedDuration === 'week'
+                                    ? t('booking.date.startDate')
+                                    : t('booking.date.date')}
                             </label>
 
                             <button
@@ -345,16 +374,17 @@ export default function BookingComponent({
                                 onClick={() => setShowBookingDatePicker(!showBookingDatePicker)}
                                 className="flex w-full items-center gap-3 rounded-3xl border border-gray-200 bg-white px-4 py-4 text-left text-gray-700 transition hover:border-[#5555ff]"
                             >
-                                <Calendar className="h-5 w-5 text-gray-400" />
+                                <Calendar className="h-5 w-5 text-gray-400" aria-hidden="true" />
+
                                 <span className={selectedDate ? 'font-semibold text-gray-900' : 'text-gray-400'}>
                                     {selectedDate
-                                        ? new Date(selectedDate).toLocaleDateString('de-DE', {
+                                        ? new Date(selectedDate).toLocaleDateString(locale, {
                                             weekday: 'short',
                                             day: '2-digit',
                                             month: 'short',
                                             year: 'numeric',
                                         })
-                                        : 'Datum wählen'}
+                                        : t('booking.date.chooseDate')}
                                 </span>
                             </button>
 
@@ -362,7 +392,7 @@ export default function BookingComponent({
                                 <div className="absolute left-0 right-0 z-20 mt-2 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
                                     <DatePicker
                                         selectedDate={selectedDate}
-                                        onDateSelect={date => {
+                                        onDateSelect={(date) => {
                                             setSelectedDate(date);
                                             setShowBookingDatePicker(false);
                                         }}
@@ -374,12 +404,12 @@ export default function BookingComponent({
                     ) : (
                         <div className="mb-8">
                             <label className="mb-4 block text-base font-bold text-gray-700">
-                                Monat
+                                {t('booking.month.label')}
                             </label>
 
                             <select
                                 value={selectedMonth}
-                                onChange={event => {
+                                onChange={(event) => {
                                     const value = event.target.value;
                                     setSelectedMonth(value);
 
@@ -389,7 +419,10 @@ export default function BookingComponent({
                                 }}
                                 className="w-full rounded-3xl border border-gray-200 bg-white px-4 py-4 text-gray-700 focus:border-[#5555ff] focus:outline-none focus:ring-2 focus:ring-[#5555ff]/20"
                             >
-                                <option value="">Monat wählen</option>
+                                <option value="">
+                                    {t('booking.month.placeholder')}
+                                </option>
+
                                 {Array.from({ length: 12 }, (_, index) => {
                                     const date = new Date();
                                     date.setMonth(date.getMonth() + index);
@@ -398,24 +431,14 @@ export default function BookingComponent({
                                     const month = String(date.getMonth() + 1).padStart(2, '0');
                                     const value = `${year}-${month}`;
 
-                                    const monthNames = [
-                                        'Januar',
-                                        'Februar',
-                                        'März',
-                                        'April',
-                                        'Mai',
-                                        'Juni',
-                                        'Juli',
-                                        'August',
-                                        'September',
-                                        'Oktober',
-                                        'November',
-                                        'Dezember',
-                                    ];
+                                    const label = new Intl.DateTimeFormat(locale, {
+                                        month: 'long',
+                                        year: 'numeric',
+                                    }).format(date);
 
                                     return (
                                         <option key={value} value={value}>
-                                            {monthNames[date.getMonth()]} {year}
+                                            {label}
                                         </option>
                                     );
                                 })}
@@ -426,34 +449,34 @@ export default function BookingComponent({
                     {selectedDuration === 'hour' && (
                         <div className="mb-8">
                             <label className="mb-4 block text-base font-bold text-gray-700">
-                                Uhrzeit
+                                {t('booking.time.label')}
                             </label>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <label className="rounded-3xl bg-gray-100 px-4 py-3">
                                     <span className="mb-1 flex items-center gap-2 text-xs font-semibold text-gray-500">
-                                        <Clock className="h-4 w-4" />
-                                        Von
+                                        <Clock className="h-4 w-4" aria-hidden="true" />
+                                        {t('booking.time.from')}
                                     </span>
 
                                     <input
                                         type="time"
                                         value={selectedStartTime}
-                                        onChange={event => setSelectedStartTime(event.target.value)}
+                                        onChange={(event) => setSelectedStartTime(event.target.value)}
                                         className="w-full bg-transparent text-base font-bold text-gray-900 outline-none"
                                     />
                                 </label>
 
                                 <label className="rounded-3xl bg-gray-100 px-4 py-3">
                                     <span className="mb-1 flex items-center gap-2 text-xs font-semibold text-gray-500">
-                                        <Clock className="h-4 w-4" />
-                                        Bis
+                                        <Clock className="h-4 w-4" aria-hidden="true" />
+                                        {t('booking.time.to')}
                                     </span>
 
                                     <input
                                         type="time"
                                         value={selectedEndTime}
-                                        onChange={event => setSelectedEndTime(event.target.value)}
+                                        onChange={(event) => setSelectedEndTime(event.target.value)}
                                         className="w-full bg-transparent text-base font-bold text-gray-900 outline-none"
                                     />
                                 </label>
@@ -464,7 +487,7 @@ export default function BookingComponent({
                     {selectedDuration === 'half_day' && (
                         <div className="mb-8">
                             <label className="mb-4 block text-base font-bold text-gray-700">
-                                Zeitraum
+                                {t('booking.period.label')}
                             </label>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -481,7 +504,10 @@ export default function BookingComponent({
                                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                                 >
-                                    <span className="block text-lg font-bold">Vormittag</span>
+                                    <span className="block text-lg font-bold">
+                                        {t('booking.period.morning')}
+                                    </span>
+
                                     <span className="mt-1 block text-sm font-semibold opacity-80">
                                         08:00 – 12:00
                                     </span>
@@ -500,7 +526,10 @@ export default function BookingComponent({
                                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                                 >
-                                    <span className="block text-lg font-bold">Nachmittag</span>
+                                    <span className="block text-lg font-bold">
+                                        {t('booking.period.afternoon')}
+                                    </span>
+
                                     <span className="mt-1 block text-sm font-semibold opacity-80">
                                         13:00 – 17:00
                                     </span>
@@ -519,11 +548,13 @@ export default function BookingComponent({
                                 : 'bg-[#e63cff] hover:bg-[#d12ee6]'
                         }`}
                     >
-                        {deskrl.instant_bookable ? 'Reservieren' : 'Anfragen'}
+                        {deskrl.instant_bookable
+                            ? t('booking.action.reserve')
+                            : t('booking.action.request')}
                     </button>
 
                     <p className="text-center text-sm leading-5 text-gray-500">
-                        Keine Buchungsgebühren • Kostenlose Stornierung bis 24h vorher
+                        {t('booking.note')}
                     </p>
                 </div>
             </aside>

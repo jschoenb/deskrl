@@ -1,9 +1,15 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { InertiaPage } from '@/types/inertia';
 import { Calendar } from 'lucide-react';
+import { useIntl } from 'react-intl';
 import type { ReactNode } from 'react';
 
 const ProviderBookings: InertiaPage = () => {
+    const intl = useIntl();
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
+
     return (
         <>
             {/* Full-width provider bookings header */}
@@ -13,12 +19,12 @@ const ProviderBookings: InertiaPage = () => {
                         <Calendar className="h-8 w-8 text-white" />
 
                         <h1 className="text-4xl font-extrabold md:text-5xl">
-                            Buchungen
+                            {t('providerBookings.title')}
                         </h1>
                     </div>
 
                     <p className="text-lg text-white/90">
-                        Verwalte alle Buchungen deiner Räume.
+                        {t('providerBookings.description')}
                     </p>
                 </div>
             </div>
@@ -32,11 +38,11 @@ const ProviderBookings: InertiaPage = () => {
                     </div>
 
                     <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                        Noch keine Buchungen
+                        {t('providerBookings.emptyTitle')}
                     </h2>
 
                     <p className="text-gray-600">
-                        Sobald Nutzer:innen deine Räume buchen, erscheinen die Buchungen hier.
+                        {t('providerBookings.emptyDescription')}
                     </p>
                 </div>
             </div>

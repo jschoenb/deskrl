@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
-import React, { ReactNode, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useIntl } from 'react-intl';
 import {
     ArrowLeft,
     Bike,
@@ -184,16 +185,28 @@ type PageProps = {
 
 /**
  * Returns the best available text from a localized field.
- * It first tries German, then English, then any other existing value.
+ * It first tries the current locale, then German, then English, then any other existing value.
  */
-function getLocalizedText(value?: LocalizedText): string {
-    if (!value) return '';
-
-    if (typeof value === 'string') {
-        return value;
+function getLocalizedText(value: LocalizedText | undefined, locale = 'de'): string {
+    if (!value) {
+        return '';
     }
 
-    return value.de || value.en || Object.values(value).find(Boolean) || '';
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value);
+
+            if (typeof parsed === 'object' && parsed !== null) {
+                return parsed?.[locale] || parsed.de || parsed.en || Object.values(parsed).find(Boolean) || '';
+            }
+
+            return value;
+        } catch {
+            return value;
+        }
+    }
+
+    return value[locale] || value.de || value.en || Object.values(value).find(Boolean) || '';
 }
 
 /**
@@ -211,15 +224,19 @@ function getImageUrl(path: string): string {
 /**
  * Builds a readable address string from the nested Deskrl address relation.
  */
-function formatAddress(address?: Address): string {
-    if (!address) return 'Adresse noch nicht verfügbar';
+function formatAddress(address: Address | undefined, fallback: string): string {
+    if (!address) {
+        return fallback;
+    }
 
-    return [
+    const formattedAddress = [
         address.street && address.house_nr ? `${address.street} ${address.house_nr}` : address.street,
         address.postal_code && address.city ? `${address.postal_code} ${address.city}` : address.city,
     ]
         .filter(Boolean)
         .join(', ');
+
+    return formattedAddress || fallback;
 }
 
 /**
@@ -290,6 +307,17 @@ function getUtilityIcon(utilityName: string) {
 }
 
 export default function Show({ deskrl }: Props) {
+    const intl = useIntl();
+
+    // Returns the translated text for the given translation key.
+    const t = useCallback(
+        (id: string, values?: Record<string, string | number>) =>
+            intl.formatMessage({ id }, values),
+        [intl],
+    );
+
+    const locale = intl.locale || 'de';
+
     const { props } = usePage<PageProps>();
     const authUser = props.auth?.user ?? null;
 
@@ -357,8 +385,14 @@ export default function Show({ deskrl }: Props) {
     /**
      * Convert localized JSON fields into simple display strings.
      */
-    const title = getLocalizedText(deskrl.title) || 'Deskrl ohne Titel';
-    const description = getLocalizedText(deskrl.description) || 'Für diesen Deskrl gibt es noch keine Beschreibung.';
+    const title = getLocalizedText(deskrl.title, locale) || t('deskrlDetail.fallback.title');
+    const description = getLocalizedText(deskrl.description, locale) || t('deskrlDetail.fallback.description');
+
+    const hostName = host?.first_name || host?.last_name
+        ? `${host.first_name ?? ''} ${host.last_name ?? ''}`.trim()
+        : t('deskrlDetail.host.fallbackName');
+
+    const hostCompanyName = commercialAccount?.company_name || t('deskrlDetail.host.privateHost');
 
     /**
      * Sort images so that the main image appears first.
@@ -368,7 +402,7 @@ export default function Show({ deskrl }: Props) {
         return (
             [...(deskrl.images ?? [])]
                 .sort((a, b) => Number(b.is_main) - Number(a.is_main) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                .map(image => getImageUrl(image.path))
+                .map((image) => getImageUrl(image.path))
         );
     }, [deskrl.images]);
 
@@ -379,9 +413,9 @@ export default function Show({ deskrl }: Props) {
     const groupedUtilities = useMemo(() => {
         const groups: Record<string, Utility[]> = {};
 
-        deskrl.utilities?.forEach(utility => {
+        deskrl.utilities?.forEach((utility) => {
             const utilityCategory = utility.utility_category || utility.utilityCategory;
-            const categoryName = getLocalizedText(utilityCategory?.category_name) || 'Weitere Ausstattung';
+            const categoryName = getLocalizedText(utilityCategory?.category_name, locale) || t('deskrlDetail.utilities.otherCategory');
 
             if (!groups[categoryName]) {
                 groups[categoryName] = [];
@@ -395,7 +429,7 @@ export default function Show({ deskrl }: Props) {
             utilities,
             Icon: getUtilityCategoryIcon(categoryName),
         }));
-    }, [deskrl.utilities]);
+    }, [deskrl.utilities, locale, t]);
 
     /**
      * Only show the first utility groups by default.
@@ -411,7 +445,7 @@ export default function Show({ deskrl }: Props) {
 
         if (type === 'copy') {
             navigator.clipboard.writeText(url);
-            toast.success('Link wurde kopiert.');
+            toast.success(t('deskrlDetail.toast.linkCopied'));
             setShowShareMenu(false);
             return;
         }
@@ -437,7 +471,7 @@ export default function Show({ deskrl }: Props) {
         }
 
         if (!isRegularUser) {
-            toast.info('Favoriten können aktuell nur von Nutzer:innen gespeichert werden.');
+            toast.info(t('deskrlDetail.toast.onlyUsersCanSaveFavorites'));
             return;
         }
 
@@ -446,11 +480,11 @@ export default function Show({ deskrl }: Props) {
 
             toast.success(
                 isCurrentDeskrlFavorited
-                    ? 'Deskrl wurde aus deinen Gemerkten entfernt.'
-                    : 'Deskrl wurde zu deinen Gemerkten hinzugefügt.',
+                    ? t('deskrlDetail.toast.favoriteRemoved')
+                    : t('deskrlDetail.toast.favoriteAdded'),
             );
         } catch {
-            toast.error('Favorit konnte nicht gespeichert werden.');
+            toast.error(t('deskrlDetail.toast.favoriteError'));
         }
     };
 
@@ -460,7 +494,9 @@ export default function Show({ deskrl }: Props) {
      */
     const handleRoutePlanning = () => {
         window.open(
-            `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(formatAddress(address))}`,
+            `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                formatAddress(address, t('deskrlDetail.fallback.address')),
+            )}`,
             '_blank',
         );
     };
@@ -474,18 +510,18 @@ export default function Show({ deskrl }: Props) {
                         type="button"
                         onClick={() => setLightboxOpen(false)}
                         className="absolute right-6 top-6 text-white hover:text-gray-300"
-                        aria-label="Lightbox schließen"
+                        aria-label={t('deskrlDetail.lightbox.close')}
                     >
-                        <X className="h-8 w-8" />
+                        <X className="h-8 w-8" aria-hidden="true" />
                     </button>
 
                     <button
                         type="button"
                         onClick={() => setSelectedImage((selectedImage - 1 + images.length) % images.length)}
                         className="absolute left-6 text-white hover:text-gray-300"
-                        aria-label="Vorheriges Bild"
+                        aria-label={t('deskrlDetail.lightbox.previous')}
                     >
-                        <ChevronLeft className="h-12 w-12" />
+                        <ChevronLeft className="h-12 w-12" aria-hidden="true" />
                     </button>
 
                     <img
@@ -498,9 +534,9 @@ export default function Show({ deskrl }: Props) {
                         type="button"
                         onClick={() => setSelectedImage((selectedImage + 1) % images.length)}
                         className="absolute right-6 text-white hover:text-gray-300"
-                        aria-label="Nächstes Bild"
+                        aria-label={t('deskrlDetail.lightbox.next')}
                     >
-                        <ChevronRight className="h-12 w-12" />
+                        <ChevronRight className="h-12 w-12" aria-hidden="true" />
                     </button>
 
                     <div className="absolute bottom-6 text-lg text-white">
@@ -512,8 +548,8 @@ export default function Show({ deskrl }: Props) {
             <div className="mx-auto max-w-7xl px-4 py-8">
                 {/* Back link to overview/search page */}
                 <Link href="/" className="mb-6 inline-flex items-center gap-2 text-gray-600 hover:text-[#5555ff]">
-                    <ArrowLeft className="h-5 w-5" />
-                    Zurück zur Suche
+                    <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+                    {t('deskrlDetail.backToSearch')}
                 </Link>
 
                 {/* Header area with title, location and action buttons */}
@@ -531,21 +567,14 @@ export default function Show({ deskrl }: Props) {
 
                         <div className="flex flex-wrap items-center gap-4 text-gray-600">
                             <p className="flex items-center gap-2 text-base text-gray-600 md:text-lg">
-                                <MapPin className="h-5 w-5 text-[#5555ff]" />
-                                {address?.city || 'Ort noch nicht verfügbar'}
+                                <MapPin className="h-5 w-5 text-[#5555ff]" aria-hidden="true" />
+                                {address?.city || t('deskrlDetail.fallback.location')}
                             </p>
 
                             {/*
                               Rating placeholder:
                               Reviews are not part of the current MVP yet.
                               Keep this block commented until ratings are implemented in the backend.
-                            */}
-                            {/*
-                            <p className="flex items-center gap-2 text-2xl">
-                                <Star className="h-7 w-7 fill-yellow-400 text-yellow-400" />
-                                <span className="font-bold text-gray-800">4.9</span>
-                                <span>(127 Bewertungen)</span>
-                            </p>
                             */}
                         </div>
                     </div>
@@ -558,8 +587,8 @@ export default function Show({ deskrl }: Props) {
                                 onClick={() => setShowShareMenu(!showShareMenu)}
                                 className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-semibold hover:border-[#5555ff]"
                             >
-                                <Share2 className="h-5 w-5" />
-                                Teilen
+                                <Share2 className="h-5 w-5" aria-hidden="true" />
+                                {t('deskrlDetail.share.button')}
                             </button>
 
                             {/* Share dropdown menu */}
@@ -570,7 +599,7 @@ export default function Show({ deskrl }: Props) {
                                         onClick={() => handleShare('whatsapp')}
                                         className="flex w-full items-center gap-3 px-4 py-2 hover:bg-gray-50"
                                     >
-                                        <MessageCircle className="h-5 w-5" />
+                                        <MessageCircle className="h-5 w-5" aria-hidden="true" />
                                         WhatsApp
                                     </button>
 
@@ -579,7 +608,7 @@ export default function Show({ deskrl }: Props) {
                                         onClick={() => handleShare('email')}
                                         className="flex w-full items-center gap-3 px-4 py-2 hover:bg-gray-50"
                                     >
-                                        <Mail className="h-5 w-5" />
+                                        <Mail className="h-5 w-5" aria-hidden="true" />
                                         E-Mail
                                     </button>
 
@@ -588,8 +617,8 @@ export default function Show({ deskrl }: Props) {
                                         onClick={() => handleShare('copy')}
                                         className="flex w-full items-center gap-3 px-4 py-2 hover:bg-gray-50"
                                     >
-                                        <Share2 className="h-5 w-5" />
-                                        Link kopieren
+                                        <Share2 className="h-5 w-5" aria-hidden="true" />
+                                        {t('deskrlDetail.share.copyLink')}
                                     </button>
                                 </div>
                             )}
@@ -608,8 +637,12 @@ export default function Show({ deskrl }: Props) {
                                 className={`h-5 w-5 ${
                                     isCurrentDeskrlFavorited ? 'fill-[#e63cff] text-[#e63cff]' : ''
                                 }`}
+                                aria-hidden="true"
                             />
-                            {isCurrentDeskrlFavorited ? 'Gemerkt' : 'Merken'}
+
+                            {isCurrentDeskrlFavorited
+                                ? t('deskrlDetail.favorite.saved')
+                                : t('deskrlDetail.favorite.save')}
                         </button>
                     </div>
                 </div>
@@ -644,7 +677,7 @@ export default function Show({ deskrl }: Props) {
                             >
                                 <img
                                     src={image}
-                                    alt={`${title} ${index + 2}`}
+                                    alt={t('deskrlDetail.gallery.imageAlt', { title, number: index + 2 })}
                                     className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                                 />
                             </button>
@@ -653,9 +686,12 @@ export default function Show({ deskrl }: Props) {
                 ) : (
                     <div className="mb-10 flex h-[360px] items-center justify-center rounded-3xl border-2 border-dashed border-red-300 bg-red-50 text-center">
                         <div>
-                            <p className="text-xl font-bold text-red-700">Keine Bilder vorhanden</p>
+                            <p className="text-xl font-bold text-red-700">
+                                {t('deskrlDetail.gallery.noImagesTitle')}
+                            </p>
+
                             <p className="mt-2 text-sm text-red-600">
-                                Der Deskrl hat aktuell keine Bilder aus der Datenbank.
+                                {t('deskrlDetail.gallery.noImagesDescription')}
                             </p>
                         </div>
                     </div>
@@ -671,13 +707,16 @@ export default function Show({ deskrl }: Props) {
                                 <div className="border-b border-gray-200 pb-8">
                                     <div className="flex items-center gap-5">
                                         <div className="flex h-12 w-12 items-center justify-center text-[#5555ff]">
-                                            <Users className="h-7 w-7" />
+                                            <Users className="h-7 w-7" aria-hidden="true" />
                                         </div>
 
                                         <div>
-                                            <p className="text-sm text-gray-500 md:text-base">Maximale Personenzahl</p>
+                                            <p className="text-sm text-gray-500 md:text-base">
+                                                {t('deskrlDetail.capacity.label')}
+                                            </p>
+
                                             <p className="text-xl font-bold text-gray-800">
-                                                Bis zu {deskrl.capacity} Personen
+                                                {t('deskrlDetail.capacity.value', { count: deskrl.capacity })}
                                             </p>
                                         </div>
                                     </div>
@@ -686,7 +725,9 @@ export default function Show({ deskrl }: Props) {
 
                             {/* Description section */}
                             <div className="border-b border-gray-200 py-8">
-                                <h2 className="mb-6 text-2xl font-bold text-gray-950">Über diesen Raum</h2>
+                                <h2 className="mb-6 text-2xl font-bold text-gray-950">
+                                    {t('deskrlDetail.about.title')}
+                                </h2>
 
                                 <p className="text-base leading-7 text-gray-700 md:text-lg">
                                     {description}
@@ -695,18 +736,21 @@ export default function Show({ deskrl }: Props) {
 
                             {/* Utility section grouped by category */}
                             <div className="pt-8">
-                                <h2 className="mb-8 text-2xl font-bold text-gray-950">Ausstattung & Services</h2>
+                                <h2 className="mb-8 text-2xl font-bold text-gray-950">
+                                    {t('deskrlDetail.utilities.title')}
+                                </h2>
 
                                 {groupedUtilities.length > 0 ? (
                                     <div className="space-y-10">
-                                        {visibleUtilityGroups.map(group => {
+                                        {visibleUtilityGroups.map((group) => {
                                             const CategoryIcon = group.Icon;
 
                                             return (
                                                 <div key={group.categoryName}>
                                                     {/* Utility category headline */}
                                                     <div className="mb-5 flex items-center gap-3">
-                                                        <CategoryIcon className="h-6 w-6 text-[#5555ff]" />
+                                                        <CategoryIcon className="h-6 w-6 text-[#5555ff]" aria-hidden="true" />
+
                                                         <h3 className="text-lg font-bold text-gray-950 md:text-xl">
                                                             {group.categoryName}
                                                         </h3>
@@ -714,8 +758,8 @@ export default function Show({ deskrl }: Props) {
 
                                                     {/* Utility cards */}
                                                     <div className="grid gap-4 md:grid-cols-2">
-                                                        {group.utilities.map(utility => {
-                                                            const utilityName = getLocalizedText(utility.name);
+                                                        {group.utilities.map((utility) => {
+                                                            const utilityName = getLocalizedText(utility.name, locale);
                                                             const UtilityIcon = getUtilityIcon(utilityName);
 
                                                             return (
@@ -724,7 +768,7 @@ export default function Show({ deskrl }: Props) {
                                                                     className="flex items-center gap-4 rounded-2xl bg-[#f4f3ff] px-4 py-4"
                                                                 >
                                                                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#5555ff] text-white">
-                                                                        <UtilityIcon className="h-5 w-5" />
+                                                                        <UtilityIcon className="h-5 w-5" aria-hidden="true" />
                                                                     </div>
 
                                                                     <span className="text-base font-semibold text-gray-950 md:text-lg">
@@ -753,27 +797,33 @@ export default function Show({ deskrl }: Props) {
                                                         className={`h-6 w-6 transition-transform ${
                                                             showAllUtilities ? 'rotate-180' : ''
                                                         }`}
+                                                        aria-hidden="true"
                                                     />
+
                                                     {showAllUtilities
-                                                        ? 'Weniger Ausstattungsmerkmale'
-                                                        : 'Mehr Ausstattungsmerkmale'}
+                                                        ? t('deskrlDetail.utilities.showLess')
+                                                        : t('deskrlDetail.utilities.showMore')}
                                                 </button>
                                             </div>
                                         )}
                                     </div>
                                 ) : (
-                                    <p className="text-gray-500">Noch keine Ausstattung hinterlegt.</p>
+                                    <p className="text-gray-500">
+                                        {t('deskrlDetail.utilities.empty')}
+                                    </p>
                                 )}
                             </div>
                         </section>
 
                         {/* Location card */}
                         <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-                            <h2 className="mb-6 text-2xl font-bold text-gray-950">Standort</h2>
+                            <h2 className="mb-6 text-2xl font-bold text-gray-950">
+                                {t('deskrlDetail.location.title')}
+                            </h2>
 
                             <p className="mb-6 flex items-center gap-3 text-base text-gray-700 md:text-lg">
-                                <MapPin className="h-5 w-5 text-[#5555ff]" />
-                                {formatAddress(address)}
+                                <MapPin className="h-5 w-5 text-[#5555ff]" aria-hidden="true" />
+                                {formatAddress(address, t('deskrlDetail.fallback.address'))}
                             </p>
 
                             {/* Interactive Google Map; it becomes active once an API key is configured. */}
@@ -781,7 +831,7 @@ export default function Show({ deskrl }: Props) {
                                 <DeskrlLocationMap
                                     latitude={address?.latitude}
                                     longitude={address?.longitude}
-                                ></DeskrlLocationMap>
+                                />
                             </div>
 
                             {/* Opens Google Maps route planning in a new browser tab */}
@@ -790,21 +840,23 @@ export default function Show({ deskrl }: Props) {
                                 onClick={handleRoutePlanning}
                                 className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5555ff] py-4 text-base font-bold text-white transition hover:bg-[#4444ee] md:text-lg"
                             >
-                                <Navigation className="h-7 w-7" />
-                                Route planen
+                                <Navigation className="h-7 w-7" aria-hidden="true" />
+                                {t('deskrlDetail.location.route')}
                             </button>
                         </section>
 
                         {/* Host card */}
                         <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-                            <h2 className="mb-6 text-2xl font-bold text-gray-950">Gastgeber</h2>
+                            <h2 className="mb-6 text-2xl font-bold text-gray-950">
+                                {t('deskrlDetail.host.title')}
+                            </h2>
 
                             <div className="flex items-center gap-5">
                                 {/* Show host profile image if available, otherwise show initials */}
                                 {host?.profile_image && !hostImageFailed ? (
                                     <img
                                         src={getImageUrl(host.profile_image)}
-                                        alt="Host profile"
+                                        alt={t('deskrlDetail.host.profileImageAlt', { name: hostName })}
                                         onError={() => {
                                             // Fall back to initials if the profile image path is invalid or missing.
                                             setHostImageFailed(true);
@@ -813,26 +865,24 @@ export default function Show({ deskrl }: Props) {
                                     />
                                 ) : (
                                     <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#f4f3ff] text-2xl font-bold text-[#5555ff]">
-                                        {(host?.first_name?.[0] || 'D').toUpperCase()}
+                                        {(hostName[0] || 'D').toUpperCase()}
                                     </div>
                                 )}
 
                                 <div>
                                     <h3 className="text-xl font-bold text-gray-950">
-                                        {host?.first_name || host?.last_name
-                                            ? `${host.first_name ?? ''} ${host.last_name ?? ''}`.trim()
-                                            : 'Gastgeber:in'}
+                                        {hostName}
                                     </h3>
 
                                     <p className="mt-1 text-base text-gray-600">
-                                        {commercialAccount?.company_name || 'Private:r Gastgeber:in'}
+                                        {hostCompanyName}
                                     </p>
 
                                     {/* Show the verification badge only when the host is actually verified. */}
                                     {isHostVerified && (
                                         <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-base font-semibold text-green-700">
-                                            <Check className="h-5 w-5" />
-                                            Verifizierter Gastgeber
+                                            <Check className="h-5 w-5" aria-hidden="true" />
+                                            {t('deskrlDetail.host.verified')}
                                         </span>
                                     )}
                                 </div>

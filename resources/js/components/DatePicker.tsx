@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
-
+import { useMemo, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 interface DatePickerProps {
     selectedDate?: string;
@@ -19,22 +19,47 @@ export function DatePicker({
                                onRangeSelect,
                                minDate,
                                label,
-                               isRange = false
+                               isRange = false,
                            }: DatePickerProps) {
-    const language = 'de';
+    const intl = useIntl();
+
+    const locale = intl.locale || 'de-DE';
+
     const [currentMonth, setCurrentMonth] = useState(() => {
         const date = selectedDate ? new Date(selectedDate) : new Date();
+
         return new Date(date.getFullYear(), date.getMonth(), 1);
     });
-    const [tempStartDate, setTempStartDate] = useState<string | null>(null);
 
-    const monthNames = language === 'de'
-        ? ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
-        : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    // Returns the translated text for the given translation key.
+    const t = (id: string, values?: Record<string, string | number>) =>
+        intl.formatMessage({ id }, values);
 
-    const dayNames = language === 'de'
-        ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
-        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    // Builds localized short weekday labels from Monday to Sunday.
+    const dayNames = useMemo(() => {
+        const monday = new Date(2024, 0, 1);
+
+        return Array.from({ length: 7 }, (_, index) =>
+            new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(
+                new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + index),
+            ),
+        );
+    }, [locale]);
+
+    // Formats the visible month and year label.
+    const monthLabel = new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        year: 'numeric',
+    }).format(currentMonth);
+
+    // Formats a full date for accessible button labels.
+    const formatDateForAria = (date: Date) =>
+        new Intl.DateTimeFormat(locale, {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        }).format(date);
 
     const getDaysInMonth = (date: Date) => {
         const year = date.getFullYear();
@@ -44,18 +69,21 @@ export function DatePicker({
         const daysInMonth = lastDay.getDate();
 
         // Get the day of week (0 = Sunday, 1 = Monday, etc.)
-        // Convert to Monday-based (0 = Monday, 6 = Sunday)
+        // Convert to Monday-based (0 = Monday, 6 = Sunday).
         let firstDayOfWeek = firstDay.getDay() - 1;
-        if (firstDayOfWeek === -1) firstDayOfWeek = 6; // Sunday becomes 6
+
+        if (firstDayOfWeek === -1) {
+            firstDayOfWeek = 6;
+        }
 
         const days: (Date | null)[] = [];
 
-        // Add empty cells for days before the first day of the month
-        for (let i = 0; i < firstDayOfWeek; i++) {
+        // Add empty cells for days before the first day of the month.
+        for (let index = 0; index < firstDayOfWeek; index++) {
             days.push(null);
         }
 
-        // Add all days of the month
+        // Add all days of the month.
         for (let day = 1; day <= daysInMonth; day++) {
             days.push(new Date(year, month, day));
         }
@@ -74,56 +102,81 @@ export function DatePicker({
     };
 
     const isDateDisabled = (date: Date | null) => {
-        if (!date) return true;
+        if (!date) {
+            return true;
+        }
+
         if (minDate) {
             const min = new Date(minDate);
             min.setHours(0, 0, 0, 0);
+
             const dateToCheck = new Date(date);
             dateToCheck.setHours(0, 0, 0, 0);
+
             return dateToCheck < min;
         }
+
         return false;
     };
 
     const isDateSelected = (date: Date | null) => {
-        if (!date) return false;
+        if (!date) {
+            return false;
+        }
 
         if (isRange) {
-            if (!selectedDate && !selectedEndDate) return false;
+            if (!selectedDate && !selectedEndDate) {
+                return false;
+            }
+
             const checkDate = new Date(date);
             checkDate.setHours(0, 0, 0, 0);
 
             if (selectedDate) {
                 const start = new Date(selectedDate);
                 start.setHours(0, 0, 0, 0);
-                if (checkDate.getTime() === start.getTime()) return true;
+
+                if (checkDate.getTime() === start.getTime()) {
+                    return true;
+                }
             }
 
             if (selectedEndDate) {
                 const end = new Date(selectedEndDate);
                 end.setHours(0, 0, 0, 0);
-                if (checkDate.getTime() === end.getTime()) return true;
+
+                if (checkDate.getTime() === end.getTime()) {
+                    return true;
+                }
             }
 
             return false;
-        } else {
-            if (!selectedDate) return false;
-            const selected = new Date(selectedDate);
-            return (
-                date.getDate() === selected.getDate() &&
-                date.getMonth() === selected.getMonth() &&
-                date.getFullYear() === selected.getFullYear()
-            );
         }
+
+        if (!selectedDate) {
+            return false;
+        }
+
+        const selected = new Date(selectedDate);
+
+        return (
+            date.getDate() === selected.getDate() &&
+            date.getMonth() === selected.getMonth() &&
+            date.getFullYear() === selected.getFullYear()
+        );
     };
 
     const isDateInRange = (date: Date | null) => {
-        if (!date || !isRange || !selectedDate || !selectedEndDate) return false;
+        if (!date || !isRange || !selectedDate || !selectedEndDate) {
+            return false;
+        }
 
         const checkDate = new Date(date);
         checkDate.setHours(0, 0, 0, 0);
+
         const start = new Date(selectedDate);
         start.setHours(0, 0, 0, 0);
+
         const end = new Date(selectedEndDate);
         end.setHours(0, 0, 0, 0);
 
@@ -131,8 +184,12 @@ export function DatePicker({
     };
 
     const isToday = (date: Date | null) => {
-        if (!date) return false;
+        if (!date) {
+            return false;
+        }
+
         const today = new Date();
+
         return (
             date.getDate() === today.getDate() &&
             date.getMonth() === today.getMonth() &&
@@ -141,7 +198,9 @@ export function DatePicker({
     };
 
     const handleDateClick = (date: Date | null) => {
-        if (!date || isDateDisabled(date)) return;
+        if (!date || isDateDisabled(date)) {
+            return;
+        }
 
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -149,34 +208,39 @@ export function DatePicker({
         const dateString = `${year}-${month}-${day}`;
 
         if (isRange && onRangeSelect) {
-            // Range selection logic
+            // Start a new range selection.
             if (!selectedDate || (selectedDate && selectedEndDate)) {
-                // Start new selection
                 onRangeSelect(dateString, '');
-                setTempStartDate(dateString);
-            } else {
-                // Complete the range
-                const start = new Date(selectedDate);
-                const end = new Date(dateString);
-
-                if (end < start) {
-                    // If end date is before start date, swap them
-                    onRangeSelect(dateString, selectedDate);
-                } else {
-                    onRangeSelect(selectedDate, dateString);
-                }
-                setTempStartDate(null);
+                return;
             }
-        } else if (onDateSelect) {
-            // Single date selection
+
+            // Complete the selected date range.
+            const start = new Date(selectedDate);
+            const end = new Date(dateString);
+
+            if (end < start) {
+                onRangeSelect(dateString, selectedDate);
+                return;
+            }
+
+            onRangeSelect(selectedDate, dateString);
+            return;
+        }
+
+        // Single date selection.
+        if (onDateSelect) {
             onDateSelect(dateString);
         }
     };
 
     const canGoPrevious = () => {
-        if (!minDate) return true;
+        if (!minDate) {
+            return true;
+        }
+
         const min = new Date(minDate);
         const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+
         return prevMonth >= new Date(min.getFullYear(), min.getMonth(), 1);
     };
 
@@ -189,33 +253,37 @@ export function DatePicker({
             )}
 
             <div className="bg-white rounded-lg border border-gray-200">
-                {/* Month/Year Header */}
+                {/* Month and year header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                     <button
+                        type="button"
                         onClick={goToPreviousMonth}
                         disabled={!canGoPrevious()}
+                        aria-label={t('datePicker.previousMonth')}
                         className={`p-1 rounded-lg transition-colors ${
                             canGoPrevious()
                                 ? 'hover:bg-gray-100 text-gray-700'
                                 : 'text-gray-300 cursor-not-allowed'
                         }`}
                     >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-5 h-5" aria-hidden="true" />
                     </button>
 
                     <div className="text-sm font-semibold text-gray-900">
-                        {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                        {monthLabel}
                     </div>
 
                     <button
+                        type="button"
                         onClick={goToNextMonth}
+                        aria-label={t('datePicker.nextMonth')}
                         className="p-1 rounded-lg hover:bg-gray-100 text-gray-700 transition-colors"
                     >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-5 h-5" aria-hidden="true" />
                     </button>
                 </div>
 
-                {/* Calendar Grid */}
+                {/* Calendar grid */}
                 <div className="p-3">
                     {/* Day names */}
                     <div className="grid grid-cols-7 gap-1 mb-2">
@@ -240,17 +308,25 @@ export function DatePicker({
                             return (
                                 <button
                                     key={index}
+                                    type="button"
                                     onClick={() => handleDateClick(date)}
                                     disabled={disabled}
+                                    aria-label={
+                                        date
+                                            ? t('datePicker.selectDate', {
+                                                date: formatDateForAria(date),
+                                            })
+                                            : undefined
+                                    }
                                     className={`
-                    aspect-square rounded-lg text-sm transition-all
-                    ${!date ? 'invisible' : ''}
-                    ${disabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-100'}
-                    ${selected ? 'bg-[#5555ff] text-white hover:bg-[#4444ee]' : ''}
-                    ${inRange ? 'bg-[#f5f5ff] text-[#5555ff]' : ''}
-                    ${!selected && !inRange ? 'text-gray-700' : ''}
-                    ${today && !selected ? 'border-2 border-[#5555ff] font-semibold' : ''}
-                  `}
+                                        aspect-square rounded-lg text-sm transition-all
+                                        ${!date ? 'invisible' : ''}
+                                        ${disabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-100'}
+                                        ${selected ? 'bg-[#5555ff] text-white hover:bg-[#4444ee]' : ''}
+                                        ${inRange ? 'bg-[#f5f5ff] text-[#5555ff]' : ''}
+                                        ${!selected && !inRange ? 'text-gray-700' : ''}
+                                        ${today && !selected ? 'border-2 border-[#5555ff] font-semibold' : ''}
+                                    `}
                                 >
                                     {date?.getDate()}
                                 </button>

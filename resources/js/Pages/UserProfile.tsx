@@ -1,20 +1,21 @@
 import AppLayout from '@/Layouts/AppLayout';
-import {InertiaPage} from '@/types/inertia';
-import {Head} from '@inertiajs/react';
-import {useState} from 'react';
-import type {ReactNode} from 'react';
+import { InertiaPage } from '@/types/inertia';
+import { Head } from '@inertiajs/react';
+import { useState } from 'react';
+import { useIntl } from 'react-intl';
+import type { ReactNode } from 'react';
 
-import {useProfileForm} from '@/hooks/useProfileForm';
-import {ProfileHeader} from './Profile/ProfileHeader';
-import {StatsGrid} from './Profile/StatsGrid';
-import {ProviderUpgrade} from './Profile/ProviderUpgrade';
-import {VerificationSection} from './Profile/VerificationSection';
-import {CommercialVerificationModal} from './Profile/CommercialVerificationModal';
-import {PersonalInformationSection} from './Profile/PersonalInformationSection';
-import {BusinessInformationSection} from './Profile/BusinessInformationSection';
-import {AddressSection} from './Profile/AddressSection';
+import { useProfileForm } from '@/hooks/useProfileForm';
+import { ProfileHeader } from './Profile/ProfileHeader';
+import { StatsGrid } from './Profile/StatsGrid';
+import { ProviderUpgrade } from './Profile/ProviderUpgrade';
+import { VerificationSection } from './Profile/VerificationSection';
+import { CommercialVerificationModal } from './Profile/CommercialVerificationModal';
+import { PersonalInformationSection } from './Profile/PersonalInformationSection';
+import { BusinessInformationSection } from './Profile/BusinessInformationSection';
+import { AddressSection } from './Profile/AddressSection';
 
-import type {UserFromBackend, VerificationStatus} from '@/types/profile';
+import type { UserFromBackend, VerificationStatus } from '@/types/profile';
 
 interface UserProfileProps {
     account: UserFromBackend;
@@ -25,8 +26,13 @@ interface UserProfileProps {
     };
 }
 
-const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
+const UserProfile: InertiaPage<UserProfileProps> = ({ account, stats }) => {
+    const intl = useIntl();
+
     const [showCommercialVerificationModal, setShowCommercialVerificationModal] = useState(false);
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
 
     const {
         personal,
@@ -66,7 +72,7 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
 
     return (
         <>
-            <Head title="Mein Profil"/>
+            <Head title={t('profile.page.title')} />
 
             <div className="min-h-screen bg-gray-50">
                 <div className="mx-auto max-w-4xl px-4 py-12">
@@ -82,7 +88,7 @@ const UserProfile: InertiaPage<UserProfileProps> = ({account, stats}) => {
                     />
 
                     {!isHost && (
-                        <StatsGrid role={role} stats={stats}/>
+                        <StatsGrid role={role} stats={stats} />
                     )}
 
                     {!isHost && (

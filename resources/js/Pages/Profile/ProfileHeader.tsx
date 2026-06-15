@@ -1,6 +1,7 @@
 import { Upload } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
+import { useIntl } from 'react-intl';
 import { VerificationBadge } from './VerificationBadge';
 import type { AccountType, VerificationStatus } from '@/types/profile';
 
@@ -15,19 +16,25 @@ interface ProfileHeaderProps {
     };
 }
 
-const ROLE_LABELS: Record<AccountType, string> = {
-    user: 'Nutzer:in',
-    private_host: 'Private:r Anbieter:in',
-    commercial_host: 'Gewerbliche:r Anbieter:in',
-    admin: 'Admin',
+const ROLE_LABEL_KEYS: Record<AccountType, string> = {
+    user: 'profile.role.user',
+    private_host: 'profile.role.privateHost',
+    commercial_host: 'profile.role.commercialHost',
+    admin: 'profile.role.admin',
 };
 
 const MAX_IMAGE_SIZE_MB = 5;
 
 export function ProfileHeader({ user }: ProfileHeaderProps) {
+    const intl = useIntl();
+
     const fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim();
     const displayName = fullName || user.email;
     const initial = displayName.charAt(0).toUpperCase();
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string, values?: Record<string, string | number>) =>
+        intl.formatMessage({ id }, values);
 
     // Check whether the current profile belongs to a host account.
     const isHost =
@@ -44,7 +51,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
 
         // Prevent files that are too large from being uploaded.
         if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-            toast.error(`Bild zu groß. Maximale Größe: ${MAX_IMAGE_SIZE_MB} MB`);
+            toast.error(t('profile.header.imageTooLarge', { maxSize: MAX_IMAGE_SIZE_MB }));
             return;
         }
 
@@ -54,8 +61,8 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
             {
                 forceFormData: true,
                 preserveScroll: true,
-                onSuccess: () => toast.success('Profilbild aktualisiert.'),
-                onError: () => toast.error('Fehler beim Hochladen.'),
+                onSuccess: () => toast.success(t('profile.header.imageUpdated')),
+                onError: () => toast.error(t('profile.header.imageUploadError')),
             },
         );
     };
@@ -69,13 +76,13 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                         {user.profileImage ? (
                             <img
                                 src={user.profileImage}
-                                alt={`Profilbild von ${displayName}`}
+                                alt={t('profile.header.profileImageAlt', { name: displayName })}
                                 className="h-24 w-24 rounded-2xl object-cover"
                             />
                         ) : (
                             <div
                                 className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-[#5555ff] to-[#7575ff] text-4xl font-bold text-white"
-                                aria-label={`Avatar von ${displayName}`}
+                                aria-label={t('profile.header.avatarAria', { name: displayName })}
                             >
                                 {initial}
                             </div>
@@ -84,7 +91,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                         {/* Hover overlay for changing the profile image */}
                         <label
                             className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-2xl bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
-                            aria-label="Profilbild ändern"
+                            aria-label={t('profile.header.changeProfileImageAria')}
                         >
                             <Upload className="h-6 w-6 text-white" aria-hidden="true" />
 
@@ -108,7 +115,9 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                     {/* Separate upload trigger for better accessibility */}
                     <label className="cursor-pointer">
                         <span className="text-sm font-semibold text-[#5555ff] transition-colors hover:text-[#4444ee]">
-                            {user.profileImage ? 'Bild ändern' : 'Bild hochladen'}
+                            {user.profileImage
+                                ? t('profile.header.changeImage')
+                                : t('profile.header.uploadImage')}
                         </span>
 
                         <input
@@ -116,12 +125,12 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                             accept="image/*"
                             onChange={handleImageUpload}
                             className="hidden"
-                            aria-label="Profilbild hochladen"
+                            aria-label={t('profile.header.uploadProfileImageAria')}
                         />
                     </label>
 
                     <p className="max-w-[120px] text-center text-xs text-gray-500">
-                        JPG, PNG oder WEBP, max. 5 MB
+                        {t('profile.header.imageHint', { maxSize: MAX_IMAGE_SIZE_MB })}
                     </p>
                 </div>
 
@@ -142,7 +151,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                                 isHost ? 'bg-[#e63cff]' : 'bg-[#5555ff]'
                             }`}
                         >
-                            {ROLE_LABELS[user.role]}
+                            {t(ROLE_LABEL_KEYS[user.role])}
                         </span>
 
                         {/* Verification status badge */}

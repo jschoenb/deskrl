@@ -5,6 +5,8 @@ import AuthModal from '@/components/AuthModal';
 import { MapPin, Heart, HeartSolid } from 'iconoir-react';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
+import type { ReactNode } from 'react';
 
 const PLACEHOLDER_IMAGE =
     'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80';
@@ -56,7 +58,12 @@ interface Deskrl {
     utilities?: DeskrlUtility[];
 }
 
-function getLocalizedText(value: LocalizedText | undefined | null, fallback = ''): string {
+// Returns localized text from JSON, stringified JSON or a plain string.
+function getLocalizedText(
+    value: LocalizedText | undefined | null,
+    fallback = '',
+    locale = 'de',
+): string {
     if (!value) {
         return fallback;
     }
@@ -65,27 +72,30 @@ function getLocalizedText(value: LocalizedText | undefined | null, fallback = ''
         try {
             const parsed = JSON.parse(value);
 
-            return parsed?.de ?? parsed?.en ?? value;
+            return parsed?.[locale] ?? parsed?.de ?? parsed?.en ?? value;
         } catch {
             return value;
         }
     }
 
-    return value.de ?? value.en ?? fallback;
+    return value[locale as keyof typeof value] ?? value.de ?? value.en ?? fallback;
 }
 
-function getCategoryName(deskrl: Deskrl): string {
+// Returns the localized category name for a Deskrl.
+function getCategoryName(deskrl: Deskrl, fallback: string, locale: string): string {
     const category = deskrl.deskrl_category ?? deskrl.deskrlCategory;
 
-    return getLocalizedText(category?.name, 'Deskrl');
+    return getLocalizedText(category?.name, fallback, locale);
 }
 
+// Returns the related address from either possible backend relation name.
 function getAddress(deskrl: Deskrl) {
     return deskrl.deskrl_address?.address
         ?? deskrl.deskrlAddress?.address
         ?? null;
 }
 
+// Returns the main image URL or a placeholder image.
 function getMainImage(deskrl: Deskrl): string {
     const mainImage = deskrl.images?.find((image) => image.is_main) ?? deskrl.images?.[0];
 
@@ -100,6 +110,7 @@ function getMainImage(deskrl: Deskrl): string {
     return `/storage/${mainImage.path}`;
 }
 
+// Formats the hourly price for card display.
 function formatPrice(value: number | string | null | undefined): string {
     if (value === null || value === undefined || value === '') {
         return '?';
@@ -115,12 +126,19 @@ function formatPrice(value: number | string | null | undefined): string {
 }
 
 const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
+    const intl = useIntl();
     const { favorites, toggleFavorite } = useFavorites();
     const { props } = usePage();
     const { auth } = props as any;
 
     const isLoggedIn = !!auth?.user;
     const [showAuthModal, setShowAuthModal] = useState(false);
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string, values?: Record<string, string | number>) =>
+        intl.formatMessage({ id }, values);
+
+    const locale = intl.locale || 'de';
 
     // Only logged-in users see their saved Deskrls from the database state.
     const favoritedDeskrls = deskrls.filter((deskrl) => favorites.includes(deskrl.id));
@@ -135,11 +153,11 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
                         </div>
 
                         <h1 className="text-3xl font-bold mb-4 text-gray-900">
-                            Meine Gemerkten
+                            {t('favorites.title')}
                         </h1>
 
                         <p className="text-gray-600 mb-6">
-                            Melde dich an, um deine gemerkten Deskrls dauerhaft zu speichern und später wiederzufinden.
+                            {t('favorites.loginDescription')}
                         </p>
 
                         <button
@@ -147,7 +165,7 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
                             onClick={() => setShowAuthModal(true)}
                             className="inline-block bg-[#5555ff] hover:bg-[#4444ee] text-white px-8 py-3 rounded-xl transition-colors font-bold"
                         >
-                            Jetzt anmelden
+                            {t('favorites.loginButton')}
                         </button>
                     </div>
                 </div>
@@ -170,14 +188,14 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
                         <HeartSolid className="w-8 h-8 text-white" />
 
                         <h1 className="text-4xl md:text-5xl font-extrabold">
-                            Meine Gemerkten
+                            {t('favorites.title')}
                         </h1>
                     </div>
 
                     <p className="text-white/90 text-lg">
                         {favoritedDeskrls.length === 0
-                            ? 'Noch keine Räume gespeichert'
-                            : `${favoritedDeskrls.length} ${favoritedDeskrls.length === 1 ? 'Raum' : 'Räume'} gespeichert`}
+                            ? t('favorites.savedNone')
+                            : t('favorites.savedCount', { count: favoritedDeskrls.length })}
                     </p>
                 </div>
             </div>
@@ -191,25 +209,25 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
                         </div>
 
                         <h2 className="text-2xl font-bold mb-4 text-gray-900">
-                            Noch keine Favoriten
+                            {t('favorites.emptyTitle')}
                         </h2>
 
                         <p className="text-gray-600 mb-8">
-                            Klicke auf das Herz bei einem Raum, um ihn hier zu speichern.
+                            {t('favorites.emptyDescription')}
                         </p>
 
                         <Link
                             href="/"
                             className="inline-block bg-[#5555ff] hover:bg-[#4444ee] text-white px-8 py-3 rounded-xl transition-colors font-bold"
                         >
-                            Räume entdecken
+                            {t('favorites.discoverButton')}
                         </Link>
                     </div>
                 ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {favoritedDeskrls.map((deskrl) => {
-                            const title = getLocalizedText(deskrl.title, 'Ohne Titel');
-                            const category = getCategoryName(deskrl);
+                            const title = getLocalizedText(deskrl.title, t('favorites.card.untitled'), locale);
+                            const category = getCategoryName(deskrl, t('favorites.card.categoryFallback'), locale);
                             const address = getAddress(deskrl);
                             const image = getMainImage(deskrl);
                             const utilities = deskrl.utilities ?? [];
@@ -233,6 +251,7 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
                                         <button
                                             type="button"
                                             onClick={() => toggleFavorite(deskrl.id)}
+                                            aria-label={t('favorites.card.removeFavorite')}
                                             className="absolute top-4 right-4 bg-[#e63cff] rounded-full p-2 shadow"
                                         >
                                             <HeartSolid className="h-5 w-5 text-white" />
@@ -250,7 +269,7 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
 
                                         <p className="text-gray-600 text-sm mb-4 flex items-center gap-1">
                                             <MapPin className="w-4 h-4" />
-                                            {address?.city ?? 'Ort unbekannt'}
+                                            {address?.city ?? t('favorites.card.unknownLocation')}
                                             {address?.street ? `, ${address.street}` : ''}
                                         </p>
 
@@ -262,7 +281,11 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
                                                             key={utility.id}
                                                             className="px-3 py-1 bg-[#f5f5ff] text-[#5555ff] rounded-full text-xs font-semibold"
                                                         >
-                                                            {getLocalizedText(utility.name, 'Ausstattung')}
+                                                            {getLocalizedText(
+                                                                utility.name,
+                                                                t('favorites.card.utilityFallback'),
+                                                                locale,
+                                                            )}
                                                             {utility.pivot?.quantity
                                                                 ? ` (${utility.pivot.quantity})`
                                                                 : ''}
@@ -277,7 +300,7 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
                                                 </>
                                             ) : (
                                                 <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
-                                                    Keine Ausstattung angegeben
+                                                    {t('favorites.card.noUtilities')}
                                                 </span>
                                             )}
                                         </div>
@@ -289,7 +312,7 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
                                                 </span>
 
                                                 <span className="text-gray-600 text-sm">
-                                                    /Stunde
+                                                    {t('favorites.card.perHour')}
                                                 </span>
                                             </div>
 
@@ -310,6 +333,6 @@ const Favorites: InertiaPage<{ deskrls: Deskrl[] }> = ({ deskrls = [] }) => {
     );
 };
 
-Favorites.layout = page => <AppLayout>{page}</AppLayout>;
+Favorites.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
 
 export default Favorites;

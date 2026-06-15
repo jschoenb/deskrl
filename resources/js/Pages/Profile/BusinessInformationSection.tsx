@@ -1,6 +1,7 @@
 import { Section } from './Section';
 import { InputField } from './InputField';
 import type { BusinessFormData } from '@/types/profile';
+import { useIntl } from 'react-intl';
 
 interface BusinessInformationSectionProps {
     business: BusinessFormData;
@@ -20,15 +21,20 @@ export function BusinessInformationSection({
                                                onSave,
                                                onCancel,
                                            }: BusinessInformationSectionProps) {
+    const intl = useIntl();
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
+
     return (
         <Section
-            title="Unternehmensinformationen"
+            title={t('profile.business.title')}
             onSave={onSave}
             onCancel={onCancel}
         >
             <div className="grid gap-4 md:grid-cols-2">
                 <InputField
-                    label="Firmenname"
+                    label={t('profile.business.companyName.label')}
                     value={business.companyName}
                     onChange={(value) => updateBusiness('companyName', value)}
                     error={businessErrors.company_name}
@@ -36,19 +42,19 @@ export function BusinessInformationSection({
                 />
 
                 <InputField
-                    label="Firmenbuchnummer"
+                    label={t('profile.business.companyRegistrationNumber.label')}
                     value={business.companyRegistrationNumber}
                     onChange={(value) => updateBusiness('companyRegistrationNumber', value)}
-                    placeholder="z. B. FN 123456a"
+                    placeholder={t('profile.business.companyRegistrationNumber.placeholder')}
                     error={businessErrors.company_nr}
                     required
                 />
 
                 <InputField
-                    label="UID-Nummer"
+                    label={t('profile.business.vatNumber.label')}
                     value={business.vatNumber}
                     onChange={(value) => updateBusiness('vatNumber', value)}
-                    placeholder="z. B. ATU12345678"
+                    placeholder={t('profile.business.vatNumber.placeholder')}
                     error={businessErrors.vat_nr}
                     required
                 />

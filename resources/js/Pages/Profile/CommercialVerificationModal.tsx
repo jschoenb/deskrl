@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Building2, Home, X } from 'lucide-react';
+import { useIntl } from 'react-intl';
 
 type ProviderType = 'private_host' | 'commercial_host';
 
@@ -13,8 +14,13 @@ export function CommercialVerificationModal({
                                                 isOpen,
                                                 onClose,
                                             }: CommercialVerificationModalProps) {
+    const intl = useIntl();
+
     const [providerType, setProviderType] = useState<ProviderType>('private_host');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
 
     // Do not render the modal when it is closed.
     if (!isOpen) {
@@ -49,11 +55,11 @@ export function CommercialVerificationModal({
                 <div className="mb-6 flex items-start justify-between gap-4">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-950">
-                            Anbieter:in werden
+                            {t('providerUpgrade.title')}
                         </h2>
 
                         <p className="mt-2 text-sm text-gray-600">
-                            Wähle aus, ob du privat oder gewerblich Räume anbieten möchtest.
+                            {t('providerUpgrade.description')}
                         </p>
                     </div>
 
@@ -61,7 +67,7 @@ export function CommercialVerificationModal({
                         type="button"
                         onClick={onClose}
                         className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-                        aria-label="Modal schließen"
+                        aria-label={t('providerUpgrade.close')}
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -84,12 +90,12 @@ export function CommercialVerificationModal({
                             </div>
 
                             <h3 className="font-bold text-gray-950">
-                                Private:r Anbieter:in
+                                {t('providerUpgrade.privateTitle')}
                             </h3>
                         </div>
 
                         <p className="text-sm text-gray-600">
-                            Für Personen, die eigene Arbeitsplätze oder Räume privat anbieten möchten.
+                            {t('providerUpgrade.privateDescription')}
                         </p>
                     </button>
 
@@ -108,12 +114,12 @@ export function CommercialVerificationModal({
                             </div>
 
                             <h3 className="font-bold text-gray-950">
-                                Gewerbliche:r Anbieter:in
+                                {t('providerUpgrade.commercialTitle')}
                             </h3>
                         </div>
 
                         <p className="text-sm text-gray-600">
-                            Für Unternehmen, Coworking-Spaces oder gewerbliche Raumangebote.
+                            {t('providerUpgrade.commercialDescription')}
                         </p>
                     </button>
                 </div>
@@ -121,9 +127,7 @@ export function CommercialVerificationModal({
                 {/* MVP verification notice for commercial providers */}
                 {providerType === 'commercial_host' && (
                     <div className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-                        Für gewerbliche Anbieter:innen wird später ein Verifizierungsdokument benötigt,
-                        zum Beispiel ein Firmenbuchauszug oder Gewerbeschein. Im MVP wird dieser Schritt
-                        vorerst nur angezeigt und noch nicht technisch geprüft.
+                        {t('providerUpgrade.commercialNotice')}
                     </div>
                 )}
 
@@ -134,7 +138,7 @@ export function CommercialVerificationModal({
                         onClick={onClose}
                         className="flex-1 rounded-xl bg-gray-100 px-4 py-3 font-semibold text-gray-900 hover:bg-gray-200"
                     >
-                        Abbrechen
+                        {t('common.cancel')}
                     </button>
 
                     <button
@@ -143,7 +147,7 @@ export function CommercialVerificationModal({
                         disabled={isSubmitting}
                         className="flex-1 rounded-xl bg-[#5555ff] px-4 py-3 font-semibold text-white hover:bg-[#4444ee] disabled:cursor-not-allowed disabled:bg-gray-300"
                     >
-                        {isSubmitting ? 'Wird gespeichert...' : 'Fortfahren'}
+                        {isSubmitting ? t('common.saving') : t('common.continue')}
                     </button>
                 </div>
             </div>
