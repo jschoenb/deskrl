@@ -16,17 +16,22 @@ class DeskrlSeeder extends Seeder
     public function run(): void
     {
         $hostAccount = Account::query()->first();
-        $workspaceCategory = DeskrlCategory::query()->first();
+        $fallbackCategory = DeskrlCategory::query()->first();
 
         if (!$hostAccount) {
             $this->command->warn('No account found. Please seed accounts before deskrls.');
             return;
         }
 
-        if (!$workspaceCategory) {
+        if (!$fallbackCategory) {
             $this->command->warn('No deskrl category found. Please seed deskrl categories before deskrls.');
             return;
         }
+
+        $workspaceCategory = $this->findCategoryOrFallback('Arbeitsplatz', $fallbackCategory);
+        $officeCategory = $this->findCategoryOrFallback('Büroraum', $fallbackCategory);
+        $seminarRoomCategory = $this->findCategoryOrFallback('Seminarraum', $fallbackCategory);
+        $eventLocationCategory = $this->findCategoryOrFallback('Eventlocation', $fallbackCategory);
 
         Deskrl::query()->updateOrCreate(
             [
@@ -34,7 +39,7 @@ class DeskrlSeeder extends Seeder
                 'title->de' => 'Moderner Meetingraum in Linz',
             ],
             [
-                'deskrl_category_id' => $workspaceCategory->id,
+                'deskrl_category_id' => $officeCategory->id,
                 'title' => [
                     'de' => 'Moderner Meetingraum in Linz',
                 ],
@@ -90,7 +95,7 @@ class DeskrlSeeder extends Seeder
                 'title->de' => 'Seminarraum für Workshops',
             ],
             [
-                'deskrl_category_id' => $workspaceCategory->id,
+                'deskrl_category_id' => $seminarRoomCategory->id,
                 'title' => [
                     'de' => 'Seminarraum für Workshops',
                 ],
@@ -111,13 +116,14 @@ class DeskrlSeeder extends Seeder
                 'bookable_until_months' => 12,
             ]
         );
+
         Deskrl::query()->updateOrCreate(
             [
                 'host_account_id' => $hostAccount->id,
                 'title->de' => 'Kreativer Projektraum in Graz',
             ],
             [
-                'deskrl_category_id' => $workspaceCategory->id,
+                'deskrl_category_id' => $officeCategory->id,
                 'title' => [
                     'de' => 'Kreativer Projektraum in Graz',
                 ],
@@ -145,7 +151,7 @@ class DeskrlSeeder extends Seeder
                 'title->de' => 'Ruhiges Einzelbüro in Salzburg',
             ],
             [
-                'deskrl_category_id' => $workspaceCategory->id,
+                'deskrl_category_id' => $officeCategory->id,
                 'title' => [
                     'de' => 'Ruhiges Einzelbüro in Salzburg',
                 ],
@@ -173,7 +179,7 @@ class DeskrlSeeder extends Seeder
                 'title->de' => 'Eventraum für kleine Gruppen',
             ],
             [
-                'deskrl_category_id' => $workspaceCategory->id,
+                'deskrl_category_id' => $eventLocationCategory->id,
                 'title' => [
                     'de' => 'Eventraum für kleine Gruppen',
                 ],
@@ -194,5 +200,23 @@ class DeskrlSeeder extends Seeder
                 'bookable_until_months' => 9,
             ]
         );
+    }
+
+    /**
+     * Finds a category by name or returns the fallback category.
+     */
+    private function findCategoryOrFallback(string $name, DeskrlCategory $fallbackCategory): DeskrlCategory
+    {
+        $category = DeskrlCategory::query()
+            ->where('name', $name)
+            ->first();
+
+        if ($category) {
+            return $category;
+        }
+
+        $this->command->warn("No DeskrlCategory found for {$name}. Using fallback category.");
+
+        return $fallbackCategory;
     }
 }
