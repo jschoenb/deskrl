@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Address;
 use App\Models\Deskrl;
 use App\Models\DeskrlAddress;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DeskrlAddressSeeder extends Seeder
@@ -21,11 +20,13 @@ class DeskrlAddressSeeder extends Seeder
 
         if ($deskrls->isEmpty()) {
             $this->command->warn('No deskrls found. Please seed deskrls before deskrl addresses.');
+
             return;
         }
 
         if ($addresses->isEmpty()) {
             $this->command->warn('No addresses found. Please seed addresses before deskrl addresses.');
+
             return;
         }
 
