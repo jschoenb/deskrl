@@ -45,7 +45,7 @@ class DeskrlAddressController extends Controller
             ->with('address')
             ->first();
 
-        if (!$deskrlAddress) {
+        if (! $deskrlAddress) {
             $address = Address::query()->create($validated);
 
             DeskrlAddress::query()->create([
@@ -73,7 +73,7 @@ class DeskrlAddressController extends Controller
     {
         $deskrlAddress = $deskrl->deskrlAddress()->first();
 
-        if (!$deskrlAddress) {
+        if (! $deskrlAddress) {
             return redirect()
                 ->back()
                 ->withErrors([

@@ -10,12 +10,14 @@ use Inertia\Response;
 
 class HomeController extends Controller
 {
+    /**
+     * Shows the public homepage with active Deskrls, filters and utilities.
+     */
     public function index(Request $request): Response
     {
         $query = Deskrl::query()
             ->where('status', 'active');
 
-        // ---- Search: location (address) OR title (German) ----
         if ($request->filled('search')) {
             $search = $request->input('search');
 
@@ -29,14 +31,12 @@ class HomeController extends Controller
             });
         }
 
-        // ---- Type filter (room category) ----
         if ($request->filled('type')) {
             $query->whereHas('deskrlCategory', function ($cq) use ($request) {
                 $cq->where('name', $request->input('type'));
             });
         }
 
-        // ---- Date + time (weekday derived from date) ----
         if ($request->filled('date') && $request->filled('start_time') && $request->filled('end_time')) {
             $weekday = strtolower(date('l', strtotime($request->input('date'))));
 
@@ -47,7 +47,6 @@ class HomeController extends Controller
             });
         }
 
-        // ---- Utilities filter (deskrl must have ALL selected) ----
         if ($request->filled('amenities')) {
             $amenityIds = is_array($request->input('amenities'))
                 ? $request->input('amenities')
@@ -74,15 +73,15 @@ class HomeController extends Controller
             ->get();
 
         return Inertia::render('Home', [
-            'deskrls'  => $deskrls,
+            'deskrls' => $deskrls,
             'utilities' => $utilities,
-            'filters'  => [
-                'search'     => $request->input('search'),
-                'type'       => $request->input('type'),
-                'date'       => $request->input('date'),
+            'filters' => [
+                'search' => $request->input('search'),
+                'type' => $request->input('type'),
+                'date' => $request->input('date'),
                 'start_time' => $request->input('start_time'),
-                'end_time'   => $request->input('end_time'),
-                'amenities'  => $request->input('amenities'),
+                'end_time' => $request->input('end_time'),
+                'amenities' => $request->input('amenities'),
             ],
         ]);
     }

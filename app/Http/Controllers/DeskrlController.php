@@ -14,7 +14,7 @@ use Inertia\Response;
 class DeskrlController extends Controller
 {
     /**
-     * Display a public overview of all active Deskrls.
+     * Displays a public overview of all active Deskrls.
      */
     public function index(Request $request): Response
     {
@@ -31,8 +31,8 @@ class DeskrlController extends Controller
             $search = $request->input('search');
 
             $query->where(function ($q) use ($search) {
-                $q->where('title->de', 'like', '%' . $search . '%')
-                    ->orWhere('description->de', 'like', '%' . $search . '%');
+                $q->where('title->de', 'like', '%'.$search.'%')
+                    ->orWhere('description->de', 'like', '%'.$search.'%');
             });
         }
 
@@ -55,7 +55,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Display a single Deskrl detail page.
+     * Displays a single Deskrl detail page.
      */
     public function show(Deskrl $deskrl): Response
     {
@@ -76,7 +76,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Show the form for creating a new Deskrl.
+     * Shows the form for creating a new Deskrl.
      */
     public function create(): Response
     {
@@ -92,7 +92,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Store a newly created Deskrl as a draft.
+     * Stores a newly created Deskrl as a draft.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -100,7 +100,7 @@ class DeskrlController extends Controller
 
         $hostAccountId = $this->resolveHostAccountId($request);
 
-        if (!$hostAccountId) {
+        if (! $hostAccountId) {
             return redirect()
                 ->back()
                 ->withErrors([
@@ -111,8 +111,8 @@ class DeskrlController extends Controller
         $deskrl = Deskrl::query()->create([
             ...$validated,
             'host_account_id' => $hostAccountId,
-            //TODO später einkommentieren statt Zeile 113, sobald Auth & Controller getestet wurden
-            //'host_account_id' => $request->user()->id,
+            // TODO: Replace this fallback with the authenticated host account once auth is fully connected.
+            // 'host_account_id' => $request->user()->id,
             'status' => 'draft',
             'instant_bookable' => $request->boolean('instant_bookable'),
         ]);
@@ -123,7 +123,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Show the form for editing an existing Deskrl.
+     * Shows the form for editing an existing Deskrl.
      */
     public function edit(Deskrl $deskrl): Response
     {
@@ -150,7 +150,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Update an existing Deskrl.
+     * Updates an existing Deskrl.
      */
     public function update(Request $request, Deskrl $deskrl): RedirectResponse
     {
@@ -167,7 +167,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Soft delete a Deskrl.
+     * Soft deletes a Deskrl.
      */
     public function destroy(Deskrl $deskrl): RedirectResponse
     {
@@ -179,16 +179,16 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Publish a Deskrl.
+     * Publishes a Deskrl if all required draft fields are filled.
      */
     public function publish(Deskrl $deskrl): RedirectResponse
     {
         if (
-            !$deskrl->deskrl_category_id ||
-            !$this->hasAtLeastOneTranslation($deskrl->title) ||
-            !$this->hasAtLeastOneTranslation($deskrl->description) ||
-            !$deskrl->capacity ||
-            !$this->hasAtLeastOnePrice($deskrl)
+            ! $deskrl->deskrl_category_id ||
+            ! $this->hasAtLeastOneTranslation($deskrl->title) ||
+            ! $this->hasAtLeastOneTranslation($deskrl->description) ||
+            ! $deskrl->capacity ||
+            ! $this->hasAtLeastOnePrice($deskrl)
         ) {
             return redirect()
                 ->back()
@@ -208,7 +208,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Archive a Deskrl.
+     * Archives a Deskrl without deleting it permanently.
      */
     public function archive(Deskrl $deskrl): RedirectResponse
     {
@@ -222,7 +222,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Activate a Deskrl.
+     * Activates a Deskrl and makes it publicly available.
      */
     public function activate(Deskrl $deskrl): RedirectResponse
     {
@@ -236,7 +236,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Deactivate a Deskrl.
+     * Deactivates a Deskrl without archiving or deleting it.
      */
     public function deactivate(Deskrl $deskrl): RedirectResponse
     {
@@ -250,8 +250,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Validate Deskrl input data.
-     * some fields are nullable because of Deskrl drafts
+     * Validates Deskrl input data for draft creation and updates.
      */
     private function validateDeskrl(Request $request): array
     {
@@ -285,11 +284,11 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Check whether at least one translation value is filled.
+     * Checks whether at least one translation value is filled.
      */
     private function hasAtLeastOneTranslation(?array $translations): bool
     {
-        if (!$translations) {
+        if (! $translations) {
             return false;
         }
 
@@ -303,7 +302,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * Check whether at least one price field has a valid value.
+     * Checks whether at least one price field has a valid value.
      */
     private function hasAtLeastOnePrice(Deskrl $deskrl): bool
     {
@@ -317,10 +316,7 @@ class DeskrlController extends Controller
     }
 
     /**
-     * TODO: Temporary help function for resolving the host account id.
-     * Fallback:
-     * If authentication is not fully connected to Account yet,
-     * use the first private or commercial host account.
+     * Temporarily resolves a host account until authentication is fully connected.
      */
     private function resolveHostAccountId(Request $request): ?int
     {

@@ -54,7 +54,7 @@ class AccountController extends Controller
     }
 
     /**
-     * Updates the currently logged-in account.
+     * Updates the currently logged-in account and optionally changes the password.
      */
     public function update(Request $request)
     {
@@ -161,7 +161,7 @@ class AccountController extends Controller
     }
 
     /**
-     * Upgrades the currently logged-in account to a host account.
+     * Upgrades the currently logged-in account to a private or commercial host account.
      */
     public function becomeProvider(Request $request)
     {
@@ -187,7 +187,7 @@ class AccountController extends Controller
     }
 
     /**
-     * Deletes or deactivates the currently logged-in account.
+     * Marks the currently logged-in account as deleted and ends the session.
      */
     public function destroy(Request $request)
     {

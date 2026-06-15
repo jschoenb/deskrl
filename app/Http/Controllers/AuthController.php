@@ -19,7 +19,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Handles the registration of a new account.
+     * Registers a new account and logs it in immediately.
      */
     public function register(Request $request)
     {
@@ -77,7 +77,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Handles the login of an existing account.
+     * Authenticates an existing account and redirects it to the intended page.
      */
     public function login(Request $request)
     {
@@ -107,7 +107,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Logs out the currently authenticated account.
+     * Logs out the currently authenticated account and resets the session.
      */
     public function logout(Request $request)
     {
