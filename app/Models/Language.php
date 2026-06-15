@@ -12,6 +12,9 @@ class Language extends Model
         'icon_path',
     ];
 
+    /**
+     * A language can belong to multiple accounts.
+     */
     public function accounts(): BelongsToMany
     {
         return $this->belongsToMany(Account::class, 'account_language')

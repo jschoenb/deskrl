@@ -21,6 +21,9 @@ class CommercialAccount extends Model
         'is_verified' => 'boolean',
     ];
 
+    /**
+     * A commercial account belongs to one account.
+     */
     public function account()
     {
         return $this->belongsTo(Account::class);

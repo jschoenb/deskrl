@@ -16,7 +16,7 @@ class UtilityCategory extends Model
     ];
 
     /**
-     * Eine Utility-Kategorie enthält mehrere Utilities.
+     * A utility category can have multiple utilities.
      */
     public function utilities(): HasMany
     {
