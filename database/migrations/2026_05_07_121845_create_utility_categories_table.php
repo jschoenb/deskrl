@@ -7,23 +7,19 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Create the utility categories table with translated category names.
      */
     public function up(): void
     {
         Schema::create('utility_categories', function (Blueprint $table) {
             $table->id();
-
-            // Kategoriename als JSON für spätere Übersetzungen,
-            // z. B. {"de": "Technik & Ausstattung", "en": "Technology & equipment"}
             $table->json('category_name');
-
             $table->timestamps();
         });
     }
 
     /**
-     * Reverse the migrations.
+     * Drop the utility categories table.
      */
     public function down(): void
     {

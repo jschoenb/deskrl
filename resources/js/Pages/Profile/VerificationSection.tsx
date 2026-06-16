@@ -1,4 +1,5 @@
-import type {AccountType, VerificationStatus} from '@/types/profile';
+import { useIntl } from 'react-intl';
+import type { AccountType, VerificationStatus } from '@/types/profile';
 
 interface VerificationSectionProps {
     user: {
@@ -7,7 +8,12 @@ interface VerificationSectionProps {
     };
 }
 
-export function VerificationSection({user}: VerificationSectionProps) {
+export function VerificationSection({ user }: VerificationSectionProps) {
+    const intl = useIntl();
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
+
     // Hide this section for regular users and admins.
     if (user.role === 'user' || user.role === 'admin') {
         return null;
@@ -16,12 +22,11 @@ export function VerificationSection({user}: VerificationSectionProps) {
     return (
         <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-6">
             <h2 className="mb-2 text-xl font-bold text-gray-950">
-                Anbieter:innen-Verifizierung
+                {t('profile.verificationSection.title')}
             </h2>
 
             <p className="text-sm text-gray-600">
-                Eine Verifizierung wird später vor allem für kommerzielle Anbieter:innen relevant sein.
-                Im MVP wird dieser Schritt vorerst nur angezeigt und noch nicht technisch geprüft.
+                {t('profile.verificationSection.description')}
             </p>
 
             {/* TODO: Add commercial verification upload later.

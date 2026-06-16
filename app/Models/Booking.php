@@ -19,16 +19,25 @@ class Booking extends Model
         'billing_address_id',
     ];
 
+    /**
+     * A booking belongs to one Deskrl.
+     */
     public function deskrl()
     {
         return $this->belongsTo(Deskrl::class, 'deskrl_id');
     }
 
+    /**
+     * A booking belongs to one user account.
+     */
     public function account()
     {
         return $this->belongsTo(Account::class, 'user_id');
     }
 
+    /**
+     * A booking can have one billing address.
+     */
     public function billingAddress()
     {
         return $this->belongsTo(Address::class, 'billing_address_id');

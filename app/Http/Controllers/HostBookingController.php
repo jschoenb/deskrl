@@ -3,15 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class HostBookingController extends Controller
 {
     /**
-     * Alle Buchungen, die zu den Deskrls des eingeloggten Hosts gehören.
-     * GET /host/bookings
+     * Shows all bookings that belong to Deskrls of the currently logged-in host.
      */
     public function index()
     {
@@ -29,11 +27,7 @@ class HostBookingController extends Controller
     }
 
     /**
-     * Eine offene Buchung akzeptieren.
-     * PATCH /host/bookings/{booking}/accept
-     *
-     * Status-Mapping (DB kennt nur pending|confirmed|cancelled):
-     *   pending  --accept-->  confirmed
+     * Accepts a pending booking and changes its status to confirmed.
      */
     public function accept(Booking $booking)
     {
@@ -47,18 +41,13 @@ class HostBookingController extends Controller
 
         $booking->update(['status' => 'confirmed']);
 
-        // TODO (mit Team klären): Bestätigungsmail an Nutzer + ics-Kalenderdatei
+        // TODO: Add confirmation email and calendar file once the team has clarified this feature.
 
         return redirect()->back();
     }
 
     /**
-     * Eine offene Buchung ablehnen.
-     * PATCH /host/bookings/{booking}/reject
-     *
-     * Status-Mapping: pending --reject--> cancelled
-     * (DB hat keinen eigenen 'rejected'-Status, daher cancelled.
-     *  Falls Unterscheidung später nötig: Migration um 'rejected' erweitern.)
+     * Rejects a pending booking and changes its status to cancelled.
      */
     public function reject(Booking $booking)
     {
@@ -76,8 +65,7 @@ class HostBookingController extends Controller
     }
 
     /**
-     * Eine bestätigte Buchung als Host stornieren.
-     * PATCH /host/bookings/{booking}/cancel
+     * Cancels a booking from the host perspective.
      */
     public function cancel(Booking $booking)
     {
@@ -91,15 +79,13 @@ class HostBookingController extends Controller
 
         $booking->update(['status' => 'cancelled']);
 
-        // TODO (mit Team klären): Info-Mail an Nutzer + Refund (payment_status)
+        // TODO: Add user notification and refund handling once payment logic is implemented.
 
         return redirect()->back();
     }
 
-    // ---------- Hilfsmethode ----------
-
     /**
-     * Stellt sicher, dass die Buchung zu einem Deskrl des eingeloggten Hosts gehört.
+     * Ensures that the booking belongs to a Deskrl of the currently logged-in host.
      */
     private function authorizeHostOwnsBooking(Booking $booking): void
     {

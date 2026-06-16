@@ -3,20 +3,21 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
+import { useIntl } from 'react-intl';
 
 const AVAILABLE_LANGUAGES = [
-    'Deutsch',
-    'English',
-    'Español',
-    'Français',
-    'Italiano',
-    'Nederlands',
-    'Polski',
-    'Português',
-    'Русский',
-    '中文',
-    '日本語',
-    '한국어',
+    { value: 'Deutsch', labelKey: 'language.de' },
+    { value: 'English', labelKey: 'language.en' },
+    { value: 'Español', labelKey: 'language.es' },
+    { value: 'Français', labelKey: 'language.fr' },
+    { value: 'Italiano', labelKey: 'language.it' },
+    { value: 'Nederlands', labelKey: 'language.nl' },
+    { value: 'Polski', labelKey: 'language.pl' },
+    { value: 'Português', labelKey: 'language.pt' },
+    { value: 'Русский', labelKey: 'language.ru' },
+    { value: '中文', labelKey: 'language.zh' },
+    { value: '日本語', labelKey: 'language.ja' },
+    { value: '한국어', labelKey: 'language.ko' },
 ] as const;
 
 interface LanguageSelectProps {
@@ -25,9 +26,22 @@ interface LanguageSelectProps {
 }
 
 export function LanguageSelect({ selected, onChange }: LanguageSelectProps) {
+    const intl = useIntl();
+
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string, values?: Record<string, string | number>) =>
+        intl.formatMessage({ id }, values);
+
+    // Returns the visible label for a language value.
+    const getLanguageLabel = (language: string) => {
+        const foundLanguage = AVAILABLE_LANGUAGES.find((item) => item.value === language);
+
+        return foundLanguage ? t(foundLanguage.labelKey) : language;
+    };
 
     // Close the dropdown when the user clicks outside of it.
     useEffect(() => {
@@ -73,19 +87,19 @@ export function LanguageSelect({ selected, onChange }: LanguageSelectProps) {
 
     // Filter available languages by the current search value.
     const filteredLanguages = AVAILABLE_LANGUAGES.filter((language) =>
-        language.toLowerCase().includes(search.toLowerCase()),
+        t(language.labelKey).toLowerCase().includes(search.toLowerCase()),
     );
 
     // Build the visible button label based on the current selection.
     const label =
         selected.length === 0
-            ? 'Sprachen auswählen'
-            : `${selected.length} ${selected.length === 1 ? 'Sprache' : 'Sprachen'} ausgewählt`;
+            ? t('profile.languages.placeholder')
+            : t('profile.languages.selectedCount', { count: selected.length });
 
     return (
         <div className="space-y-2">
             <label className="text-sm font-semibold text-gray-600">
-                Sprachen
+                {t('profile.languages.label')}
             </label>
 
             <div ref={dropdownRef} className="relative">
@@ -114,7 +128,7 @@ export function LanguageSelect({ selected, onChange }: LanguageSelectProps) {
                     <div
                         role="listbox"
                         aria-multiselectable="true"
-                        aria-label="Sprachen auswählen"
+                        aria-label={t('profile.languages.placeholder')}
                         className="absolute left-0 right-0 top-full z-20 mt-2 max-h-80 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
                     >
                         {/* Search input */}
@@ -123,7 +137,7 @@ export function LanguageSelect({ selected, onChange }: LanguageSelectProps) {
                                 type="search"
                                 value={search}
                                 onChange={(event) => setSearch(event.target.value)}
-                                placeholder="Sprache suchen…"
+                                placeholder={t('profile.languages.searchPlaceholder')}
                                 autoFocus
                                 className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
                             />
@@ -133,25 +147,25 @@ export function LanguageSelect({ selected, onChange }: LanguageSelectProps) {
                         <div className="max-h-60 overflow-y-auto">
                             {filteredLanguages.length === 0 ? (
                                 <p className="px-4 py-3 text-sm text-gray-500">
-                                    Keine Sprache gefunden.
+                                    {t('profile.languages.noResults')}
                                 </p>
                             ) : (
                                 filteredLanguages.map((language) => {
-                                    const isSelected = selected.includes(language);
+                                    const isSelected = selected.includes(language.value);
 
                                     return (
                                         <button
-                                            key={language}
+                                            key={language.value}
                                             type="button"
                                             role="option"
                                             aria-selected={isSelected}
-                                            onClick={() => toggleLanguage(language)}
+                                            onClick={() => toggleLanguage(language.value)}
                                             className={`flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
                                                 isSelected ? 'bg-gray-50 text-[#5555ff]' : ''
                                             }`}
                                         >
                                             <span className="font-semibold">
-                                                {language}
+                                                {t(language.labelKey)}
                                             </span>
 
                                             {isSelected && (
@@ -174,25 +188,29 @@ export function LanguageSelect({ selected, onChange }: LanguageSelectProps) {
                 <div
                     className="flex flex-wrap gap-2"
                     role="group"
-                    aria-label="Ausgewählte Sprachen"
+                    aria-label={t('profile.languages.selectedGroupAria')}
                 >
-                    {selected.map((language) => (
-                        <span
-                            key={language}
-                            className="inline-flex items-center gap-2 rounded-lg bg-[#5555ff] px-3 py-1.5 text-sm text-white"
-                        >
-                            {language}
+                    {selected.map((language) => {
+                        const languageLabel = getLanguageLabel(language);
 
-                            <button
-                                type="button"
-                                onClick={() => toggleLanguage(language)}
-                                aria-label={`${language} entfernen`}
-                                className="rounded-full p-0.5 transition-colors hover:bg-white/20"
+                        return (
+                            <span
+                                key={language}
+                                className="inline-flex items-center gap-2 rounded-lg bg-[#5555ff] px-3 py-1.5 text-sm text-white"
                             >
-                                <X className="h-3.5 w-3.5" aria-hidden="true" />
-                            </button>
-                        </span>
-                    ))}
+                                {languageLabel}
+
+                                <button
+                                    type="button"
+                                    onClick={() => toggleLanguage(language)}
+                                    aria-label={t('profile.languages.removeAria', { language: languageLabel })}
+                                    className="rounded-full p-0.5 transition-colors hover:bg-white/20"
+                                >
+                                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                                </button>
+                            </span>
+                        );
+                    })}
                 </div>
             )}
         </div>

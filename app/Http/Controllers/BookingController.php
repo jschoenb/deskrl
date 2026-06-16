@@ -13,8 +13,7 @@ use Inertia\Inertia;
 class BookingController extends Controller
 {
     /**
-     * Alle Buchungen des eingeloggten Accounts (Nutzer-Sicht).
-     * GET /bookings
+     * Shows all bookings of the currently logged-in user.
      */
     public function index()
     {
@@ -30,8 +29,7 @@ class BookingController extends Controller
     }
 
     /**
-     * Eine einzelne Buchung im Detail.
-     * GET /bookings/{booking}
+     * Shows one booking in detail if it belongs to the currently logged-in user.
      */
     public function show(Booking $booking)
     {
@@ -47,43 +45,22 @@ class BookingController extends Controller
     }
 
     /**
-     * Neue Buchung erstellen.
-     * POST /deskrls/{deskrl}/bookings
-     *
-     * Prüfungen:
-     * - Ist der User eingeloggt?
-     * - Ist der Deskrl aktiv und buchbar?
-     * - Sind Zeitraum und Buchungsrate gültig?
-     * - Liegt der Zeitraum nicht vollständig in der Vergangenheit?
-     * - Entspricht der Zeitraum min_hours / max_hours?
-     * - Überschneidet sich die Buchung mit bestehenden Buchungen?
-     * - Ist für die gewählte Buchungsrate ein Preis hinterlegt?
-     *
-     * Status-Werte laut Migration:
-     * - pending
-     * - confirmed
-     * - cancelled
-     *
-     * Neue Buchungen starten als pending.
-     * Bei instant_bookable starten sie direkt als confirmed.
+     * Creates a new booking request and checks login, availability, duration and price.
      */
     public function store(Request $request, Deskrl $deskrl)
     {
-        // Fallback, falls die Route versehentlich ohne auth-Middleware erreichbar ist.
         if (!Auth::check()) {
             return redirect()->back()->withErrors([
                 'booking' => 'Bitte melde dich an, um eine Buchung anzufragen.',
             ]);
         }
 
-        // 1) Ist der Deskrl buchbar?
         if ($deskrl->status !== 'active') {
             return redirect()->back()->withErrors([
                 'booking' => 'Dieses Deskrl ist aktuell nicht buchbar.',
             ]);
         }
 
-        // 2) Eingaben validieren
         $validated = $request->validate(
             [
                 'from' => ['required', 'date'],
@@ -109,17 +86,12 @@ class BookingController extends Controller
         $from = Carbon::parse($validated['from']);
         $until = Carbon::parse($validated['until']);
 
-        // 3) Zeitraum gegen Vergangenheit prüfen.
-        // Wichtig:
-        // Tages-, Wochen- und Monatsbuchungen können technisch um 00:00 starten.
-        // Deshalb wird hier nicht pauschal "from > now" validiert.
         if ($until->lessThanOrEqualTo(now())) {
             return redirect()->back()->withErrors([
                 'booking' => 'Der gewählte Zeitraum liegt bereits in der Vergangenheit.',
             ]);
         }
 
-        // Bei stundenweisen und halbtägigen Buchungen soll der Startzeitpunkt noch in der Zukunft liegen.
         if (
             in_array($validated['price_rate'], ['hourly', 'half_day'], true)
             && $from->lessThanOrEqualTo(now())
@@ -129,7 +101,6 @@ class BookingController extends Controller
             ]);
         }
 
-        // 4) Zeitraum gegen Deskrl-Settings prüfen
         $hours = $from->diffInMinutes($until) / 60;
 
         if ($deskrl->min_hours && $hours < $deskrl->min_hours) {
@@ -144,16 +115,6 @@ class BookingController extends Controller
             ]);
         }
 
-        // 5) Überschneidung mit bestehenden Buchungen prüfen.
-        // Nur aktive Buchungen blockieren neue Buchungen: pending oder confirmed.
-        //
-        // Saubere Overlap-Logik:
-        // Eine bestehende Buchung überschneidet sich, wenn:
-        // existing.from < requested.until
-        // AND
-        // existing.until > requested.from
-        //
-        // Dadurch blockiert eine Buchung, die exakt beim neuen Start endet, nicht unnötig.
         $overlap = Booking::query()
             ->where('deskrl_id', $deskrl->id)
             ->whereIn('status', ['pending', 'confirmed'])
@@ -167,7 +128,6 @@ class BookingController extends Controller
             ]);
         }
 
-        // 6) Preis ermitteln: Sonderpreis hat Vorrang vor Standardpreis.
         $special = SpecialDayPrice::query()
             ->where('deskrl_id', $deskrl->id)
             ->whereDate('date', $from->toDateString())
@@ -193,9 +153,6 @@ class BookingController extends Controller
             ]);
         }
 
-        // 7) Buchung anlegen.
-        // price_rate speichert die gewählte Rate.
-        // price speichert den Preis-Snapshot zum Zeitpunkt der Buchung.
         $booking = Booking::create([
             'user_id' => Auth::id(),
             'deskrl_id' => $deskrl->id,
@@ -213,8 +170,7 @@ class BookingController extends Controller
     }
 
     /**
-     * Buchung aus Nutzer-Sicht stornieren.
-     * PATCH /bookings/{booking}/cancel
+     * Cancels a booking from the user's perspective if it belongs to the current user.
      */
     public function cancel(Booking $booking)
     {
@@ -222,7 +178,6 @@ class BookingController extends Controller
             abort(403);
         }
 
-        // Schon stornierte Buchung nicht erneut stornieren.
         if ($booking->status === 'cancelled') {
             return redirect()->back()->withErrors([
                 'booking' => 'Diese Buchung ist bereits storniert.',
@@ -232,10 +187,6 @@ class BookingController extends Controller
         $booking->update([
             'status' => 'cancelled',
         ]);
-
-        // TODO (mit Team klären):
-        // Kostenfreie Stornofrist, z. B. bis 3 Tage vorher.
-        // Optional später: payment_status auf refunded setzen.
 
         return redirect()->back()->with('success', 'Die Buchung wurde storniert.');
     }

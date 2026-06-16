@@ -13,7 +13,7 @@ class DeskrlAddress extends Model
     ];
 
     /**
-     * The address link belongs to one Deskrl.
+     * A Deskrl address record belongs to one Deskrl.
      */
     public function deskrl(): BelongsTo
     {
@@ -21,7 +21,7 @@ class DeskrlAddress extends Model
     }
 
     /**
-     * The address link belongs to one Address.
+     * A Deskrl address record belongs to one address.
      */
     public function address(): BelongsTo
     {

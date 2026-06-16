@@ -3,9 +3,10 @@
 // This hook contains the complete profile form logic.
 // It maps the current Laravel database structure to the existing profile form UI.
 
-import { useCallback, useMemo, useState } from 'react';
-import { router } from '@inertiajs/react';
-import { toast } from 'sonner';
+import {useCallback, useMemo, useState} from 'react';
+import {router} from '@inertiajs/react';
+import {toast} from 'sonner';
+import {useIntl} from 'react-intl';
 import type {
     AddressFormData,
     BillingFormData,
@@ -16,7 +17,7 @@ import type {
 
 // Reads translated JSON fields like { de: "...", en: "..." }.
 // It also supports JSON strings because some backend values may arrive as strings.
-function getLocalizedText(value: any, fallback = ''): string {
+function getLocalizedText(value: any, fallback = '', locale = 'de'): string {
     if (!value) {
         return fallback;
     }
@@ -25,13 +26,13 @@ function getLocalizedText(value: any, fallback = ''): string {
         try {
             const parsed = JSON.parse(value);
 
-            return parsed?.de ?? parsed?.en ?? value;
+            return parsed?.[locale] ?? parsed?.de ?? parsed?.en ?? value;
         } catch {
             return value;
         }
     }
 
-    return value.de ?? value.en ?? fallback;
+    return value?.[locale] ?? value.de ?? value.en ?? fallback;
 }
 
 // Converts a date value from Laravel into an input[type="date"] compatible string.
@@ -54,6 +55,16 @@ function normalizeErrors(errors: Record<string, string | string[]>): Record<stri
 }
 
 export function useProfileForm(user: UserFromBackend) {
+    const intl = useIntl();
+
+    // Returns the translated text for the given translation key.
+    const t = useCallback(
+        (id: string) => intl.formatMessage({id}),
+        [intl],
+    );
+
+    const locale = intl.locale || 'de';
+
     // Split the account name into first name and last name.
     const initialName = useMemo(() => {
         return {
@@ -98,7 +109,7 @@ export function useProfileForm(user: UserFromBackend) {
             // Languages are now loaded as related language objects.
             languages: Array.isArray(user.languages)
                 ? user.languages
-                    .map((language) => getLocalizedText(language.name))
+                    .map((language) => getLocalizedText(language.name, '', locale))
                     .filter(Boolean)
                 : [],
 
@@ -109,15 +120,15 @@ export function useProfileForm(user: UserFromBackend) {
             company: user.commercial_account?.company_name ?? '',
 
             // about_me is stored as JSON, for example { de: "..." }.
-            aboutMe: getLocalizedText(user.about_me),
+            aboutMe: getLocalizedText(user.about_me, '', locale),
         }),
-        [initialName, user],
+        [initialName, user, locale],
     );
 
     // Prepare the initial main address form state.
     const initialAddress: AddressFormData = useMemo(
         () => ({
-            country: getLocalizedText(defaultAddressRelation?.address?.country?.name),
+            country: getLocalizedText(defaultAddressRelation?.address?.country?.name, '', locale),
             countryId: defaultAddressRelation?.address?.country_id ?? null,
             street: defaultAddressRelation?.address?.street ?? '',
             houseNumber: defaultAddressRelation?.address?.house_nr ?? '',
@@ -128,7 +139,7 @@ export function useProfileForm(user: UserFromBackend) {
             city: defaultAddressRelation?.address?.city ?? '',
             state: defaultAddressRelation?.address?.state ?? '',
         }),
-        [defaultAddressRelation],
+        [defaultAddressRelation, locale],
     );
 
     // Prepare the initial billing address form state.
@@ -136,7 +147,7 @@ export function useProfileForm(user: UserFromBackend) {
         () => ({
             billingCompany: billingAddressRelation?.company_name ?? '',
             billingVatNumber: billingAddressRelation?.vat_nr ?? '',
-            country: getLocalizedText(billingAddressRelation?.address?.country?.name),
+            country: getLocalizedText(billingAddressRelation?.address?.country?.name, '', locale),
             countryId: billingAddressRelation?.address?.country_id ?? null,
             street: billingAddressRelation?.address?.street ?? '',
             houseNumber: billingAddressRelation?.address?.house_nr ?? '',
@@ -147,7 +158,7 @@ export function useProfileForm(user: UserFromBackend) {
             city: billingAddressRelation?.address?.city ?? '',
             state: billingAddressRelation?.address?.state ?? '',
         }),
-        [billingAddressRelation],
+        [billingAddressRelation, locale],
     );
 
     // Prepare the initial business form state from commercial_account.
@@ -176,10 +187,10 @@ export function useProfileForm(user: UserFromBackend) {
     // Update a single field in the personal form and remove its error message.
     const updatePersonal = useCallback(
         <K extends keyof PersonalFormData>(field: K, value: PersonalFormData[K]) => {
-            setPersonal((prev) => ({ ...prev, [field]: value }));
+            setPersonal((prev) => ({...prev, [field]: value}));
 
             setPersonalErrors((prev) => {
-                const next = { ...prev };
+                const next = {...prev};
 
                 if (field === 'firstName') {
                     delete next.first_name;
@@ -218,10 +229,10 @@ export function useProfileForm(user: UserFromBackend) {
     // Update a single field in the main address form and remove its error message.
     const updateAddress = useCallback(
         <K extends keyof AddressFormData>(field: K, value: AddressFormData[K]) => {
-            setAddress((prev) => ({ ...prev, [field]: value }));
+            setAddress((prev) => ({...prev, [field]: value}));
 
             setAddressErrors((prev) => {
-                const next = { ...prev };
+                const next = {...prev};
 
                 if (field === 'countryId') {
                     delete next.country_id;
@@ -264,10 +275,10 @@ export function useProfileForm(user: UserFromBackend) {
     // Update a single field in the billing address form and remove its error message.
     const updateBilling = useCallback(
         <K extends keyof BillingFormData>(field: K, value: BillingFormData[K]) => {
-            setBilling((prev) => ({ ...prev, [field]: value }));
+            setBilling((prev) => ({...prev, [field]: value}));
 
             setBillingErrors((prev) => {
-                const next = { ...prev };
+                const next = {...prev};
 
                 if (field === 'countryId') {
                     delete next.country_id;
@@ -318,10 +329,10 @@ export function useProfileForm(user: UserFromBackend) {
     // Update a single field in the business form and remove its error message.
     const updateBusiness = useCallback(
         <K extends keyof BusinessFormData>(field: K, value: BusinessFormData[K]) => {
-            setBusiness((prev) => ({ ...prev, [field]: value }));
+            setBusiness((prev) => ({...prev, [field]: value}));
 
             setBusinessErrors((prev) => {
-                const next = { ...prev };
+                const next = {...prev};
 
                 if (field === 'companyName') {
                     delete next.company_name;
@@ -361,15 +372,15 @@ export function useProfileForm(user: UserFromBackend) {
                 preserveState: true,
                 onSuccess: () => {
                     setPersonalErrors({});
-                    toast.success('Persönliche Informationen wurden gespeichert.');
+                    toast.success(t('profile.form.toast.personalSaved'));
                 },
                 onError: (errors: Record<string, string | string[]>) => {
                     setPersonalErrors(normalizeErrors(errors));
-                    toast.error('Bitte prüfe die markierten Felder.');
+                    toast.error(t('profile.form.toast.checkFields'));
                 },
             },
         );
-    }, [personal]);
+    }, [personal, t]);
 
     // Save or update the default address through the new AddressController structure.
     const handleSaveAddress = useCallback(() => {
@@ -393,7 +404,7 @@ export function useProfileForm(user: UserFromBackend) {
             preserveState: true,
             onSuccess: () => {
                 setAddressErrors({});
-                toast.success('Adresse wurde gespeichert.');
+                toast.success(t('profile.form.toast.addressSaved'));
 
                 // If billing address is the same as the main address,
                 // keep the local billing form in sync with the address form.
@@ -417,7 +428,7 @@ export function useProfileForm(user: UserFromBackend) {
             },
             onError: (errors: Record<string, string | string[]>) => {
                 setAddressErrors(normalizeErrors(errors));
-                toast.error('Bitte prüfe die markierten Felder.');
+                toast.error(t('profile.form.toast.checkFields'));
             },
         };
 
@@ -427,7 +438,7 @@ export function useProfileForm(user: UserFromBackend) {
         }
 
         router.post('/addresses', payload, options);
-    }, [address, billing, defaultAddressRelation, isBillingSameAsAddress]);
+    }, [address, billing, defaultAddressRelation, isBillingSameAsAddress, t]);
 
     // Save or update the billing address through the new AddressController structure.
     const handleSaveBilling = useCallback(() => {
@@ -455,7 +466,7 @@ export function useProfileForm(user: UserFromBackend) {
                 // Keep the billing address section open after saving.
                 setIsBillingSameAsAddress(false);
 
-                toast.success('Rechnungsadresse wurde gespeichert.');
+                toast.success(t('profile.form.toast.billingSaved'));
             },
             onError: (errors: Record<string, string | string[]>) => {
                 setBillingErrors(normalizeErrors(errors));
@@ -463,7 +474,7 @@ export function useProfileForm(user: UserFromBackend) {
                 // Keep the billing address section open even if validation fails.
                 setIsBillingSameAsAddress(false);
 
-                toast.error('Bitte prüfe die markierten Felder.');
+                toast.error(t('profile.form.toast.checkFields'));
             },
         };
 
@@ -473,7 +484,7 @@ export function useProfileForm(user: UserFromBackend) {
         }
 
         router.post('/addresses', payload, options);
-    }, [billing, billingAddressRelation]);
+    }, [billing, billingAddressRelation, t]);
 
     // Save or update commercial account data.
     const handleSaveBusiness = useCallback(() => {
@@ -489,12 +500,12 @@ export function useProfileForm(user: UserFromBackend) {
 
             onSuccess: () => {
                 setBusinessErrors({});
-                toast.success('Unternehmensdaten wurden gespeichert.');
+                toast.success(t('profile.form.toast.businessSaved'));
             },
 
             onError: (errors: Record<string, string | string[]>) => {
                 setBusinessErrors(normalizeErrors(errors));
-                toast.error('Bitte prüfe die markierten Felder.');
+                toast.error(t('profile.form.toast.checkFields'));
             },
         };
 
@@ -504,35 +515,35 @@ export function useProfileForm(user: UserFromBackend) {
         }
 
         router.post('/commercial-account', payload, options);
-    }, [business, user.commercial_account]);
+    }, [business, user.commercial_account, t]);
 
     // Reset personal form changes.
     const handleCancelPersonal = useCallback(() => {
         setPersonal(initialPersonal);
         setPersonalErrors({});
-        toast.info('Änderungen wurden verworfen.');
-    }, [initialPersonal]);
+        toast.info(t('profile.form.toast.changesDiscarded'));
+    }, [initialPersonal, t]);
 
     // Reset main address form changes.
     const handleCancelAddress = useCallback(() => {
         setAddress(initialAddress);
         setAddressErrors({});
-        toast.info('Änderungen wurden verworfen.');
-    }, [initialAddress]);
+        toast.info(t('profile.form.toast.changesDiscarded'));
+    }, [initialAddress, t]);
 
     // Reset billing address form changes.
     const handleCancelBilling = useCallback(() => {
         setBilling(initialBilling);
         setBillingErrors({});
-        toast.info('Änderungen wurden verworfen.');
-    }, [initialBilling]);
+        toast.info(t('profile.form.toast.changesDiscarded'));
+    }, [initialBilling, t]);
 
     // Reset business form changes.
     const handleCancelBusiness = useCallback(() => {
         setBusiness(initialBusiness);
         setBusinessErrors({});
-        toast.info('Änderungen wurden verworfen.');
-    }, [initialBusiness]);
+        toast.info(t('profile.form.toast.changesDiscarded'));
+    }, [initialBusiness, t]);
 
     return {
         // Form states

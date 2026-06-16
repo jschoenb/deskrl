@@ -7,28 +7,22 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Create the utilities table with translated names and category assignments.
      */
     public function up(): void
     {
         Schema::create('utilities', function (Blueprint $table) {
             $table->id();
-
-            // Verknüpfung zur Kategorie, z. B. Technik, Komfort, Mobilität
             $table->foreignId('utility_category_id')
                 ->constrained('utility_categories')
                 ->cascadeOnDelete();
-
-            // Name als JSON für spätere Übersetzungen,
-            // z. B. {"de": "WLAN", "en": "WiFi"}
             $table->json('name');
-
             $table->timestamps();
         });
     }
 
     /**
-     * Reverse the migrations.
+     * Drop the utilities table.
      */
     public function down(): void
     {

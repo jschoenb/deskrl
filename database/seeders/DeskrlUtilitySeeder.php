@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Deskrl;
 use App\Models\DeskrlUtility;
 use App\Models\Utility;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DeskrlUtilitySeeder extends Seeder
@@ -19,9 +18,9 @@ class DeskrlUtilitySeeder extends Seeder
         $deskrls = Deskrl::query()->get();
         $utilities = Utility::query()->get();
 
-
         if ($deskrls->isEmpty() || $utilities->isEmpty()) {
             $this->command->warn('Deskrls or utilities are missing. Please seed them first.');
+
             return;
         }
 

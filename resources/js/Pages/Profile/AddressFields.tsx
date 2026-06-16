@@ -4,6 +4,7 @@
 import { AddressFormData, BillingFormData } from '@/types/profile';
 import { CountrySelect } from './CountrySelect';
 import { InputField } from './InputField';
+import { useIntl } from 'react-intl';
 
 type AddressFieldKey = keyof AddressFormData;
 
@@ -20,7 +21,11 @@ export function AddressFields({
                                   idPrefix = '',
                                   errors = {},
                               }: AddressFieldsProps) {
+    const intl = useIntl();
     const prefix = idPrefix ? `${idPrefix}-` : '';
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
 
     // Updates one address field and keeps the typing simple for both address and billing forms.
     const handleChange = (field: AddressFieldKey, value: string | number | null) => {
@@ -28,7 +33,6 @@ export function AddressFields({
     };
 
     // Sets the visible country text and a temporary default country ID.
-    // Later this should be replaced by a real country dropdown using database IDs.
     const handleCountryChange = (value: string) => {
         handleChange('country', value);
 
@@ -48,7 +52,7 @@ export function AddressFields({
                 />
 
                 <p className="mt-1 text-xs text-gray-400">
-                    Pflichtfeld
+                    {t('address.requiredField')}
                 </p>
 
                 {errors.country_id && (
@@ -63,10 +67,10 @@ export function AddressFields({
                 <div>
                     <InputField
                         id={`${prefix}street`}
-                        label="Straße *"
+                        label={t('address.street.label')}
                         value={data.street}
                         onChange={(value) => handleChange('street', value)}
-                        placeholder="z. B. Musterstraße"
+                        placeholder={t('address.street.placeholder')}
                     />
 
                     {errors.street && (
@@ -79,10 +83,10 @@ export function AddressFields({
                 <div>
                     <InputField
                         id={`${prefix}houseNumber`}
-                        label="Hausnummer *"
+                        label={t('address.houseNumber.label')}
                         value={data.houseNumber}
                         onChange={(value) => handleChange('houseNumber', value)}
-                        placeholder="z. B. 12"
+                        placeholder={t('address.houseNumber.placeholder')}
                     />
 
                     {errors.house_nr && (
@@ -98,10 +102,10 @@ export function AddressFields({
                 <div>
                     <InputField
                         id={`${prefix}staircase`}
-                        label="Stiege (optional)"
+                        label={t('address.staircase.label')}
                         value={data.staircase}
                         onChange={(value) => handleChange('staircase', value)}
-                        placeholder="z. B. 1"
+                        placeholder={t('address.staircase.placeholder')}
                     />
 
                     {errors.stair && (
@@ -114,20 +118,20 @@ export function AddressFields({
                 <div>
                     <InputField
                         id={`${prefix}apartment`}
-                        label="Top (optional)"
+                        label={t('address.apartment.label')}
                         value={data.apartment}
                         onChange={(value) => handleChange('apartment', value)}
-                        placeholder="z. B. 4"
+                        placeholder={t('address.apartment.placeholder')}
                     />
                 </div>
 
                 <div>
                     <InputField
                         id={`${prefix}door`}
-                        label="Tür / Top (optional)"
+                        label={t('address.door.label')}
                         value={data.door}
                         onChange={(value) => handleChange('door', value)}
-                        placeholder="z. B. A"
+                        placeholder={t('address.door.placeholder')}
                     />
 
                     {errors.door && (
@@ -140,10 +144,10 @@ export function AddressFields({
                 <div>
                     <InputField
                         id={`${prefix}postalCode`}
-                        label="PLZ *"
+                        label={t('address.postalCode.label')}
                         value={data.postalCode}
                         onChange={(value) => handleChange('postalCode', value)}
-                        placeholder="z. B. 1010"
+                        placeholder={t('address.postalCode.placeholder')}
                     />
 
                     {errors.postal_code && (
@@ -159,10 +163,10 @@ export function AddressFields({
                 <div>
                     <InputField
                         id={`${prefix}city`}
-                        label="Stadt *"
+                        label={t('address.city.label')}
                         value={data.city}
                         onChange={(value) => handleChange('city', value)}
-                        placeholder="z. B. Wien"
+                        placeholder={t('address.city.placeholder')}
                     />
 
                     {errors.city && (
@@ -175,10 +179,10 @@ export function AddressFields({
                 <div>
                     <InputField
                         id={`${prefix}state`}
-                        label="Bundesland (optional)"
+                        label={t('address.state.label')}
                         value={data.state}
                         onChange={(value) => handleChange('state', value)}
-                        placeholder="z. B. Wien"
+                        placeholder={t('address.state.placeholder')}
                     />
 
                     {errors.state && (

@@ -25,7 +25,7 @@ class AddressController extends Controller
     }
 
     /**
-     * Stores a new address for the currently logged-in account.
+     * Stores a new address and attaches it to the currently logged-in account.
      */
     public function store(Request $request)
     {
@@ -133,7 +133,7 @@ class AddressController extends Controller
     }
 
     /**
-     * Validates address data and related pivot data.
+     * Validates address data and related account-address pivot data.
      */
     private function validateAddressData(Request $request): array
     {
@@ -144,15 +144,13 @@ class AddressController extends Controller
                 'state' => ['nullable', 'string', 'max:255', 'regex:/^[\pL\s\-]*$/u'],
                 'city' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\-]+$/u'],
 
-                // Street names can contain letters, numbers, spaces, dots and hyphens.
-                // This allows names like "Straße des 17. Juni".
+                // Allows common street names with letters, numbers, spaces, dots and hyphens.
                 'street' => ['required', 'string', 'max:255', 'regex:/^[\pL0-9\s\.\-]+$/u'],
 
-                // Current MVP rule: house number should contain digits only.
-                // If you later want to allow "12A" or "12/3", this regex must be relaxed.
+                // Current MVP rule: house numbers contain digits only.
                 'house_nr' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/'],
 
-                // Current MVP rule for Austria/Germany: postal code contains digits only.
+                // Current MVP rule: postal codes contain digits only.
                 'postal_code' => ['required', 'string', 'max:10', 'regex:/^[0-9]+$/'],
 
                 'stair' => ['nullable', 'string', 'max:50'],

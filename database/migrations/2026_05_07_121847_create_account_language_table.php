@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Create the account-language pivot table for account language assignments.
      */
     public function up(): void
     {
@@ -22,7 +22,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Drop the account-language pivot table.
      */
     public function down(): void
     {

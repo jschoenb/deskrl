@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useIntl } from 'react-intl';
 
 // Information passed from the header or from pages that open the modal.
 interface AuthModalProps {
@@ -10,7 +11,12 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalProps) {
+    const intl = useIntl();
+
     const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
 
     useEffect(() => {
         if (isOpen) {
@@ -40,8 +46,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
     };
 
     // Sends either login data or registration data to the Laravel AuthController.
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = (event: FormEvent) => {
+        event.preventDefault();
 
         if (mode === 'login') {
             post('/login', {
@@ -69,28 +75,26 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
             <div className="bg-white rounded-3xl max-w-md w-full p-8 relative shadow-2xl overflow-y-auto max-h-[95vh]">
                 <button
                     type="button"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
+                    onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
                         onClose();
                     }}
                     className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-all hover:scale-110 z-[110]"
-                    aria-label="Schließen"
+                    aria-label={t('auth.close')}
                 >
-                    <X className="w-8 h-8" />
+                    <X className="w-8 h-8" aria-hidden="true" />
                 </button>
 
                 <div className="text-center mb-8">
-{/*                    <div className="text-5xl mb-4">😊</div>*/}
-
                     <h2 className="text-3xl font-bold mb-2 text-gray-900">
-                        {mode === 'login' ? 'Willkommen zurück!' : 'Jetzt registrieren'}
+                        {mode === 'login' ? t('auth.login.title') : t('auth.register.title')}
                     </h2>
 
                     <p className="text-gray-600">
                         {mode === 'login'
-                            ? 'Melde dich an, um fortzufahren'
-                            : 'Erstelle dein Deskrl-Konto'}
+                            ? t('auth.login.description')
+                            : t('auth.register.description')}
                     </p>
                 </div>
 
@@ -99,14 +103,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="text-xs font-bold uppercase text-gray-500 ml-1">
-                                    Vorname
+                                    {t('auth.firstName.label')}
                                 </label>
 
                                 <input
                                     type="text"
                                     value={data.first_name}
-                                    onChange={(e) => setData('first_name', e.target.value)}
-                                    placeholder="Anna"
+                                    onChange={(event) => setData('first_name', event.target.value)}
+                                    placeholder={t('auth.firstName.placeholder')}
                                     className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${
                                         errors.first_name
                                             ? 'border-red-500'
@@ -124,14 +128,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
                             <div className="space-y-1">
                                 <label className="text-xs font-bold uppercase text-gray-500 ml-1">
-                                    Nachname
+                                    {t('auth.lastName.label')}
                                 </label>
 
                                 <input
                                     type="text"
                                     value={data.last_name}
-                                    onChange={(e) => setData('last_name', e.target.value)}
-                                    placeholder="Muster"
+                                    onChange={(event) => setData('last_name', event.target.value)}
+                                    placeholder={t('auth.lastName.placeholder')}
                                     className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${
                                         errors.last_name
                                             ? 'border-red-500'
@@ -151,14 +155,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
                     <div className="space-y-1">
                         <label className="text-xs font-bold uppercase text-gray-500 ml-1">
-                            E-Mail
+                            {t('auth.email.label')}
                         </label>
 
                         <input
                             type="email"
                             value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            placeholder="deine@email.com"
+                            onChange={(event) => setData('email', event.target.value)}
+                            placeholder={t('auth.email.placeholder')}
                             className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${
                                 errors.email
                                     ? 'border-red-500'
@@ -176,14 +180,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
                     <div className="space-y-1">
                         <label className="text-xs font-bold uppercase text-gray-500 ml-1">
-                            Passwort
+                            {t('auth.password.label')}
                         </label>
 
                         <input
                             type="password"
                             value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="••••••••"
+                            onChange={(event) => setData('password', event.target.value)}
+                            placeholder={t('auth.password.placeholder')}
                             className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${
                                 errors.password
                                     ? 'border-red-500'
@@ -202,14 +206,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                     {mode === 'register' && (
                         <div className="space-y-1">
                             <label className="text-xs font-bold uppercase text-gray-500 ml-1">
-                                Passwort bestätigen
+                                {t('auth.passwordConfirmation.label')}
                             </label>
 
                             <input
                                 type="password"
                                 value={data.password_confirmation}
-                                onChange={(e) => setData('password_confirmation', e.target.value)}
-                                placeholder="••••••••"
+                                onChange={(event) => setData('password_confirmation', event.target.value)}
+                                placeholder={t('auth.password.placeholder')}
                                 className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${
                                     errors.password
                                         ? 'border-red-500'
@@ -227,11 +231,11 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                     >
                         {processing
                             ? mode === 'login'
-                                ? 'Anmeldung läuft...'
-                                : 'Registrierung läuft...'
+                                ? t('auth.login.processing')
+                                : t('auth.register.processing')
                             : mode === 'login'
-                                ? 'Anmelden'
-                                : 'Registrieren'}
+                                ? t('auth.login.submit')
+                                : t('auth.register.submit')}
                     </button>
                 </form>
 
@@ -242,8 +246,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                         className="text-[#5555ff] font-bold hover:text-[#4444ee] transition-colors"
                     >
                         {mode === 'login'
-                            ? 'Noch kein Konto? Jetzt registrieren'
-                            : 'Bereits ein Konto? Zum Login'}
+                            ? t('auth.switchToRegister')
+                            : t('auth.switchToLogin')}
                     </button>
                 </div>
             </div>

@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Create the favorites table to link user accounts with saved Deskrls.
+     */
     public function up(): void
     {
         Schema::create('favorites', function (Blueprint $table) {
@@ -17,6 +20,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Drop the favorites table.
+     */
     public function down(): void
     {
         Schema::dropIfExists('favorites');

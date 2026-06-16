@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Change bookings.price_rate from decimal to enum.
+     * Change the booking price rate from a decimal value to a fixed enum value.
      */
     public function up(): void
     {
@@ -30,6 +30,9 @@ return new class extends Migration
         }
     }
 
+    /**
+     * Change the booking price rate back from enum to decimal.
+     */
     public function down(): void
     {
         if (Schema::hasColumn('bookings', 'price_rate')) {

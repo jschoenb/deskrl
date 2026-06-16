@@ -2,6 +2,7 @@ import { Section } from './Section';
 import { AddressFields } from './AddressFields';
 import { InputField } from './InputField';
 import type { AddressFormData, BillingFormData } from '@/types/profile';
+import { useIntl } from 'react-intl';
 
 interface AddressSectionProps {
     address: AddressFormData;
@@ -40,17 +41,22 @@ export function AddressSection({
                                    onSaveBilling,
                                    onCancelBilling,
                                }: AddressSectionProps) {
+    const intl = useIntl();
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
+
     return (
         <>
             <Section
-                title={isHost ? 'Anbieter-Adresse' : 'Adresse'}
+                title={isHost ? t('profile.address.providerTitle') : t('profile.address.title')}
                 onSave={onSaveAddress}
                 onCancel={onCancelAddress}
             >
                 {/* Main address fields are handled by the reusable AddressFields component. */}
                 <AddressFields
                     data={address}
-                    onChange={updateAddress}
+                    onChange={(field, value) => updateAddress(field, value as any)}
                     idPrefix="address"
                     errors={addressErrors}
                 />
@@ -58,7 +64,7 @@ export function AddressSection({
                 {/* Billing address toggle belongs to the main address area. */}
                 <div className="border-t border-gray-200 pt-6">
                     <h3 className="mb-4 text-base font-bold">
-                        Ist die Rechnungsadresse dieselbe?
+                        {t('profile.billing.sameAsAddressQuestion')}
                     </h3>
 
                     <div className="flex gap-4">
@@ -72,7 +78,7 @@ export function AddressSection({
                                     : 'border-gray-200 text-gray-700 hover:border-gray-300'
                             }`}
                         >
-                            Ja
+                            {t('common.yes')}
                         </button>
 
                         <button
@@ -85,7 +91,7 @@ export function AddressSection({
                                     : 'border-gray-200 text-gray-700 hover:border-gray-300'
                             }`}
                         >
-                            Nein
+                            {t('common.no')}
                         </button>
                     </div>
                 </div>
@@ -94,24 +100,24 @@ export function AddressSection({
             {/* Billing address fields are shown only when they differ from the main address. */}
             {!isBillingSameAsAddress && (
                 <Section
-                    title="Rechnungsadresse"
+                    title={t('profile.billing.title')}
                     onSave={onSaveBilling}
                     onCancel={onCancelBilling}
                 >
                     {/* Billing-specific company fields */}
                     <div className="grid gap-4 md:grid-cols-2">
                         <InputField
-                            label="Firma (optional)"
+                            label={t('profile.billing.company.label')}
                             value={billing.billingCompany}
                             onChange={(value) => updateBilling('billingCompany', value)}
                             error={billingErrors.company_name}
                         />
 
                         <InputField
-                            label="UID-Nummer (optional)"
+                            label={t('profile.billing.vatNumber.label')}
                             value={billing.billingVatNumber}
                             onChange={(value) => updateBilling('billingVatNumber', value)}
-                            placeholder="ATU12345678"
+                            placeholder={t('profile.billing.vatNumber.placeholder')}
                             error={billingErrors.vat_nr}
                         />
                     </div>
@@ -119,7 +125,7 @@ export function AddressSection({
                     {/* Reusable address fields for the billing address */}
                     <AddressFields
                         data={billing}
-                        onChange={(field, value) => updateBilling(field, value)}
+                        onChange={(field, value) => updateBilling(field, value as any)}
                         idPrefix="billing"
                         errors={billingErrors}
                     />

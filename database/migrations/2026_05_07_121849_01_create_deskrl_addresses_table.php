@@ -7,20 +7,18 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Create the Deskrl addresses table to link each Deskrl to one address.
      */
     public function up(): void
     {
         Schema::create('deskrl_addresses', function (Blueprint $table) {
             $table->id();
 
-            // Each Deskrl can have only one address link.
             $table->foreignId('deskrl_id')
                 ->unique()
                 ->constrained('deskrls')
                 ->cascadeOnDelete();
 
-            // The same address can be reused by multiple Deskrls.
             $table->foreignId('address_id')
                 ->constrained('addresses')
                 ->restrictOnDelete();
@@ -30,7 +28,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Drop the Deskrl addresses table.
      */
     public function down(): void
     {

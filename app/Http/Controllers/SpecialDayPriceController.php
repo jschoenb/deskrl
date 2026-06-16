@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SpecialDayPrice;
 use App\Models\Deskrl;
+use App\Models\SpecialDayPrice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -11,8 +11,7 @@ use Inertia\Inertia;
 class SpecialDayPriceController extends Controller
 {
     /**
-     * Alle Sonderpreise eines bestimmten Deskrls anzeigen.
-     * GET /deskrls/{deskrl}/special-prices
+     * Shows all special day prices for the given Deskrl.
      */
     public function index(Deskrl $deskrl)
     {
@@ -30,22 +29,21 @@ class SpecialDayPriceController extends Controller
     }
 
     /**
-     * Neuen Sonderpreis für ein Datum speichern.
-     * POST /deskrls/{deskrl}/special-prices
+     * Stores or updates one special day price for the given Deskrl and date.
      */
     public function store(Request $request, Deskrl $deskrl)
     {
         $this->authorizeHost($deskrl);
 
         $validated = $request->validate([
-            'date'                  => ['required', 'date', 'after_or_equal:today'],
+            'date' => ['required', 'date', 'after_or_equal:today'],
             'special_price_per_day' => ['required', 'numeric', 'min:0'],
         ]);
 
         SpecialDayPrice::updateOrCreate(
             [
                 'deskrl_id' => $deskrl->id,
-                'date'      => $validated['date'],
+                'date' => $validated['date'],
             ],
             [
                 'special_price_per_day' => $validated['special_price_per_day'],
@@ -56,8 +54,7 @@ class SpecialDayPriceController extends Controller
     }
 
     /**
-     * Bestehenden Sonderpreis ändern.
-     * PUT /deskrls/{deskrl}/special-prices/{specialDayPrice}
+     * Updates an existing special day price for the given Deskrl.
      */
     public function update(Request $request, Deskrl $deskrl, SpecialDayPrice $specialDayPrice)
     {
@@ -65,7 +62,7 @@ class SpecialDayPriceController extends Controller
         $this->ensureBelongsToDeskrl($specialDayPrice, $deskrl);
 
         $validated = $request->validate([
-            'date'                  => ['required', 'date'],
+            'date' => ['required', 'date'],
             'special_price_per_day' => ['required', 'numeric', 'min:0'],
         ]);
 
@@ -75,8 +72,7 @@ class SpecialDayPriceController extends Controller
     }
 
     /**
-     * Sonderpreis löschen.
-     * DELETE /deskrls/{deskrl}/special-prices/{specialDayPrice}
+     * Deletes a special day price from the given Deskrl.
      */
     public function destroy(Deskrl $deskrl, SpecialDayPrice $specialDayPrice)
     {
@@ -88,8 +84,9 @@ class SpecialDayPriceController extends Controller
         return redirect()->back();
     }
 
-    // ---------- Hilfsmethoden ----------
-
+    /**
+     * Ensures that the currently logged-in account owns the given Deskrl.
+     */
     private function authorizeHost(Deskrl $deskrl): void
     {
         if ($deskrl->host_account_id !== Auth::id()) {
@@ -97,6 +94,9 @@ class SpecialDayPriceController extends Controller
         }
     }
 
+    /**
+     * Ensures that the special day price belongs to the given Deskrl.
+     */
     private function ensureBelongsToDeskrl(SpecialDayPrice $price, Deskrl $deskrl): void
     {
         if ($price->deskrl_id !== $deskrl->id) {
