@@ -23,7 +23,7 @@ class BookingController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('Bookings/Index', [
+        return Inertia::render('Bookings', [
             'bookings' => $bookings,
         ]);
     }
