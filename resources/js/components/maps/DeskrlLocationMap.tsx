@@ -1,4 +1,4 @@
-import { APIProvider, Map } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import { useIntl } from 'react-intl';
 
 type Props = {
@@ -70,7 +70,15 @@ export default function DeskrlLocationMap({ latitude, longitude }: Props) {
                     gestureHandling="greedy"
                     disableDefaultUI={false}
                     style={{ width: '100%', height: '100%' }}
-                />
+                >
+                    <Marker
+                        position={{
+                            lat: parsedLatitude,
+                            lng: parsedLongitude,
+                        }}
+                        title="Standort des Deskrls"
+                    />
+                </Map>
             </div>
         </APIProvider>
     );
