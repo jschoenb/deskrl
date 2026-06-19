@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-/*jksdhfa*/
 class Utility extends Model
 {
     protected $fillable = [
@@ -18,7 +18,7 @@ class Utility extends Model
     ];
 
     /**
-     * Eine Utility gehört zu einer Utility-Kategorie.
+     * A utility belongs to one utility category.
      */
     public function utilityCategory(): BelongsTo
     {
@@ -26,8 +26,7 @@ class Utility extends Model
     }
 
     /**
-     * Eine Utility kann mehreren Deskrls zugeordnet werden.
-     * Pivot-Tabelle: deskrl_utility
+     * A utility can belong to multiple Deskrls through the pivot table.
      */
     public function deskrls(): BelongsToMany
     {

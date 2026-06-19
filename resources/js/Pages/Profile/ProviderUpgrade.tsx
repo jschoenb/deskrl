@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import { useIntl } from 'react-intl';
 import type { AccountType } from '@/types/profile';
 
 interface ProviderUpgradeProps {
@@ -7,6 +8,11 @@ interface ProviderUpgradeProps {
 }
 
 export function ProviderUpgrade({ role, onUpgradeClick }: ProviderUpgradeProps) {
+    const intl = useIntl();
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
+
     // Show this upgrade box only for regular user accounts.
     if (role !== 'user') {
         return null;
@@ -25,12 +31,11 @@ export function ProviderUpgrade({ role, onUpgradeClick }: ProviderUpgradeProps) 
 
                 <div className="flex-1">
                     <h2 className="mb-3 text-xl font-bold sm:text-2xl">
-                        Werde Anbieter:in auf Deskrl
+                        {t('profile.providerUpgrade.title')}
                     </h2>
 
                     <p className="mb-6 leading-relaxed opacity-95">
-                        Vermiete deinen Schreibtisch, dein Büro oder deinen Meetingraum –
-                        und verdiene nebenbei Geld.
+                        {t('profile.providerUpgrade.description')}
                     </p>
 
                     {/* Open the same provider upgrade modal as the header button. */}
@@ -39,7 +44,7 @@ export function ProviderUpgrade({ role, onUpgradeClick }: ProviderUpgradeProps) 
                         onClick={onUpgradeClick}
                         className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3 font-bold text-[#e63cff] shadow-lg transition-colors hover:bg-gray-50"
                     >
-                        Raum anbieten
+                        {t('profile.providerUpgrade.button')}
                         <ArrowRight className="h-5 w-5" aria-hidden="true" />
                     </button>
                 </div>

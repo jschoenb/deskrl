@@ -1,7 +1,5 @@
-// Reusable profile section wrapper.
-// It provides consistent spacing, semantic region markup and shared action buttons.
-
-import {ReactNode, useId} from 'react';
+import { ReactNode, useId } from 'react';
+import { useIntl } from 'react-intl';
 
 interface SectionProps {
     title: string;
@@ -18,8 +16,13 @@ export function Section({
                             onCancel,
                             isLoading = false,
                         }: SectionProps) {
+    const intl = useIntl();
+
     // Generate a stable heading ID for aria-labelledby.
     const headingId = useId();
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
 
     return (
         <div
@@ -45,7 +48,7 @@ export function Section({
                         aria-busy={isLoading}
                         className="rounded-xl bg-[#5555ff] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#4444ee] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        {isLoading ? 'Wird gespeichert…' : 'Änderungen speichern'}
+                        {isLoading ? t('common.saving') : t('common.saveChanges')}
                     </button>
 
                     <button
@@ -54,7 +57,7 @@ export function Section({
                         disabled={isLoading}
                         className="rounded-xl bg-gray-100 px-6 py-3 font-semibold text-gray-900 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        Abbrechen
+                        {t('common.cancel')}
                     </button>
                 </div>
             </div>

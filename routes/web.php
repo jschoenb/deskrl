@@ -149,7 +149,7 @@ Route::get('/favorites', [FavoriteController::class, 'index'])
 // =========================================================
 // Static pages
 // =========================================================
-Route::get('/bookings', fn () => Inertia::render('Bookings'));
+//Route::get('/bookings', fn () => Inertia::render('Bookings'));
 
 Route::get('/faq-user', fn () => Inertia::render('FaqUser'));
 Route::get('/cancellation', fn () => Inertia::render('Cancellation'));

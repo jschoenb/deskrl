@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 class AccountLanguageSeeder extends Seeder
 {
+    /**
+     * Seed language assignments for existing accounts.
+     */
     public function run(): void
     {
         $accounts = Account::query()->get();

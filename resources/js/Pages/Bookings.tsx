@@ -1,25 +1,43 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { InertiaPage } from '@/types/inertia';
 import AuthModal from '@/components/AuthModal';
+import BookingList, { Booking } from '@/components/BookingList';
 import { Calendar } from 'lucide-react';
 import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
+type PageProps = {
+    auth?: {
+        user?: {
+            id: number;
+            first_name?: string;
+            last_name?: string;
+            email?: string;
+        } | null;
+    };
+    bookings?: Booking[];
+};
+
 const Bookings: InertiaPage = () => {
-    const { props } = usePage();
-    const { auth } = props as any;
+    const { props } = usePage<PageProps>();
+
+    const auth = props.auth;
+    const bookings = props.bookings ?? [];
 
     const isLoggedIn = Boolean(auth?.user);
     const [showAuthModal, setShowAuthModal] = useState(false);
 
-    // Guests see a centered login hint instead of booking content.
+    // Temporary debug:
+    // Open the browser console and check whether bookings arrive from Laravel.
+    console.log('Bookings page props:', props);
+    console.log('Bookings:', bookings);
+
     if (!isLoggedIn) {
         return (
             <>
                 <div className="flex min-h-[70vh] items-center justify-center bg-white px-4">
                     <div className="max-w-md text-center">
-                        {/* Decorative icon circle */}
                         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#f5f5ff]">
                             <Calendar className="h-10 w-10 text-[#5555ff]" />
                         </div>
@@ -42,7 +60,6 @@ const Bookings: InertiaPage = () => {
                     </div>
                 </div>
 
-                {/* Auth modal for login and registration */}
                 <AuthModal
                     isOpen={showAuthModal}
                     onClose={() => setShowAuthModal(false)}
@@ -52,10 +69,8 @@ const Bookings: InertiaPage = () => {
         );
     }
 
-    // Logged-in users see the booking page placeholder for now.
     return (
         <>
-            {/* Full-width page header, matching the favorites page style */}
             <div className="relative left-1/2 right-1/2 mb-8 w-screen -ml-[50vw] -mr-[50vw] bg-gradient-to-br from-[#5555ff] via-[#7575ff] to-[#e63cff] px-4 py-16 text-white">
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-4 flex items-center gap-3">
@@ -67,27 +82,13 @@ const Bookings: InertiaPage = () => {
                     </div>
 
                     <p className="text-lg text-white/90">
-                        Hier findest du später deine aktuellen und vergangenen Buchungen.
+                        Hier findest du deine aktuellen, angefragten und vergangenen Buchungen.
                     </p>
                 </div>
             </div>
 
-            {/* Empty booking state */}
             <div className="mx-auto max-w-7xl px-4 pb-12 md:px-8">
-                <div className="py-16 text-center">
-                    {/* Decorative empty-state icon */}
-                    <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
-                        <Calendar className="h-12 w-12 text-gray-400" />
-                    </div>
-
-                    <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                        Noch keine Buchungen
-                    </h2>
-
-                    <p className="text-gray-600">
-                        Sobald du einen Raum buchst, erscheint deine Buchung hier.
-                    </p>
-                </div>
+                <BookingList bookings={bookings} />
             </div>
         </>
     );

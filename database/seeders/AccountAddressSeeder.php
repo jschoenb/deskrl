@@ -9,6 +9,9 @@ use Illuminate\Database\Seeder;
 
 class AccountAddressSeeder extends Seeder
 {
+    /**
+     * Seed private and billing address relations for existing accounts.
+     */
     public function run(): void
     {
         $accounts = Account::query()->get();
@@ -25,23 +28,17 @@ class AccountAddressSeeder extends Seeder
         }
 
         foreach ($accounts as $index => $account) {
-            // Select one address as the private/default address.
             $privateAddress = $addresses[$index % $addresses->count()];
-
-            // Select a different address as the billing address.
             $billingAddress = $addresses[($index + 1) % $addresses->count()];
 
-            // Safety check: private and billing address must not be the same.
             if ($privateAddress->id === $billingAddress->id) {
                 $billingAddress = $addresses[($index + 2) % $addresses->count()];
             }
 
-            // Remove old address links for this account before creating clean seed data.
             AccountAddress::query()
                 ->where('account_id', $account->id)
                 ->delete();
 
-            // Create the private/default address relation.
             AccountAddress::query()->create([
                 'account_id' => $account->id,
                 'address_id' => $privateAddress->id,
@@ -51,7 +48,6 @@ class AccountAddressSeeder extends Seeder
                 'is_billing_address' => false,
             ]);
 
-            // Create the separate billing address relation.
             AccountAddress::query()->create([
                 'account_id' => $account->id,
                 'address_id' => $billingAddress->id,

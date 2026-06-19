@@ -97,7 +97,7 @@ class Deskrl extends Model
     }
 
     /**
-     * A Deskrl is linked to one address through the deskrl_addresses table.
+     * A Deskrl is linked to one address.
      */
     public function deskrlAddress(): HasOne
     {
@@ -105,10 +105,7 @@ class Deskrl extends Model
     }
 
     /**
-     * A Deskrl can have multiple utilities.
-     * This many-to-many relationship uses the deskrl_utility pivot table.
-     * The pivot table stores the connection between a Deskrl and a Utility,
-     * including optional extra data such as quantity.
+     * A Deskrl can have multiple utilities through the pivot table.
      */
     public function utilities(): BelongsToMany
     {

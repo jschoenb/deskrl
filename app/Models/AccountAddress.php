@@ -23,11 +23,17 @@ class AccountAddress extends Model
         'is_billing_address' => 'boolean',
     ];
 
+    /**
+     * An account-address record belongs to one account.
+     */
     public function account()
     {
         return $this->belongsTo(Account::class);
     }
 
+    /**
+     * An account-address record belongs to one address.
+     */
     public function address()
     {
         return $this->belongsTo(Address::class);

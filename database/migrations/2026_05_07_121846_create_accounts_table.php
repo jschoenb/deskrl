@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Create the accounts table with login, profile, role and status fields.
      */
     public function up(): void
     {
@@ -33,7 +33,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Drop the accounts table.
      */
     public function down(): void
     {

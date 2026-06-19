@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.kjasdf
+     * Create the account addresses table with account, address and billing address data.
      */
     public function up(): void
     {
@@ -26,7 +26,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Drop the account addresses table.
      */
     public function down(): void
     {

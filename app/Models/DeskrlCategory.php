@@ -19,6 +19,9 @@ class DeskrlCategory extends Model
         'activated' => 'boolean',
     ];
 
+    /**
+     * A Deskrl category can have multiple Deskrls.
+     */
     public function deskrls(): HasMany
     {
         return $this->hasMany(Deskrl::class, 'deskrl_category_id');

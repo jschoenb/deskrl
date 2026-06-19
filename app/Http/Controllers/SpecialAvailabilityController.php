@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SpecialAvailability;
 use App\Models\Deskrl;
+use App\Models\SpecialAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -11,12 +11,7 @@ use Inertia\Inertia;
 class SpecialAvailabilityController extends Controller
 {
     /**
-     * Alle Sonderzeiten eines Deskrls anzeigen.
-     * GET /deskrls/{deskrl}/special-availability
-     *
-     * Euer Model-Felder: exception_date, start_time, end_time.
-     * "Geschlossen an einem Tag" wird abgebildet, indem start_time
-     * und end_time leer (null) sind = an dem Tag keine Buchung möglich.
+     * Shows all special availability entries for the given Deskrl.
      */
     public function index(Deskrl $deskrl)
     {
@@ -28,14 +23,13 @@ class SpecialAvailabilityController extends Controller
             ->get();
 
         return Inertia::render('Deskrl/SpecialAvailability/Index', [
-            'deskrl'      => $deskrl,
+            'deskrl' => $deskrl,
             'specialDays' => $specialDays,
         ]);
     }
 
     /**
-     * Sonderzeit für ein bestimmtes Datum speichern.
-     * POST /deskrls/{deskrl}/special-availability
+     * Stores or updates one special availability entry for the given Deskrl and date.
      */
     public function store(Request $request, Deskrl $deskrl)
     {
@@ -43,21 +37,18 @@ class SpecialAvailabilityController extends Controller
 
         $validated = $request->validate([
             'exception_date' => ['required', 'date', 'after_or_equal:today'],
-            // Beide null = an diesem Tag geschlossen.
-            // Beide gesetzt = abweichende Öffnungszeit.
-            'start_time'     => ['nullable', 'date_format:H:i'],
-            'end_time'       => ['nullable', 'date_format:H:i', 'after:start_time'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'],
         ]);
 
-        // Pro Deskrl + Datum nur EIN Eintrag → updateOrCreate
         SpecialAvailability::updateOrCreate(
             [
-                'deskrl_id'      => $deskrl->id,
+                'deskrl_id' => $deskrl->id,
                 'exception_date' => $validated['exception_date'],
             ],
             [
                 'start_time' => $validated['start_time'] ?? null,
-                'end_time'   => $validated['end_time'] ?? null,
+                'end_time' => $validated['end_time'] ?? null,
             ]
         );
 
@@ -65,8 +56,7 @@ class SpecialAvailabilityController extends Controller
     }
 
     /**
-     * Sonderzeit ändern.
-     * PUT /deskrls/{deskrl}/special-availability/{specialAvailability}
+     * Updates an existing special availability entry for the given Deskrl.
      */
     public function update(Request $request, Deskrl $deskrl, SpecialAvailability $specialAvailability)
     {
@@ -75,8 +65,8 @@ class SpecialAvailabilityController extends Controller
 
         $validated = $request->validate([
             'exception_date' => ['required', 'date'],
-            'start_time'     => ['nullable', 'date_format:H:i'],
-            'end_time'       => ['nullable', 'date_format:H:i', 'after:start_time'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'],
         ]);
 
         $specialAvailability->update($validated);
@@ -85,8 +75,7 @@ class SpecialAvailabilityController extends Controller
     }
 
     /**
-     * Sonderzeit löschen (Deskrl fällt auf reguläre Wochenverfügbarkeit zurück).
-     * DELETE /deskrls/{deskrl}/special-availability/{specialAvailability}
+     * Deletes a special availability entry so the Deskrl falls back to regular availability.
      */
     public function destroy(Deskrl $deskrl, SpecialAvailability $specialAvailability)
     {
@@ -98,8 +87,9 @@ class SpecialAvailabilityController extends Controller
         return redirect()->back();
     }
 
-    // ---------- Hilfsmethoden ----------
-
+    /**
+     * Ensures that the currently logged-in account owns the given Deskrl.
+     */
     private function authorizeHost(Deskrl $deskrl): void
     {
         if ($deskrl->host_account_id !== Auth::id()) {
@@ -107,6 +97,9 @@ class SpecialAvailabilityController extends Controller
         }
     }
 
+    /**
+     * Ensures that the special availability entry belongs to the given Deskrl.
+     */
     private function ensureBelongsToDeskrl(SpecialAvailability $entry, Deskrl $deskrl): void
     {
         if ($entry->deskrl_id !== $deskrl->id) {
@@ -114,4 +107,3 @@ class SpecialAvailabilityController extends Controller
         }
     }
 }
-

@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Change the booking date fields from dates to date-time values.
+     */
     public function up(): void
     {
         Schema::table('bookings', function (Blueprint $table) {
@@ -14,6 +17,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Change the booking date-time fields back to dates.
+     */
     public function down(): void
     {
         Schema::table('bookings', function (Blueprint $table) {

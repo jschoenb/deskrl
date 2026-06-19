@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Create the availabilities table with regular weekday time slots for Deskrls.
+     */
     public function up(): void
     {
         Schema::create('availabilities', function (Blueprint $table) {
@@ -18,6 +21,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Drop the availabilities table.
+     */
     public function down(): void
     {
         Schema::dropIfExists('availabilities');

@@ -2,6 +2,7 @@ import { Section } from './Section';
 import { InputField } from './InputField';
 import { LanguageSelect } from './LanguageSelect';
 import type { PersonalFormData } from '@/types/profile';
+import { useIntl } from 'react-intl';
 
 interface PersonalInformationSectionProps {
     personal: PersonalFormData;
@@ -23,15 +24,20 @@ export function PersonalInformationSection({
                                                onSave,
                                                onCancel,
                                            }: PersonalInformationSectionProps) {
+    const intl = useIntl();
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
+
     return (
         <Section
-            title={isCommercialHost ? 'Kontaktperson' : 'Persönliche Informationen'}
+            title={isCommercialHost ? t('profile.personal.contactTitle') : t('profile.personal.title')}
             onSave={onSave}
             onCancel={onCancel}
         >
             <div className="grid gap-4 md:grid-cols-2">
                 <InputField
-                    label="Vorname"
+                    label={t('profile.personal.firstName.label')}
                     value={personal.firstName}
                     onChange={(value) => updatePersonal('firstName', value)}
                     error={personalErrors.first_name}
@@ -39,7 +45,7 @@ export function PersonalInformationSection({
                 />
 
                 <InputField
-                    label="Nachname"
+                    label={t('profile.personal.lastName.label')}
                     value={personal.lastName}
                     onChange={(value) => updatePersonal('lastName', value)}
                     error={personalErrors.last_name}
@@ -47,7 +53,7 @@ export function PersonalInformationSection({
                 />
 
                 <InputField
-                    label="E-Mail"
+                    label={t('profile.personal.email.label')}
                     type="email"
                     value={personal.email}
                     onChange={(value) => updatePersonal('email', value)}
@@ -56,7 +62,7 @@ export function PersonalInformationSection({
                 />
 
                 <InputField
-                    label="Geburtsdatum"
+                    label={t('profile.personal.birthdate.label')}
                     type="date"
                     value={personal.dateOfBirth}
                     onChange={(value) => updatePersonal('dateOfBirth', value)}
@@ -64,28 +70,28 @@ export function PersonalInformationSection({
                 />
 
                 <InputField
-                    label="Telefon"
+                    label={t('profile.personal.phone.label')}
                     type="tel"
                     value={personal.phone}
                     onChange={(value) => updatePersonal('phone', value)}
-                    placeholder="+43 699 12345678"
+                    placeholder={t('profile.personal.phone.placeholder')}
                     error={personalErrors.phone}
                 />
 
                 {!isCommercialHost && (
                     <>
                         <InputField
-                            label="Beruf"
+                            label={t('profile.personal.profession.label')}
                             value={personal.profession}
                             onChange={(value) => updatePersonal('profession', value)}
-                            placeholder="z. B. Software-Entwickler:in"
+                            placeholder={t('profile.personal.profession.placeholder')}
                         />
 
                         <InputField
-                            label="Firma"
+                            label={t('profile.personal.company.label')}
                             value={personal.company}
                             onChange={(value) => updatePersonal('company', value)}
-                            placeholder="z. B. Muster GmbH"
+                            placeholder={t('profile.personal.company.placeholder')}
                         />
                     </>
                 )}
@@ -98,9 +104,10 @@ export function PersonalInformationSection({
                         onChange={(languages) => updatePersonal('languages', languages)}
                     />
 
+                    {/* Personal description field */}
                     <div className="space-y-2">
                         <label htmlFor="about-me" className="text-sm font-semibold text-gray-600">
-                            Über mich
+                            {t('profile.personal.aboutMe.label')}
                         </label>
 
                         <textarea
@@ -108,7 +115,7 @@ export function PersonalInformationSection({
                             value={personal.aboutMe}
                             onChange={(event) => updatePersonal('aboutMe', event.target.value)}
                             rows={4}
-                            placeholder="Erzähl anderen, wer du bist…"
+                            placeholder={t('profile.personal.aboutMe.placeholder')}
                             className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
                         />
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {createContext, useContext, useEffect, useState, type ReactNode} from 'react';
 import axios from 'axios';
 
 axios.defaults.withCredentials = true;
@@ -13,9 +13,11 @@ interface FavoritesContextType {
 
 const FavoritesContext = createContext<FavoritesContextType>({
     favorites: [],
-    toggleFavorite: async () => {},
+    toggleFavorite: async () => {
+    },
     isFavorited: () => false,
-    clearFavorites: () => {},
+    clearFavorites: () => {
+    },
 });
 
 interface FavoritesProviderProps {
@@ -23,7 +25,7 @@ interface FavoritesProviderProps {
     isLoggedIn: boolean;
 }
 
-export function FavoritesProvider({ children, isLoggedIn }: FavoritesProviderProps) {
+export function FavoritesProvider({children, isLoggedIn}: FavoritesProviderProps) {
     const [favorites, setFavorites] = useState<number[]>([]);
 
     useEffect(() => {
@@ -62,7 +64,7 @@ export function FavoritesProvider({ children, isLoggedIn }: FavoritesProviderPro
             setFavorites((previousFavorites) =>
                 previousFavorites.includes(deskrlId)
                     ? previousFavorites.filter((id) => id !== deskrlId)
-                    : [...previousFavorites, deskrlId]
+                    : [...previousFavorites, deskrlId],
             );
 
             return;
@@ -73,7 +75,7 @@ export function FavoritesProvider({ children, isLoggedIn }: FavoritesProviderPro
             await axios.delete(`/deskrls/${deskrlId}/favorite`);
 
             setFavorites((previousFavorites) =>
-                previousFavorites.filter((id) => id !== deskrlId)
+                previousFavorites.filter((id) => id !== deskrlId),
             );
 
             return;

@@ -1,9 +1,15 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { InertiaPage } from '@/types/inertia';
 import { Building2 } from 'lucide-react';
+import { useIntl } from 'react-intl';
 import type { ReactNode } from 'react';
 
 const ProviderDashboard: InertiaPage = () => {
+    const intl = useIntl();
+
+    // Returns the translated text for the given translation key.
+    const t = (id: string) => intl.formatMessage({ id });
+
     return (
         <>
             {/* Full-width provider dashboard header */}
@@ -13,12 +19,12 @@ const ProviderDashboard: InertiaPage = () => {
                         <Building2 className="h-8 w-8 text-white" />
 
                         <h1 className="text-4xl font-extrabold md:text-5xl">
-                            Anbieter:innen Dashboard
+                            {t('providerDashboard.title')}
                         </h1>
                     </div>
 
                     <p className="text-lg text-white/90">
-                        Verwalte deine Räume und überwache deine Einnahmen.
+                        {t('providerDashboard.description')}
                     </p>
                 </div>
             </div>
@@ -32,11 +38,11 @@ const ProviderDashboard: InertiaPage = () => {
                     </div>
 
                     <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                        Noch keine Räume angelegt
+                        {t('providerDashboard.emptyTitle')}
                     </h2>
 
                     <p className="text-gray-600">
-                        Hier werden später deine angebotenen Räume und Einnahmen angezeigt.
+                        {t('providerDashboard.emptyDescription')}
                     </p>
                 </div>
             </div>

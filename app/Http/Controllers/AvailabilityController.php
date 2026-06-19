@@ -9,10 +9,11 @@ use Inertia\Inertia;
 
 class AvailabilityController extends Controller
 {
+    /**
+     * Shows all regular weekly availabilities for the given Deskrl.
+     */
     public function index(Deskrl $deskrl)
     {
-        // Load all regular weekly availabilities for the given Deskrl.
-        // The custom order keeps the weekdays in a natural Monday-to-Sunday order.
         return Inertia::render('Deskrl/Availabilities/Index', [
             'deskrl' => $deskrl,
             'availabilities' => $deskrl->availabilities()
@@ -29,16 +30,17 @@ class AvailabilityController extends Controller
         ]);
     }
 
+    /**
+     * Stores or updates one weekly availability entry for the given Deskrl.
+     */
     public function store(Request $request, Deskrl $deskrl)
     {
-        // Validate one weekday availability entry.
         $validated = $request->validate([
             'weekday' => ['required', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
         ]);
 
-        // Create a new availability or update the existing one for this Deskrl and weekday.
         Availability::query()->updateOrCreate(
             [
                 'deskrl_id' => $deskrl->id,
@@ -53,29 +55,31 @@ class AvailabilityController extends Controller
         return redirect()->back()->with('success', 'Availability was saved successfully.');
     }
 
+    /**
+     * Updates one existing weekly availability entry of the given Deskrl.
+     */
     public function update(Request $request, Deskrl $deskrl, Availability $availability)
     {
-        // Make sure the availability belongs to the given Deskrl.
         if ($availability->deskrl_id !== $deskrl->id) {
             abort(404);
         }
 
-        // Validate the updated availability data.
         $validated = $request->validate([
             'weekday' => ['required', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
         ]);
 
-        // Update the selected availability entry.
         $availability->update($validated);
 
         return redirect()->back()->with('success', 'Availability was updated successfully.');
     }
 
+    /**
+     * Synchronizes multiple weekly availability entries for the given Deskrl.
+     */
     public function sync(Request $request, Deskrl $deskrl)
     {
-        // Validate multiple weekday availability entries at once.
         $validated = $request->validate([
             'availabilities' => ['required', 'array'],
             'availabilities.*.weekday' => ['required', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
@@ -83,9 +87,7 @@ class AvailabilityController extends Controller
             'availabilities.*.end_time' => ['required', 'date_format:H:i'],
         ]);
 
-        // Create or update one availability entry per submitted weekday.
         foreach ($validated['availabilities'] as $availability) {
-            // Validate the time range manually because nested "after" validation is harder to read here.
             if ($availability['end_time'] <= $availability['start_time']) {
                 return redirect()
                     ->back()
