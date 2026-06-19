@@ -38,7 +38,7 @@ class BookingSeeder extends Seeder
             [
                 'from' => '2026-06-15',
                 'until' => '2026-06-15',
-                'price_rate' => 'daily',
+                'price_rate' => 'day',
                 'price' => 100.00,
                 'status' => 'confirmed',
                 'payment_status' => 'paid',
@@ -55,7 +55,7 @@ class BookingSeeder extends Seeder
             [
                 'from' => '2026-07-01',
                 'until' => '2026-07-01',
-                'price_rate' => 'daily',
+                'price_rate' => 'day',
                 'price' => 75.00,
                 'status' => 'pending',
                 'payment_status' => 'unpaid',

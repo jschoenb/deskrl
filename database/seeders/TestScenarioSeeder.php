@@ -84,9 +84,11 @@ class TestScenarioSeeder extends Seeder
                 'postal_code' => '4240',
             ],
             [
-                'state' => null,
+                'state' => 'Oberösterreich',
                 'stair' => null,
                 'door' => null,
+                'latitude' => 48.5110000,
+                'longitude' => 14.5045000,
             ]
         );
 
@@ -217,9 +219,11 @@ class TestScenarioSeeder extends Seeder
                 'postal_code' => '4232',
             ],
             [
-                'state' => null,
+                'state' => 'Oberösterreich',
                 'stair' => null,
                 'door' => null,
+                'latitude' => 48.3696000,
+                'longitude' => 14.5128000,
             ]
         );
 

@@ -28,11 +28,6 @@ const Bookings: InertiaPage = () => {
     const isLoggedIn = Boolean(auth?.user);
     const [showAuthModal, setShowAuthModal] = useState(false);
 
-    // Temporary debug:
-    // Open the browser console and check whether bookings arrive from Laravel.
-    console.log('Bookings page props:', props);
-    console.log('Bookings:', bookings);
-
     if (!isLoggedIn) {
         return (
             <>

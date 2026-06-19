@@ -11,6 +11,7 @@ import {
     X,
     XCircle,
 } from 'lucide-react';
+import { useIntl } from 'react-intl';
 import { toast } from 'sonner';
 
 type LocalizedText =
@@ -108,14 +109,18 @@ type BookingListProps = {
 
 type InertiaErrors = Record<string, string | string[] | undefined>;
 
-function getLocalizedText(value?: LocalizedText): string {
+type TranslationFunction = (id: string, values?: Record<string, string | number>) => string;
+
+function getLocalizedText(value: LocalizedText | undefined, locale: string): string {
     if (!value) return '';
 
     if (typeof value === 'string') {
         return value;
     }
 
-    return value.de || value.en || Object.values(value).find(Boolean) || '';
+    const shortLocale = locale.split('-')[0];
+
+    return value[locale] || value[shortLocale] || value.de || value.en || Object.values(value).find(Boolean) || '';
 }
 
 function getImageUrl(path?: string): string | null {
@@ -142,34 +147,34 @@ function parsePrice(value?: number | string | null): number | null {
     return Number.isFinite(numericValue) ? numericValue : null;
 }
 
-function formatPrice(value: number | null): string {
+function formatPrice(value: number | null, locale: string): string {
     if (value === null) {
         return '—';
     }
 
-    return value.toLocaleString('de-DE', {
+    return value.toLocaleString(locale, {
         minimumFractionDigits: value % 1 === 0 ? 0 : 2,
         maximumFractionDigits: 2,
     });
 }
 
-function formatDate(date: Date): string {
-    return date.toLocaleDateString('de-DE', {
+function formatDate(date: Date, locale: string): string {
+    return date.toLocaleDateString(locale, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
     });
 }
 
-function formatTime(date: Date): string {
-    return date.toLocaleTimeString('de-DE', {
+function formatTime(date: Date, locale: string): string {
+    return date.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
     });
 }
 
-function formatAddress(address?: DeskrlAddress): string {
-    if (!address) return 'Adresse noch nicht verfügbar';
+function formatAddress(address: DeskrlAddress | undefined, fallback: string): string {
+    if (!address) return fallback;
 
     const resolvedAddress = address.address ?? address;
 
@@ -182,15 +187,15 @@ function formatAddress(address?: DeskrlAddress): string {
             : resolvedAddress.city,
     ]
         .filter(Boolean)
-        .join(', ') || 'Adresse noch nicht verfügbar';
+        .join(', ') || fallback;
 }
 
-function getCity(address?: DeskrlAddress): string {
-    if (!address) return 'Ort noch nicht verfügbar';
+function getCity(address: DeskrlAddress | undefined, fallback: string): string {
+    if (!address) return fallback;
 
     const resolvedAddress = address.address ?? address;
 
-    return resolvedAddress.city || 'Ort noch nicht verfügbar';
+    return resolvedAddress.city || fallback;
 }
 
 function getMainImage(deskrl?: Deskrl | null): string | null {
@@ -225,26 +230,26 @@ function getDisplayStatus(booking: Booking): DisplayStatus {
     return 'confirmed';
 }
 
-function getPriceRateLabel(priceRate?: BookingPriceRate | null): string {
+function getPriceRateLabelKey(priceRate?: BookingPriceRate | null): string {
     const labels: Record<BookingPriceRate, string> = {
-        hour: 'Stunde',
-        half_day: 'Halbtag',
-        day: 'Tag',
-        week: 'Woche',
-        month: 'Monat',
-        hourly: 'Stunde',
-        daily: 'Tag',
-        weekly: 'Woche',
-        monthly: 'Monat',
+        hour: 'bookingList.priceRate.hour',
+        half_day: 'bookingList.priceRate.halfDay',
+        day: 'bookingList.priceRate.day',
+        week: 'bookingList.priceRate.week',
+        month: 'bookingList.priceRate.month',
+        hourly: 'bookingList.priceRate.hour',
+        daily: 'bookingList.priceRate.day',
+        weekly: 'bookingList.priceRate.week',
+        monthly: 'bookingList.priceRate.month',
     };
 
-    return priceRate ? labels[priceRate] : 'Zeitraum';
+    return priceRate ? labels[priceRate] : 'bookingList.priceRate.period';
 }
 
 function getStatusMeta(status: DisplayStatus) {
     if (status === 'active') {
         return {
-            label: 'Aktiv',
+            labelKey: 'bookingList.status.active',
             Icon: CheckCircle,
             className: 'bg-green-100 text-green-800',
         };
@@ -252,7 +257,7 @@ function getStatusMeta(status: DisplayStatus) {
 
     if (status === 'confirmed') {
         return {
-            label: 'Bestätigt',
+            labelKey: 'bookingList.status.confirmed',
             Icon: CheckCircle,
             className: 'bg-blue-100 text-blue-800',
         };
@@ -260,7 +265,7 @@ function getStatusMeta(status: DisplayStatus) {
 
     if (status === 'pending') {
         return {
-            label: 'Angefragt',
+            labelKey: 'bookingList.status.pending',
             Icon: AlertCircle,
             className: 'bg-yellow-100 text-yellow-800',
         };
@@ -268,14 +273,14 @@ function getStatusMeta(status: DisplayStatus) {
 
     if (status === 'past') {
         return {
-            label: 'Vergangen',
+            labelKey: 'bookingList.status.past',
             Icon: CheckCircle,
             className: 'bg-gray-100 text-gray-700',
         };
     }
 
     return {
-        label: 'Storniert',
+        labelKey: 'bookingList.status.cancelled',
         Icon: XCircle,
         className: 'bg-red-100 text-red-800',
     };
@@ -321,7 +326,7 @@ function isInTimeRange(date: Date, timeFilter: TimeFilter, customFrom: string, c
     return true;
 }
 
-function getFirstErrorMessage(errors: InertiaErrors): string {
+function getFirstErrorMessage(errors: InertiaErrors, fallback: string): string {
     const preferredErrorKeys = ['booking', 'status', 'from', 'until', 'price_rate'];
 
     for (const key of preferredErrorKeys) {
@@ -346,10 +351,10 @@ function getFirstErrorMessage(errors: InertiaErrors): string {
         return firstError;
     }
 
-    return 'Die Aktion konnte nicht ausgeführt werden.';
+    return fallback;
 }
 
-function normalizeBooking(booking: Booking): NormalizedBooking {
+function normalizeBooking(booking: Booking, locale: string, t: TranslationFunction): NormalizedBooking {
     const deskrl = booking.deskrl;
     const address = deskrl?.deskrl_address ?? deskrl?.deskrlAddress;
     const from = parseDateTime(booking.from);
@@ -358,10 +363,10 @@ function normalizeBooking(booking: Booking): NormalizedBooking {
     return {
         id: booking.id,
         deskrlId: booking.deskrl_id,
-        deskrlTitle: getLocalizedText(deskrl?.title) || 'Deskrl ohne Titel',
+        deskrlTitle: getLocalizedText(deskrl?.title, locale) || t('bookingList.fallback.untitledDeskrl'),
         imageUrl: getMainImage(deskrl),
-        city: getCity(address),
-        fullAddress: formatAddress(address),
+        city: getCity(address, t('bookingList.fallback.location')),
+        fullAddress: formatAddress(address, t('bookingList.fallback.address')),
         from,
         until,
         status: booking.status,
@@ -372,6 +377,8 @@ function normalizeBooking(booking: Booking): NormalizedBooking {
 }
 
 export default function BookingList({ bookings }: BookingListProps) {
+    const intl = useIntl();
+
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
     const [customFrom, setCustomFrom] = useState('');
@@ -380,6 +387,11 @@ export default function BookingList({ bookings }: BookingListProps) {
     const [cancellingBookingId, setCancellingBookingId] = useState<number | null>(null);
 
     const filterRef = useRef<HTMLDivElement>(null);
+
+    const locale = intl.locale || 'de-DE';
+
+    // Returns the translated text for the given translation key.
+    const t: TranslationFunction = (id, values) => intl.formatMessage({ id }, values);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -394,11 +406,11 @@ export default function BookingList({ bookings }: BookingListProps) {
     }, []);
 
     const normalizedBookings = useMemo<NormalizedBooking[]>(() => {
-        return bookings.map(normalizeBooking);
-    }, [bookings]);
+        return bookings.map((booking) => normalizeBooking(booking, locale, t));
+    }, [bookings, locale]);
 
     const filteredBookings = useMemo(() => {
-        return normalizedBookings.filter(booking => {
+        return normalizedBookings.filter((booking) => {
             const statusMatches = statusFilter === 'all' || booking.displayStatus === statusFilter;
             const timeMatches = isInTimeRange(booking.from, timeFilter, customFrom, customTo);
 
@@ -406,22 +418,22 @@ export default function BookingList({ bookings }: BookingListProps) {
         });
     }, [normalizedBookings, statusFilter, timeFilter, customFrom, customTo]);
 
-    const statusFilters: { key: StatusFilter; label: string }[] = [
-        { key: 'all', label: 'Alle' },
-        { key: 'active', label: 'Aktiv' },
-        { key: 'confirmed', label: 'Bestätigt' },
-        { key: 'pending', label: 'Angefragt' },
-        { key: 'past', label: 'Vergangen' },
-        { key: 'cancelled', label: 'Storniert' },
+    const statusFilters: { key: StatusFilter; labelKey: string }[] = [
+        { key: 'all', labelKey: 'bookingList.statusFilter.all' },
+        { key: 'active', labelKey: 'bookingList.status.active' },
+        { key: 'confirmed', labelKey: 'bookingList.status.confirmed' },
+        { key: 'pending', labelKey: 'bookingList.status.pending' },
+        { key: 'past', labelKey: 'bookingList.status.past' },
+        { key: 'cancelled', labelKey: 'bookingList.status.cancelled' },
     ];
 
-    const timeLabels: Record<TimeFilter, string> = {
-        all: 'Alle',
-        today: 'Heute',
-        'this-week': 'Diese Woche',
-        'this-month': 'Diesen Monat',
-        'this-year': 'Dieses Jahr',
-        custom: 'Benutzerdefiniert',
+    const timeLabelKeys: Record<TimeFilter, string> = {
+        all: 'bookingList.timeFilter.all',
+        today: 'bookingList.timeFilter.today',
+        'this-week': 'bookingList.timeFilter.thisWeek',
+        'this-month': 'bookingList.timeFilter.thisMonth',
+        'this-year': 'bookingList.timeFilter.thisYear',
+        custom: 'bookingList.timeFilter.custom',
     };
 
     const isTimeFilterActive = timeFilter !== 'all';
@@ -430,14 +442,14 @@ export default function BookingList({ bookings }: BookingListProps) {
         timeFilter === 'custom' && customFrom && customTo
             ? `${customFrom} – ${customTo}`
             : isTimeFilterActive
-                ? timeLabels[timeFilter]
-                : 'Zeitraum';
+                ? t(timeLabelKeys[timeFilter])
+                : t('bookingList.timeFilter.placeholder');
 
     const handleCancelBooking = (booking: NormalizedBooking) => {
         const confirmationMessage =
             booking.displayStatus === 'pending'
-                ? 'Möchtest du diese Buchungsanfrage wirklich zurückziehen?'
-                : 'Möchtest du diese Buchung wirklich stornieren?';
+                ? t('bookingList.confirm.withdrawRequest')
+                : t('bookingList.confirm.cancelBooking');
 
         if (!window.confirm(confirmationMessage)) {
             return;
@@ -456,13 +468,16 @@ export default function BookingList({ bookings }: BookingListProps) {
                 onSuccess: () => {
                     toast.success(
                         booking.displayStatus === 'pending'
-                            ? 'Buchungsanfrage wurde zurückgezogen.'
-                            : 'Buchung wurde storniert.',
+                            ? t('bookingList.toast.requestWithdrawn')
+                            : t('bookingList.toast.bookingCancelled'),
                     );
                 },
 
-                onError: errors => {
-                    toast.error(getFirstErrorMessage(errors as InertiaErrors));
+                onError: (errors) => {
+                    toast.error(getFirstErrorMessage(
+                        errors as InertiaErrors,
+                        t('bookingList.toast.actionError'),
+                    ));
                 },
 
                 onFinish: () => {
@@ -476,7 +491,7 @@ export default function BookingList({ bookings }: BookingListProps) {
         <>
             {/* Status filters */}
             <div className="mb-4 flex flex-wrap gap-3">
-                {statusFilters.map(filter => (
+                {statusFilters.map((filter) => (
                     <button
                         key={filter.key}
                         type="button"
@@ -487,7 +502,7 @@ export default function BookingList({ bookings }: BookingListProps) {
                                 : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-100'
                         }`}
                     >
-                        {filter.label}
+                        {t(filter.labelKey)}
                     </button>
                 ))}
             </div>
@@ -497,23 +512,23 @@ export default function BookingList({ bookings }: BookingListProps) {
                 <div className="relative">
                     <button
                         type="button"
-                        onClick={() => setFilterOpen(open => !open)}
+                        onClick={() => setFilterOpen((open) => !open)}
                         className={`flex items-center gap-2 rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition-all ${
                             isTimeFilterActive
                                 ? 'border-[#5555ff] bg-[#5555ff] text-white shadow-md'
                                 : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                         }`}
                     >
-                        <Calendar className="h-4 w-4" />
+                        <Calendar className="h-4 w-4" aria-hidden="true" />
                         {timeFilterLabel}
-                        <ChevronDown className={`h-4 w-4 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`h-4 w-4 transition-transform ${filterOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                     </button>
 
                     {filterOpen && (
                         <div className="absolute left-0 top-full z-30 mt-2 w-64 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
                             <div className="p-2">
                                 {(['all', 'today', 'this-week', 'this-month', 'this-year', 'custom'] as const).map(
-                                    option => (
+                                    (option) => (
                                         <button
                                             key={option}
                                             type="button"
@@ -530,8 +545,8 @@ export default function BookingList({ bookings }: BookingListProps) {
                                                     : 'font-medium text-gray-700 hover:bg-gray-50'
                                             }`}
                                         >
-                                            {timeLabels[option]}
-                                            {timeFilter === option && <Check className="h-4 w-4" />}
+                                            {t(timeLabelKeys[option])}
+                                            {timeFilter === option && <Check className="h-4 w-4" aria-hidden="true" />}
                                         </button>
                                     ),
                                 )}
@@ -542,7 +557,8 @@ export default function BookingList({ bookings }: BookingListProps) {
                                     <input
                                         type="date"
                                         value={customFrom}
-                                        onChange={event => setCustomFrom(event.target.value)}
+                                        aria-label={t('bookingList.timeFilter.customFrom')}
+                                        onChange={(event) => setCustomFrom(event.target.value)}
                                         className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5555ff]"
                                     />
 
@@ -550,7 +566,8 @@ export default function BookingList({ bookings }: BookingListProps) {
                                         type="date"
                                         value={customTo}
                                         min={customFrom}
-                                        onChange={event => {
+                                        aria-label={t('bookingList.timeFilter.customTo')}
+                                        onChange={(event) => {
                                             setCustomTo(event.target.value);
 
                                             if (customFrom && event.target.value) {
@@ -575,8 +592,8 @@ export default function BookingList({ bookings }: BookingListProps) {
                         }}
                         className="flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-700"
                     >
-                        <X className="h-3.5 w-3.5" />
-                        Zurücksetzen
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                        {t('bookingList.filter.reset')}
                     </button>
                 )}
             </div>
@@ -585,25 +602,25 @@ export default function BookingList({ bookings }: BookingListProps) {
             <div className="space-y-6">
                 {filteredBookings.length === 0 ? (
                     <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-                        <XCircle className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                        <XCircle className="mx-auto mb-4 h-16 w-16 text-gray-300" aria-hidden="true" />
 
                         <h3 className="mb-2 text-xl font-bold text-gray-950">
-                            Keine Buchungen gefunden
+                            {t('bookingList.empty.title')}
                         </h3>
 
                         <p className="mb-6 text-gray-600">
-                            Für die gewählten Filter gibt es aktuell keine Buchungen.
+                            {t('bookingList.empty.description')}
                         </p>
 
                         <Link
                             href="/"
                             className="inline-block rounded-xl bg-[#5555ff] px-8 py-3 font-semibold text-white transition-colors hover:bg-[#4444ee]"
                         >
-                            Deskrls entdecken
+                            {t('bookingList.empty.discoverDeskrls')}
                         </Link>
                     </div>
                 ) : (
-                    filteredBookings.map(booking => {
+                    filteredBookings.map((booking) => {
                         const statusMeta = getStatusMeta(booking.displayStatus);
                         const StatusIcon = statusMeta.Icon;
 
@@ -630,7 +647,7 @@ export default function BookingList({ bookings }: BookingListProps) {
                                                     />
                                                 ) : (
                                                     <span className="px-4 text-center text-sm font-semibold text-gray-400">
-                                                        Kein Bild vorhanden
+                                                        {t('bookingList.image.empty')}
                                                     </span>
                                                 )}
                                             </div>
@@ -653,24 +670,24 @@ export default function BookingList({ bookings }: BookingListProps) {
                                                 <span
                                                     className={`inline-flex shrink-0 items-center gap-1 rounded-lg px-3 py-1 text-sm font-semibold ${statusMeta.className}`}
                                                 >
-                                                    <StatusIcon className="h-4 w-4" />
-                                                    {statusMeta.label}
+                                                    <StatusIcon className="h-4 w-4" aria-hidden="true" />
+                                                    {t(statusMeta.labelKey)}
                                                 </span>
                                             </div>
 
                                             <p className="flex items-center gap-2 text-gray-600">
-                                                <MapPin className="h-4 w-4 shrink-0" />
+                                                <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
                                                 {booking.city}
                                             </p>
 
                                             {(booking.displayStatus === 'active' ||
                                                 booking.displayStatus === 'confirmed') && (
                                                 <div className="mt-2 flex items-start gap-2 rounded-xl border border-[#5555ff]/20 bg-[#5555ff]/5 px-3 py-2">
-                                                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#5555ff]" />
+                                                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#5555ff]" aria-hidden="true" />
 
                                                     <div>
                                                         <p className="mb-0.5 text-xs font-bold text-[#5555ff]">
-                                                            Vollständige Adresse
+                                                            {t('bookingList.address.full')}
                                                         </p>
 
                                                         <p className="text-sm font-semibold text-gray-800">
@@ -683,57 +700,57 @@ export default function BookingList({ bookings }: BookingListProps) {
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
-                                                <Calendar className="mt-0.5 h-5 w-5 text-[#5555ff]" />
+                                                <Calendar className="mt-0.5 h-5 w-5 text-[#5555ff]" aria-hidden="true" />
 
                                                 <div>
                                                     <p className="mb-1 text-sm text-gray-600">
-                                                        Von
+                                                        {t('bookingList.date.from')}
                                                     </p>
 
                                                     <p className="font-semibold">
-                                                        {formatDate(booking.from)}
+                                                        {formatDate(booking.from, locale)}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
-                                                <Clock className="mt-0.5 h-5 w-5 text-[#5555ff]" />
+                                                <Clock className="mt-0.5 h-5 w-5 text-[#5555ff]" aria-hidden="true" />
 
                                                 <div>
                                                     <p className="mb-1 text-sm text-gray-600">
-                                                        Uhrzeit
+                                                        {t('bookingList.date.time')}
                                                     </p>
 
                                                     <p className="font-semibold">
-                                                        {formatTime(booking.from)}
+                                                        {formatTime(booking.from, locale)}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
-                                                <Calendar className="mt-0.5 h-5 w-5 text-[#5555ff]" />
+                                                <Calendar className="mt-0.5 h-5 w-5 text-[#5555ff]" aria-hidden="true" />
 
                                                 <div>
                                                     <p className="mb-1 text-sm text-gray-600">
-                                                        Bis
+                                                        {t('bookingList.date.until')}
                                                     </p>
 
                                                     <p className="font-semibold">
-                                                        {formatDate(booking.until)}
+                                                        {formatDate(booking.until, locale)}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
-                                                <Clock className="mt-0.5 h-5 w-5 text-[#5555ff]" />
+                                                <Clock className="mt-0.5 h-5 w-5 text-[#5555ff]" aria-hidden="true" />
 
                                                 <div>
                                                     <p className="mb-1 text-sm text-gray-600">
-                                                        Uhrzeit
+                                                        {t('bookingList.date.time')}
                                                     </p>
 
                                                     <p className="font-semibold">
-                                                        {formatTime(booking.until)}
+                                                        {formatTime(booking.until, locale)}
                                                     </p>
                                                 </div>
                                             </div>
@@ -742,25 +759,27 @@ export default function BookingList({ bookings }: BookingListProps) {
                                         <div className="flex flex-col gap-4 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
                                             <div>
                                                 <p className="text-sm text-gray-600">
-                                                    Gesamtpreis
+                                                    {t('bookingList.price.total')}
                                                 </p>
 
                                                 <p className="text-2xl font-bold text-[#5555ff]">
-                                                    €{formatPrice(booking.price)}
+                                                    {booking.price === null ? '—' : `€${formatPrice(booking.price, locale)}`}
                                                 </p>
 
                                                 <p className="mt-1 text-xs text-gray-500">
-                                                    Rate: {getPriceRateLabel(booking.priceRate)}
+                                                    {t('bookingList.price.rate', {
+                                                        rate: t(getPriceRateLabelKey(booking.priceRate)),
+                                                    })}
                                                 </p>
                                             </div>
 
                                             {/* Mobile actions */}
                                             <div className="flex gap-2 md:hidden">
                                                 <Link
-                                                    href={`/bookings/${booking.id}`}
+                                                    href={`/deskrls/${booking.deskrlId}`}
                                                     className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-center text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-200"
                                                 >
-                                                    Details
+                                                    {t('bookingList.action.viewDeskrl')}
                                                 </Link>
 
                                                 {canCancel && (
@@ -771,8 +790,8 @@ export default function BookingList({ bookings }: BookingListProps) {
                                                         className="flex-1 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
                                                         {booking.displayStatus === 'pending'
-                                                            ? 'Zurückziehen'
-                                                            : 'Stornieren'}
+                                                            ? t('bookingList.action.withdraw')
+                                                            : t('bookingList.action.cancel')}
                                                     </button>
                                                 )}
                                             </div>
@@ -782,17 +801,10 @@ export default function BookingList({ bookings }: BookingListProps) {
                                     {/* Desktop actions */}
                                     <div className="hidden flex-col gap-2 md:col-span-1 md:flex">
                                         <Link
-                                            href={`/bookings/${booking.id}`}
-                                            className="w-full rounded-lg bg-[#5555ff] px-3 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-[#4444ee]"
-                                        >
-                                            Details ansehen
-                                        </Link>
-
-                                        <Link
                                             href={`/deskrls/${booking.deskrlId}`}
                                             className="w-full rounded-lg bg-gray-100 px-3 py-2 text-center text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-200"
                                         >
-                                            Deskrl ansehen
+                                            {t('bookingList.action.viewDeskrl')}
                                         </Link>
 
                                         {canCancel && (
@@ -802,10 +814,10 @@ export default function BookingList({ bookings }: BookingListProps) {
                                                 disabled={cancellingBookingId === booking.id}
                                                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                                             >
-                                                <X className="h-4 w-4" />
+                                                <X className="h-4 w-4" aria-hidden="true" />
                                                 {booking.displayStatus === 'pending'
-                                                    ? 'Anfrage zurückziehen'
-                                                    : 'Buchung stornieren'}
+                                                    ? t('bookingList.action.withdrawRequest')
+                                                    : t('bookingList.action.cancelBooking')}
                                             </button>
                                         )}
                                     </div>
