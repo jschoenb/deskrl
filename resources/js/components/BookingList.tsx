@@ -93,7 +93,6 @@ type NormalizedBooking = {
     deskrlId: number;
     deskrlTitle: string;
     imageUrl: string | null;
-    city: string;
     fullAddress: string;
     from: Date;
     until: Date;
@@ -188,14 +187,6 @@ function formatAddress(address: DeskrlAddress | undefined, fallback: string): st
     ]
         .filter(Boolean)
         .join(', ') || fallback;
-}
-
-function getCity(address: DeskrlAddress | undefined, fallback: string): string {
-    if (!address) return fallback;
-
-    const resolvedAddress = address.address ?? address;
-
-    return resolvedAddress.city || fallback;
 }
 
 function getMainImage(deskrl?: Deskrl | null): string | null {
@@ -365,7 +356,6 @@ function normalizeBooking(booking: Booking, locale: string, t: TranslationFuncti
         deskrlId: booking.deskrl_id,
         deskrlTitle: getLocalizedText(deskrl?.title, locale) || t('bookingList.fallback.untitledDeskrl'),
         imageUrl: getMainImage(deskrl),
-        city: getCity(address, t('bookingList.fallback.location')),
         fullAddress: formatAddress(address, t('bookingList.fallback.address')),
         from,
         until,
@@ -677,25 +667,8 @@ export default function BookingList({ bookings }: BookingListProps) {
 
                                             <p className="flex items-center gap-2 text-gray-600">
                                                 <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
-                                                {booking.city}
+                                                {booking.fullAddress}
                                             </p>
-
-                                            {(booking.displayStatus === 'active' ||
-                                                booking.displayStatus === 'confirmed') && (
-                                                <div className="mt-2 flex items-start gap-2 rounded-xl border border-[#5555ff]/20 bg-[#5555ff]/5 px-3 py-2">
-                                                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#5555ff]" aria-hidden="true" />
-
-                                                    <div>
-                                                        <p className="mb-0.5 text-xs font-bold text-[#5555ff]">
-                                                            {t('bookingList.address.full')}
-                                                        </p>
-
-                                                        <p className="text-sm font-semibold text-gray-800">
-                                                            {booking.fullAddress}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
@@ -759,17 +732,13 @@ export default function BookingList({ bookings }: BookingListProps) {
                                         <div className="flex flex-col gap-4 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
                                             <div>
                                                 <p className="text-sm text-gray-600">
-                                                    {t('bookingList.price.total')}
+                                                    {t('bookingList.price.total')} ({t('bookingList.price.rate', {
+                                                    rate: t(getPriceRateLabelKey(booking.priceRate)),
+                                                })})
                                                 </p>
 
                                                 <p className="text-2xl font-bold text-[#5555ff]">
                                                     {booking.price === null ? '—' : `€${formatPrice(booking.price, locale)}`}
-                                                </p>
-
-                                                <p className="mt-1 text-xs text-gray-500">
-                                                    {t('bookingList.price.rate', {
-                                                        rate: t(getPriceRateLabelKey(booking.priceRate)),
-                                                    })}
                                                 </p>
                                             </div>
 
