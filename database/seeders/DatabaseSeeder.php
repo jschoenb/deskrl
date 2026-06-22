@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -15,6 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             LanguageSeeder::class,
             CountrySeeder::class,
+
             DeskrlCategorySeeder::class,
             UtilityCategorySeeder::class,
             UtilitySeeder::class,
@@ -29,16 +29,20 @@ class DatabaseSeeder extends Seeder
             DeskrlSeeder::class,
             DeskrlAddressSeeder::class,
             DeskrlUtilitySeeder::class,
-            DeskrlImageSeeder::class,
 
             AvailabilitySeeder::class,
             SpecialAvailabilitySeeder::class,
             SpecialDayPriceSeeder::class,
 
+            // Creates additional test accounts, addresses, Deskrls, utilities and availabilities.
+            // This must run before DeskrlImageSeeder so the test Deskrls also receive images.
+            TestScenarioSeeder::class,
+
+            // Must run after all Deskrls exist.
+            DeskrlImageSeeder::class,
+
             FavoriteSeeder::class,
             BookingSeeder::class,
-
-            TestScenarioSeeder::class,
         ]);
     }
 }
