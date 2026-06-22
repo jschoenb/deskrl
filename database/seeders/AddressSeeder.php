@@ -11,7 +11,6 @@ class AddressSeeder extends Seeder
     public function run(): void
     {
         $austria = Country::query()->where('code', 'AT')->first();
-        $germany = Country::query()->where('code', 'DE')->first();
 
         if (!$austria) {
             $this->command->warn('No country AT found. Please seed countries before addresses.');
@@ -28,7 +27,6 @@ class AddressSeeder extends Seeder
                 'postal_code' => '4020',
                 'stair' => null,
                 'door' => '5',
-                // Test coordinates for displaying this seeded address on the map.
                 'latitude' => 48.3069000,
                 'longitude' => 14.2858000,
             ],
@@ -41,7 +39,6 @@ class AddressSeeder extends Seeder
                 'postal_code' => '1020',
                 'stair' => '2',
                 'door' => '14',
-                // Test coordinates for displaying this seeded address on the map.
                 'latitude' => 48.2160000,
                 'longitude' => 16.3910000,
             ],
@@ -50,31 +47,50 @@ class AddressSeeder extends Seeder
                 'state' => 'Oberösterreich',
                 'city' => 'Hagenberg',
                 'street' => 'Softwarepark',
-                'house_nr' => '1',
+                'house_nr' => '12',
                 'postal_code' => '4232',
                 'stair' => null,
                 'door' => null,
-                // Test coordinates for displaying this seeded address on the map.
-                'latitude' => 48.3688000,
+                'latitude' => 48.3696000,
                 'longitude' => 14.5128000,
             ],
-        ];
-
-        if ($germany) {
-            $addresses[] = [
-                'country_id' => $germany->id,
-                'state' => 'Bayern',
-                'city' => 'München',
-                'street' => 'Leopoldstraße',
-                'house_nr' => '50',
-                'postal_code' => '80802',
+            [
+                'country_id' => $austria->id,
+                'state' => 'Steiermark',
+                'city' => 'Graz',
+                'street' => 'Annenstraße',
+                'house_nr' => '23',
+                'postal_code' => '8020',
                 'stair' => null,
                 'door' => null,
-                // Test coordinates for displaying this seeded address on the map.
-                'latitude' => 48.1583000,
-                'longitude' => 11.5845000,
-            ];
-        }
+                'latitude' => 47.0707000,
+                'longitude' => 15.4310000,
+            ],
+            [
+                'country_id' => $austria->id,
+                'state' => 'Salzburg',
+                'city' => 'Salzburg',
+                'street' => 'Elisabethstraße',
+                'house_nr' => '1',
+                'postal_code' => '5020',
+                'stair' => null,
+                'door' => null,
+                'latitude' => 47.8120000,
+                'longitude' => 13.0440000,
+            ],
+            [
+                'country_id' => $austria->id,
+                'state' => 'Oberösterreich',
+                'city' => 'Linz',
+                'street' => 'Peter-Behrens-Platz',
+                'house_nr' => '1',
+                'postal_code' => '4020',
+                'stair' => null,
+                'door' => null,
+                'latitude' => 48.3117000,
+                'longitude' => 14.3020000,
+            ],
+        ];
 
         foreach ($addresses as $address) {
             Address::query()->updateOrCreate(

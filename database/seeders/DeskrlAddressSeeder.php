@@ -14,27 +14,78 @@ class DeskrlAddressSeeder extends Seeder
      */
     public function run(): void
     {
-        // Deskrl addresses need existing Deskrls and existing addresses.
-        $deskrls = Deskrl::query()->get();
-        $addresses = Address::query()->get();
+        $assignments = [
+            [
+                'deskrl_title' => 'Moderner Meetingraum in Linz',
+                'city' => 'Linz',
+                'street' => 'Hauptstraße',
+                'house_nr' => '12',
+                'postal_code' => '4020',
+            ],
+            [
+                'deskrl_title' => 'Flexibler Arbeitsplatz in Wien',
+                'city' => 'Wien',
+                'street' => 'Praterstraße',
+                'house_nr' => '25',
+                'postal_code' => '1020',
+            ],
+            [
+                'deskrl_title' => 'Seminarraum für Workshops',
+                'city' => 'Hagenberg',
+                'street' => 'Softwarepark',
+                'house_nr' => '12',
+                'postal_code' => '4232',
+            ],
+            [
+                'deskrl_title' => 'Kreativer Projektraum in Graz',
+                'city' => 'Graz',
+                'street' => 'Annenstraße',
+                'house_nr' => '23',
+                'postal_code' => '8020',
+            ],
+            [
+                'deskrl_title' => 'Ruhiges Einzelbüro in Salzburg',
+                'city' => 'Salzburg',
+                'street' => 'Elisabethstraße',
+                'house_nr' => '1',
+                'postal_code' => '5020',
+            ],
+            [
+                'deskrl_title' => 'Eventraum für kleine Gruppen',
+                'city' => 'Linz',
+                'street' => 'Peter-Behrens-Platz',
+                'house_nr' => '1',
+                'postal_code' => '4020',
+            ],
+        ];
 
-        if ($deskrls->isEmpty()) {
-            $this->command->warn('No deskrls found. Please seed deskrls before deskrl addresses.');
+        foreach ($assignments as $assignment) {
+            // Find the seeded Deskrl by its German title.
+            $deskrl = Deskrl::query()
+                ->where('title->de', $assignment['deskrl_title'])
+                ->first();
 
-            return;
-        }
+            if (!$deskrl) {
+                $this->command->warn("No Deskrl found for {$assignment['deskrl_title']}.");
+                continue;
+            }
 
-        if ($addresses->isEmpty()) {
-            $this->command->warn('No addresses found. Please seed addresses before deskrl addresses.');
+            // Find the matching seeded address.
+            $address = Address::query()
+                ->where('city', $assignment['city'])
+                ->where('street', $assignment['street'])
+                ->where('house_nr', $assignment['house_nr'])
+                ->where('postal_code', $assignment['postal_code'])
+                ->first();
 
-            return;
-        }
+            if (!$address) {
+                $this->command->warn(
+                    "No address found for {$assignment['street']} {$assignment['house_nr']}, {$assignment['postal_code']} {$assignment['city']}."
+                );
+                continue;
+            }
 
-        foreach ($deskrls as $index => $deskrl) {
-            // Reuse existing addresses. If there are fewer addresses than Deskrls,
-            // addresses will be assigned repeatedly.
-            $address = $addresses[$index % $addresses->count()];
-
+            // Create or update the address relation for the Deskrl.
             DeskrlAddress::query()->updateOrCreate(
                 [
                     'deskrl_id' => $deskrl->id,

@@ -3,12 +3,14 @@ import { Calendar, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { toast } from 'sonner';
-import { DatePicker } from '@/components/DatePicker';
+
 import { BookingConfirmationModal } from '@/components/BookingModal';
+import { DatePicker } from '@/components/DatePicker';
 
 type BookingDuration = 'hour' | 'half_day' | 'day' | 'week' | 'month';
 
-type BackendPriceRate = 'hourly' | 'half_day' | 'daily' | 'weekly' | 'monthly';
+// These values must match the enum values in the bookings.price_rate database column.
+type BackendPriceRate = 'hour' | 'half_day' | 'day' | 'week' | 'month';
 
 type BookingDurationOption = {
     key: BookingDuration;
@@ -44,6 +46,7 @@ type BookingComponentProps = {
 
 type InertiaErrors = Record<string, string | string[] | undefined>;
 
+// Converts price values from the backend into valid numbers.
 function parsePrice(value?: number | string | null): number | null {
     if (value === null || value === undefined || value === '') {
         return null;
@@ -54,18 +57,20 @@ function parsePrice(value?: number | string | null): number | null {
     return Number.isFinite(numericValue) ? numericValue : null;
 }
 
+// Maps the frontend duration selection to the backend enum value.
 function mapDurationToBackendPriceRate(duration: BookingDuration): BackendPriceRate {
     const mapping: Record<BookingDuration, BackendPriceRate> = {
-        hour: 'hourly',
+        hour: 'hour',
         half_day: 'half_day',
-        day: 'daily',
-        week: 'weekly',
-        month: 'monthly',
+        day: 'day',
+        week: 'week',
+        month: 'month',
     };
 
     return mapping[duration];
 }
 
+// Extracts a readable error message from Inertia validation errors.
 function getFirstErrorMessage(errors: InertiaErrors, fallback: string): string {
     const preferredErrorKeys = [
         'booking',
@@ -170,10 +175,64 @@ export default function BookingComponent({
         bookingDurationOptions.find((option) => option.key === selectedDuration) ?? bookingDurationOptions[0];
 
     const selectedBookingPrice = selectedDurationOption?.price ?? null;
+
     const selectedBookingLabel = selectedDurationOption
         ? t(selectedDurationOption.labelKey)
         : t('booking.duration.period');
 
+    // Calculates the selected hourly booking duration based on start and end time.
+    const getHourlyDuration = (): number => {
+        const [startHour, startMinute] = selectedStartTime.split(':').map(Number);
+        const [endHour, endMinute] = selectedEndTime.split(':').map(Number);
+
+        const startTotalMinutes = startHour * 60 + startMinute;
+        const endTotalMinutes = endHour * 60 + endMinute;
+
+        return (endTotalMinutes - startTotalMinutes) / 60;
+    };
+
+    // Returns the amount used for price calculation.
+    // Hourly bookings use the real time difference, all other price rates count as one selected unit.
+    const getBookingDurationAmount = (): number => {
+        if (selectedDuration === 'hour') {
+            return getHourlyDuration();
+        }
+
+        return 1;
+    };
+
+    const bookingDurationAmount = getBookingDurationAmount();
+
+    // Prevents negative display values before validation blocks the booking.
+    const safeBookingDurationAmount = Math.max(bookingDurationAmount, 0);
+
+    // Calculates the final booking price shown in the confirmation modal and sent to the backend.
+    const calculatedBookingPrice =
+        selectedBookingPrice !== null
+            ? selectedBookingPrice * safeBookingDurationAmount
+            : null;
+
+    // Formats numbers for display, for example 1.5 hours if half-hour steps are used later.
+    const formatDurationAmount = (amount: number): string => {
+        if (Number.isInteger(amount)) {
+            return amount.toString();
+        }
+
+        return amount.toLocaleString(locale, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 2,
+        });
+    };
+
+    // Builds the duration label displayed in the confirmation modal.
+    const confirmationDurationLabel =
+        selectedDuration === 'hour'
+            ? `${formatDurationAmount(safeBookingDurationAmount)} ${
+                safeBookingDurationAmount === 1 ? 'Stunde' : 'Stunden'
+            }`
+            : `1 ${selectedBookingLabel}`;
+
+    // Builds the booking period that is sent to the backend.
     const buildBookingPeriod = (): { from: string; until: string } | null => {
         if (!selectedDate) {
             return null;
@@ -252,6 +311,12 @@ export default function BookingComponent({
             return;
         }
 
+        // Blocks invalid hourly bookings where the end time is before or equal to the start time.
+        if (selectedDuration === 'hour' && bookingDurationAmount <= 0) {
+            toast.error('Die Endzeit muss nach der Startzeit liegen.');
+            return;
+        }
+
         setShowBookingModal(true);
     };
 
@@ -263,8 +328,14 @@ export default function BookingComponent({
             return;
         }
 
-        if (selectedBookingPrice === null) {
+        if (selectedBookingPrice === null || calculatedBookingPrice === null) {
             toast.error(t('booking.toast.noPrice'));
+            return;
+        }
+
+        // Blocks invalid hourly bookings again before submitting the request.
+        if (selectedDuration === 'hour' && bookingDurationAmount <= 0) {
+            toast.error('Die Endzeit muss nach der Startzeit liegen.');
             return;
         }
 
@@ -273,7 +344,7 @@ export default function BookingComponent({
             price_rate: mapDurationToBackendPriceRate(selectedDuration),
             from: bookingPeriod.from,
             until: bookingPeriod.until,
-            price: selectedBookingPrice,
+            price: calculatedBookingPrice,
         };
 
         router.post(`/deskrls/${deskrl.id}/bookings`, payload, {
@@ -565,7 +636,8 @@ export default function BookingComponent({
                 onConfirm={handleBookingConfirm}
                 spaceName={spaceName}
                 duration={selectedDuration}
-                price={selectedBookingPrice ?? 0}
+                durationLabel={confirmationDurationLabel}
+                price={calculatedBookingPrice ?? 0}
                 date={selectedDate}
             />
         </>
