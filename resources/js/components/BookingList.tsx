@@ -14,6 +14,7 @@ import {
 import { useIntl } from 'react-intl';
 import { toast } from 'sonner';
 
+// Represents text that can either be a plain string or an object with localized values.
 type LocalizedText =
     | string
     | {
@@ -22,8 +23,10 @@ type LocalizedText =
     [key: string]: string | undefined;
 };
 
+// Booking status values as stored in the backend.
 type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
 
+// Supported price rate values, including older and normalized naming variants.
 type BookingPriceRate =
     | 'hour'
     | 'half_day'
@@ -35,12 +38,16 @@ type BookingPriceRate =
     | 'weekly'
     | 'monthly';
 
+// Status values used for displaying and filtering bookings in the UI.
 type DisplayStatus = 'active' | 'confirmed' | 'pending' | 'past' | 'cancelled';
 
+// Available status filter options.
 type StatusFilter = 'all' | DisplayStatus;
 
+// Available time filter options.
 type TimeFilter = 'all' | 'today' | 'this-week' | 'this-month' | 'this-year' | 'custom';
 
+// Image data loaded through the related Deskrl model.
 type DeskrlImage = {
     id: number;
     path: string;
@@ -48,6 +55,7 @@ type DeskrlImage = {
     sort_order?: number;
 };
 
+// Address data used for displaying the Deskrl location.
 type Address = {
     id?: number;
     city?: string;
@@ -57,10 +65,12 @@ type Address = {
     state?: string | null;
 };
 
+// Supports both nested and directly attached address structures.
 type DeskrlAddress = {
     address?: Address;
 } & Partial<Address>;
 
+// Reduced Deskrl data needed by the booking list.
 type Deskrl = {
     id: number;
     title?: LocalizedText;
@@ -69,6 +79,7 @@ type Deskrl = {
     deskrlAddress?: DeskrlAddress;
 };
 
+// Booking data received from the backend.
 export type Booking = {
     id: number;
     user_id?: number;
@@ -88,6 +99,7 @@ export type Booking = {
     deskrl?: Deskrl | null;
 };
 
+// Normalized booking structure used internally by the component.
 type NormalizedBooking = {
     id: number;
     deskrlId: number;
@@ -102,14 +114,18 @@ type NormalizedBooking = {
     price: number | null;
 };
 
+// Props expected by the booking list component.
 type BookingListProps = {
     bookings: Booking[];
 };
 
+// Inertia validation errors returned after failed requests.
 type InertiaErrors = Record<string, string | string[] | undefined>;
 
+// Type definition for the local translation helper.
 type TranslationFunction = (id: string, values?: Record<string, string | number>) => string;
 
+// Resolves localized text using the current locale, fallback languages, or the first available value.
 function getLocalizedText(value: LocalizedText | undefined, locale: string): string {
     if (!value) return '';
 
@@ -122,6 +138,7 @@ function getLocalizedText(value: LocalizedText | undefined, locale: string): str
     return value[locale] || value[shortLocale] || value.de || value.en || Object.values(value).find(Boolean) || '';
 }
 
+// Converts stored image paths into usable frontend URLs.
 function getImageUrl(path?: string): string | null {
     if (!path) return null;
 
@@ -132,10 +149,12 @@ function getImageUrl(path?: string): string | null {
     return `/${path}`;
 }
 
+// Converts backend date-time strings into JavaScript Date objects.
 function parseDateTime(value: string): Date {
     return new Date(value.replace(' ', 'T'));
 }
 
+// Converts numeric or string price values into numbers.
 function parsePrice(value?: number | string | null): number | null {
     if (value === null || value === undefined || value === '') {
         return null;
@@ -146,6 +165,7 @@ function parsePrice(value?: number | string | null): number | null {
     return Number.isFinite(numericValue) ? numericValue : null;
 }
 
+// Formats a price value according to the current locale.
 function formatPrice(value: number | null, locale: string): string {
     if (value === null) {
         return '—';
@@ -157,6 +177,7 @@ function formatPrice(value: number | null, locale: string): string {
     });
 }
 
+// Formats a date for display in the booking cards.
 function formatDate(date: Date, locale: string): string {
     return date.toLocaleDateString(locale, {
         day: '2-digit',
@@ -165,6 +186,7 @@ function formatDate(date: Date, locale: string): string {
     });
 }
 
+// Formats a time value for display in the booking cards.
 function formatTime(date: Date, locale: string): string {
     return date.toLocaleTimeString(locale, {
         hour: '2-digit',
@@ -172,6 +194,7 @@ function formatTime(date: Date, locale: string): string {
     });
 }
 
+// Builds a readable address string from the available address fields.
 function formatAddress(address: DeskrlAddress | undefined, fallback: string): string {
     if (!address) return fallback;
 
@@ -189,6 +212,7 @@ function formatAddress(address: DeskrlAddress | undefined, fallback: string): st
         .join(', ') || fallback;
 }
 
+// Selects the main Deskrl image or falls back to the first sorted image.
 function getMainImage(deskrl?: Deskrl | null): string | null {
     const image = [...(deskrl?.images ?? [])].sort(
         (a, b) => Number(b.is_main) - Number(a.is_main) || (a.sort_order ?? 0) - (b.sort_order ?? 0),
@@ -197,6 +221,7 @@ function getMainImage(deskrl?: Deskrl | null): string | null {
     return getImageUrl(image?.path);
 }
 
+// Derives the display status from the backend status and the booking time range.
 function getDisplayStatus(booking: Booking): DisplayStatus {
     const now = new Date();
     const from = parseDateTime(booking.from);
@@ -221,6 +246,7 @@ function getDisplayStatus(booking: Booking): DisplayStatus {
     return 'confirmed';
 }
 
+// Maps a price rate value to the matching translation key.
 function getPriceRateLabelKey(priceRate?: BookingPriceRate | null): string {
     const labels: Record<BookingPriceRate, string> = {
         hour: 'bookingList.priceRate.hour',
@@ -237,6 +263,7 @@ function getPriceRateLabelKey(priceRate?: BookingPriceRate | null): string {
     return priceRate ? labels[priceRate] : 'bookingList.priceRate.period';
 }
 
+// Returns label, icon, and styling information for each display status.
 function getStatusMeta(status: DisplayStatus) {
     if (status === 'active') {
         return {
@@ -277,6 +304,7 @@ function getStatusMeta(status: DisplayStatus) {
     };
 }
 
+// Checks whether a booking date matches the selected time filter.
 function isInTimeRange(date: Date, timeFilter: TimeFilter, customFrom: string, customTo: string): boolean {
     if (timeFilter === 'all') return true;
 
@@ -317,6 +345,7 @@ function isInTimeRange(date: Date, timeFilter: TimeFilter, customFrom: string, c
     return true;
 }
 
+// Extracts the most relevant validation error message from an Inertia error object.
 function getFirstErrorMessage(errors: InertiaErrors, fallback: string): string {
     const preferredErrorKeys = ['booking', 'status', 'from', 'until', 'price_rate'];
 
@@ -345,6 +374,7 @@ function getFirstErrorMessage(errors: InertiaErrors, fallback: string): string {
     return fallback;
 }
 
+// Converts one backend booking into the normalized structure used by the frontend.
 function normalizeBooking(booking: Booking, locale: string, t: TranslationFunction): NormalizedBooking {
     const deskrl = booking.deskrl;
     const address = deskrl?.deskrl_address ?? deskrl?.deskrlAddress;
@@ -369,13 +399,25 @@ function normalizeBooking(booking: Booking, locale: string, t: TranslationFuncti
 export default function BookingList({ bookings }: BookingListProps) {
     const intl = useIntl();
 
+    // Stores the currently selected status filter.
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
+    // Stores the currently selected time filter.
     const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+
+    // Stores the custom start date for the custom time filter.
     const [customFrom, setCustomFrom] = useState('');
+
+    // Stores the custom end date for the custom time filter.
     const [customTo, setCustomTo] = useState('');
+
+    // Controls whether the time filter dropdown is open.
     const [filterOpen, setFilterOpen] = useState(false);
+
+    // Stores the booking id that is currently being cancelled.
     const [cancellingBookingId, setCancellingBookingId] = useState<number | null>(null);
 
+    // Used to detect clicks outside the time filter dropdown.
     const filterRef = useRef<HTMLDivElement>(null);
 
     const locale = intl.locale || 'de-DE';
@@ -383,6 +425,7 @@ export default function BookingList({ bookings }: BookingListProps) {
     // Returns the translated text for the given translation key.
     const t: TranslationFunction = (id, values) => intl.formatMessage({ id }, values);
 
+    // Closes the time filter dropdown when the user clicks outside of it.
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
@@ -395,10 +438,12 @@ export default function BookingList({ bookings }: BookingListProps) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Normalizes all bookings before filtering and rendering them.
     const normalizedBookings = useMemo<NormalizedBooking[]>(() => {
         return bookings.map((booking) => normalizeBooking(booking, locale, t));
     }, [bookings, locale]);
 
+    // Applies the selected status and time filters to the normalized bookings.
     const filteredBookings = useMemo(() => {
         return normalizedBookings.filter((booking) => {
             const statusMatches = statusFilter === 'all' || booking.displayStatus === statusFilter;
@@ -408,6 +453,7 @@ export default function BookingList({ bookings }: BookingListProps) {
         });
     }, [normalizedBookings, statusFilter, timeFilter, customFrom, customTo]);
 
+    // Status filter buttons shown above the booking list.
     const statusFilters: { key: StatusFilter; labelKey: string }[] = [
         { key: 'all', labelKey: 'bookingList.statusFilter.all' },
         { key: 'active', labelKey: 'bookingList.status.active' },
@@ -417,6 +463,7 @@ export default function BookingList({ bookings }: BookingListProps) {
         { key: 'cancelled', labelKey: 'bookingList.status.cancelled' },
     ];
 
+    // Translation keys for all time filter options.
     const timeLabelKeys: Record<TimeFilter, string> = {
         all: 'bookingList.timeFilter.all',
         today: 'bookingList.timeFilter.today',
@@ -428,6 +475,7 @@ export default function BookingList({ bookings }: BookingListProps) {
 
     const isTimeFilterActive = timeFilter !== 'all';
 
+    // Builds the visible label for the time filter button.
     const timeFilterLabel =
         timeFilter === 'custom' && customFrom && customTo
             ? `${customFrom} – ${customTo}`
@@ -435,6 +483,7 @@ export default function BookingList({ bookings }: BookingListProps) {
                 ? t(timeLabelKeys[timeFilter])
                 : t('bookingList.timeFilter.placeholder');
 
+    // Sends a cancel request for a booking after user confirmation.
     const handleCancelBooking = (booking: NormalizedBooking) => {
         const confirmationMessage =
             booking.displayStatus === 'pending'

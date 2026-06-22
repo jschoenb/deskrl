@@ -7,6 +7,7 @@ import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
+// Defines the props received from the Inertia backend.
 type PageProps = {
     auth?: {
         user?: {
@@ -20,14 +21,19 @@ type PageProps = {
 };
 
 const Bookings: InertiaPage = () => {
+    // Reads the current page props provided by Inertia.
     const { props } = usePage<PageProps>();
 
     const auth = props.auth;
     const bookings = props.bookings ?? [];
 
+    // Checks whether a user is currently logged in.
     const isLoggedIn = Boolean(auth?.user);
+
+    // Controls whether the authentication modal is visible.
     const [showAuthModal, setShowAuthModal] = useState(false);
 
+    // Shows a login prompt instead of the booking list when no user is logged in.
     if (!isLoggedIn) {
         return (
             <>
@@ -64,6 +70,7 @@ const Bookings: InertiaPage = () => {
         );
     }
 
+    // Shows the booking overview for logged-in users.
     return (
         <>
             <div className="relative left-1/2 right-1/2 mb-8 w-screen -ml-[50vw] -mr-[50vw] bg-gradient-to-br from-[#5555ff] via-[#7575ff] to-[#e63cff] px-4 py-16 text-white">
@@ -89,6 +96,7 @@ const Bookings: InertiaPage = () => {
     );
 };
 
+// Wraps the page in the shared application layout.
 Bookings.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
 
 export default Bookings;
