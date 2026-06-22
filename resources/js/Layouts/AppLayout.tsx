@@ -1,7 +1,7 @@
 import React from 'react';
 import { usePage } from '@inertiajs/react';
 // @ts-ignore
-import Header from '@/components/header';
+import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
 import { Toaster } from 'sonner';
